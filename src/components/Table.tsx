@@ -80,7 +80,7 @@ const Table: ComponentType<
     <Card
       padding={3}
       border
-      radius={2}
+      radius={1}
       onDoubleClick={() => (isInPortableText && handleOpen?.() ? handleOpen() : undefined)}
     >
       <TableButtons path={path} value={value!} patch={patch} readOnly={props.readOnly}>

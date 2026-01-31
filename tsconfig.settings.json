@@ -15,6 +15,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
+    "types": ["node", "jest"],
 
     // Don't emit by default, pkg-utils will ignore this when generating .d.ts files
     "noEmit": true

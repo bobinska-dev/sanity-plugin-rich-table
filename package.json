@@ -32,22 +32,27 @@
     "link-watch": "plugin-kit link-watch",
     "lint": "eslint .",
     "prepublishOnly": "npm run build",
-    "watch": "pkg-utils watch --strict"
+    "watch": "pkg-utils watch --strict",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@jest/types": "^30.2.0",
     "@sanity/incompatible-plugin": "^1.0.5",
-    "react-icons": "^5.5.0",
     "emojilib": "^4.0.2",
     "fuse.js": "^7.1.0",
+    "react-icons": "^5.5.0",
     "styled-components": "^6.3.5"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.2",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
+    "@jest/globals": "^30.2.0",
     "@sanity/eslint-config-studio": "^6.0.0",
     "@sanity/pkg-utils": "^10.4.1",
     "@sanity/plugin-kit": "^4.0.20",
+    "@types/node": "^25.1.0",
     "@types/react": "^19.2.10",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
@@ -58,12 +63,14 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^17.2.0",
+    "jest": "^30.2.0",
     "prettier": "^3.8.1",
     "prettier-plugin-packagejson": "^3.0.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "sanity": "^5.7.0",
     "styled-components": "^6.3.8",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
