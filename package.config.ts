@@ -4,6 +4,7 @@ export default defineConfig({
   dist: 'dist',
   tsconfig: 'tsconfig.dist.json',
 
+  dts: 'rolldown',
   // Remove this block to enable strict export validation
   extract: {
     rules: {
