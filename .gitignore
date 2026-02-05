@@ -3,6 +3,8 @@ logs
 *.log
 npm-debug.log*
 
+studio/.sanity
+
 # Runtime data
 pids
 *.pid
