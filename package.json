@@ -9,11 +9,10 @@
   "license": "MIT",
   "author": "Saskia Bobinska <bobinska.dev@gmail.com>",
   "sideEffects": false,
-  "type": "commonjs",
+  "type": "module",
   "exports": {
     ".": {
-      "source": "./src/index.ts",
-      "import": "./dist/index.mjs",
+      "source": "./src/index.tsx",
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json"
@@ -22,33 +21,40 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "sanity.json",
-    "src",
-    "v2-incompatible.js"
+    "src"
   ],
+  "browserslist": "extends @sanity/browserslist-config",
   "scripts": {
-    "build": "plugin-kit verify-package --silent && pkg-utils build --strict --check --clean",
+    "build": "pkg-utils build --strict --check --clean",
     "format": "prettier --write --cache --ignore-unknown .",
     "link-watch": "plugin-kit link-watch",
     "lint": "eslint .",
+    "dev": "pnpm --filter studio dev",
     "prepublishOnly": "npm run build",
     "watch": "pkg-utils watch --strict"
   },
   "dependencies": {
-    "@sanity/incompatible-plugin": "^1.0.5",
-    "react-icons": "^5.5.0",
     "emojilib": "^4.0.2",
     "fuse.js": "^7.1.0",
-    "styled-components": "^6.3.5"
+    "react-icons": "^5.5.0",
+    "styled-components": "^6.3.8"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.2",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
+    "@floating-ui/react-dom": "^2.1.7",
+    "@portabletext/editor": "^4.3.7",
+    "@portabletext/keyboard-shortcuts": "^2.1.2",
+    "@portabletext/plugin-emoji-picker": "^4.0.22",
+    "@portabletext/plugin-typeahead-picker": "^3.0.2",
+    "@portabletext/toolbar": "^5.0.22",
     "@sanity/eslint-config-studio": "^6.0.0",
-    "@sanity/pkg-utils": "^10.4.1",
-    "@sanity/plugin-kit": "^4.0.20",
-    "@types/react": "^19.2.10",
+    "@sanity/icons": "^3.7.4",
+    "@sanity/pkg-utils": "^10.4.4",
+    "@sanity/types": "^5.8.0",
+    "@sanity/ui": "^3.1.11",
+    "@types/react": "^19.2.13",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
     "eslint": "^9.39.2",
@@ -57,12 +63,12 @@
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
-    "globals": "^17.2.0",
+    "globals": "^17.3.0",
     "prettier": "^3.8.1",
     "prettier-plugin-packagejson": "^3.0.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "sanity": "^5.7.0",
+    "sanity": "^5.8.0",
     "styled-components": "^6.3.8",
     "typescript": "^5.9.3"
   },
@@ -72,5 +78,11 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.js",
+      "./package.json": "./package.json"
+    }
   }
 }
