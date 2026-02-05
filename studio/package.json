@@ -1,0 +1,22 @@
+{
+  "name": "studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sanity Studio used for development",
+  "scripts": {
+    "dev": "sanity dev"
+  },
+  "dependencies": {
+    "@sanity/vision": "^5.8.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-is": "^19.2.4",
+    "sanity": "^5.8.0",
+    "sanity-plugin-rich-table": "workspace:*",
+    "styled-components": "^6.3.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.13",
+    "vite-tsconfig-paths": "^6.0.5"
+  }
+}

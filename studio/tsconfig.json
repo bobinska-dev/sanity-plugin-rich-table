@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.settings.json",
+  "include": ["./**/*.ts", "./**/*.tsx"],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "paths": {
+      "sanity-plugin-rich-table": ["../src"]
+    }
+  }
+}
