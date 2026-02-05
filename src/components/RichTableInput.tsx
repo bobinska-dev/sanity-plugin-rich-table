@@ -53,8 +53,7 @@ const RichTableInput: ComponentType<
       <Suspense fallback={<LoadingIndicator />} name={'RichTableInput Suspense'}>
         {!props.value?.rows && (
           <InitialiseTable
-            patch={patch}
-            path={pathString}
+            path={props.path}
             isInPortableText={props.isInPortableText}
             readOnly={props.readOnly}
             onChange={props.onChange}

@@ -1,13 +1,6 @@
 import {Box, Button, Card, Flex, Text} from '@sanity/ui'
 import React, {ComponentType, useCallback, useEffect, useState} from 'react'
-import {
-  FormPatch,
-  OperationsAPI,
-  PatchEvent,
-  PortableTextBlock,
-  SANITY_PATCH_TYPE,
-  stringToPath,
-} from 'sanity'
+import {FormPatch, OperationsAPI, PatchEvent, Path, PortableTextBlock, set} from 'sanity'
 
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
@@ -23,9 +16,7 @@ interface InitialiseTableProps {
   maxRows?: number
   /** Maximum number of columns to display in the size picker */
   maxCols?: number
-  path: string
-  /** Patch function from Sanity document operations for optimistic changes */
-  patch: OperationsAPI['patch']
+  path: Path
   isInPortableText?: boolean
   readOnly: boolean | undefined
   onChange: (patch: FormPatch | FormPatch[] | PatchEvent) => void
@@ -38,7 +29,6 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
   maxRows = 10,
   maxCols = 10,
   path,
-  patch,
   isInPortableText,
   readOnly,
   onChange,
@@ -66,17 +56,7 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
     (rowCount: number, cols: number) => {
       setSelected({rows: rowCount, cols: cols})
 
-      // use onChange to create new document by setting the object value to an empty object
-      onChange(
-        PatchEvent.from([
-          {
-            type: 'set',
-            path: stringToPath(path),
-            value: {},
-            patchType: SANITY_PATCH_TYPE,
-          },
-        ]),
-      )
+      const itemPath = [path.at(-1)!]
 
       // Prepare the initial table value
       // Cells per row
@@ -89,6 +69,7 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
           ] as unknown as PortableTextBlock[],
         }
       })
+
       // New rows
       const rows: RichTableRowType[] = Array.from({length: rowCount ?? 1}, (_, i) => ({
         _type: 'row',
@@ -107,48 +88,18 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
           cellIndex: cols ? cols - 1 : 0,
         }),
       )
-      const initialTableValue = {
+      const portableBlockInitialValue = {
         columnHeaders: columnHeaders,
         rows: rows,
         hasColumnTitles: true,
         hasRowTitles: true,
-      }
-      const portableBlockInitialValue = {
-        ...initialTableValue,
         _type: 'richTable',
         _key: generateKey(),
       }
 
-      // ** Prepare patches
-      if (isInPortableText) {
-        return patch.execute([
-          {
-            set: {
-              [path]: portableBlockInitialValue,
-            },
-          },
-        ])
-      }
-      return patch.execute([
-        {
-          set: {
-            [path]: initialTableValue,
-          },
-        },
-      ])
-      // TODO: find out why this does not work from Bjørge
-      /* return onChange(
-        PatchEvent.from([
-          {
-            type: 'set',
-            path: stringToPath(path),
-            value: initialTableValue as any,
-            patchType: SANITY_PATCH_TYPE,
-          },
-        ]),
-      )*/
+      onChange(PatchEvent.from(set(portableBlockInitialValue, itemPath)))
     },
-    [path, patch, isInPortableText, onChange],
+    [path, isInPortableText, onChange],
   )
   // * COMMIT SELECTION
   const effectiveRows = selected.rows || hover.rows
