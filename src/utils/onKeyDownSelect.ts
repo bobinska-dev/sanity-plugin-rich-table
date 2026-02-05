@@ -1,6 +1,6 @@
 import type {Dispatch, KeyboardEvent, SetStateAction} from 'react'
-import {TableSize} from '../../../components/input/rich-table/InitialiseTable'
 
+type TableSize = any // todo: fix
 /** Handle keyboard navigation for table size selection */
 export const onKeyDownSelectCells = ({
   e,
