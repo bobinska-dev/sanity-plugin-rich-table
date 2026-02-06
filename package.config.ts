@@ -7,9 +7,10 @@ export default defineConfig({
   // Remove this block to enable strict export validation
   extract: {
     rules: {
-      'ae-incompatible-release-tags': 'off',
+      'ae-incompatible-release-tags': 'warn',
       'ae-internal-missing-underscore': 'off',
-      'ae-missing-release-tag': 'off',
+      'ae-missing-release-tag': 'warn',
     },
   },
 })
+
