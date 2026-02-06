@@ -54,7 +54,13 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
   const [focused, setFocused] = useState<boolean>(false)
 
   const handleFocus = useCallback((state: boolean) => setFocused(state), [])
+
   // * INITIAL CONFIG FOR EDITOR PROVIDER
+  const pteSchemaType = props.schemaType
+    ? // @ts-ignore
+      props.schemaType.type.type // TODO change type in props to remove Boolean schemaType etc.
+    : content
+
   const initialConfig = useRef<EditorConfig>({
     initialValue: props.value,
     readOnly: props.readOnly ?? false,
@@ -138,7 +144,14 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
             renderListItem={renderListItem}
             renderAnnotation={renderAnnotation}
           />
-          {!props.readOnly && <ButtonToolbar focused={focused} editorRef={initialConfig} />}
+          {!props.readOnly && (
+            <ButtonToolbar
+              focused={focused}
+              editorRef={initialConfig}
+              schemaType={props.schemaType as ArraySchemaType<PortableTextBlock>}
+              path={props.path}
+            />
+          )}
         </EditorProvider>
       </Card>
     </Suspense>

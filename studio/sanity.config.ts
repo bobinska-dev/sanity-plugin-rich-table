@@ -1,7 +1,10 @@
 import {visionTool} from '@sanity/vision'
 import {defineArrayMember, defineConfig, defineField, defineType} from 'sanity'
-import {richTablePlugin} from 'sanity-plugin-rich-table'
+
 import {structureTool} from 'sanity/structure'
+import {AsteriskIcon, ImageIcon} from '@sanity/icons'
+import {richTablePlugin} from 'sanity-plugin-rich-table'
+import TestBlock from './TestBlock'
 
 export default defineConfig({
   name: 'default',
@@ -10,7 +13,57 @@ export default defineConfig({
   projectId: 'xonzamf8',
   dataset: 'production',
 
-  plugins: [structureTool(), visionTool(), richTablePlugin({})],
+  plugins: [
+    structureTool(),
+    visionTool(),
+    // @ts-ignore
+    richTablePlugin({
+      customBlockTypes: [
+        {
+          icon: ImageIcon,
+          type: {
+            name: 'image',
+            type: 'image',
+            title: 'Image test',
+            options: {hotspot: true},
+            icon: ImageIcon,
+            /* TODO: check why block component is not rendered if passed down like this
+                components: {
+              //@ts-ignore
+              block: TestBlock
+            }*/
+          },
+        },
+        {
+          icon: AsteriskIcon,
+          defaultValues: {
+            testField: 'Default value for test field',
+          },
+          type: {
+            name: 'testBlock',
+            type: 'object',
+            title: 'Test block',
+            icon: AsteriskIcon,
+            fields: [
+              {
+                name: 'testField',
+                type: 'string',
+                title: 'Test field',
+              },
+              {
+                name: 'testField2',
+                type: 'string',
+                title: 'Test field 2',
+              }
+            ],
+            preview: {
+              select: {title: 'testField', subtitle: 'testField2'},
+            },
+          },
+        },
+      ],
+    }),
+  ],
 
   schema: {
     types: [
@@ -35,9 +88,13 @@ export default defineConfig({
             of: [
               defineArrayMember({type: 'block'}),
               defineArrayMember({
-                name: 'richTableBlock',
+                name: 'richTable',
                 title: 'Rich Table Block',
                 type: 'richTableBlock',
+              }),
+              defineArrayMember({
+                name: 'image',
+                type: 'image',
               }),
             ],
           }),

@@ -1,8 +1,9 @@
-import {Card, Flex, Inline, Switch, Text} from '@sanity/ui'
+import {Button, Card, Flex, Inline, Switch, Text} from '@sanity/ui'
 import {ChangeEvent, ComponentType, Fragment} from 'react'
 import {
   ArrayOfObjectsFormNode,
   ArrayOfObjectsItemMember,
+  ArraySchemaType,
   FieldMember,
   ObjectArrayFormNode,
   ObjectFormNode,
@@ -10,6 +11,7 @@ import {
   ObjectItem,
   OperationsAPI,
   pathToString,
+  PortableTextBlock,
 } from 'sanity'
 
 import {useToggleTitles} from '../hooks/useToggleTitles'
@@ -25,6 +27,8 @@ import RowHeaderWithInput from './RowHeaderWithInput'
 import TableButtons from './TableButtons'
 import TableGrid from './TableGrid'
 import TableScrollWrapper from './TableScrollWrapper'
+import {SparkleIcon} from '@sanity/icons'
+import {useDocumentPane} from 'sanity/structure'
 
 // TODO: make row title / context menu sticky to the left side when scrolling horizontally?
 const Table: ComponentType<
@@ -152,7 +156,9 @@ const Table: ComponentType<
                 const cellItem = cellMember.item
                 const cellPTEPath = cellItem.path.concat('content')
                 const cellValue = value?.rows?.[rowIndex]?.cells?.[cellIndex]?.content
-
+                const cellContentSchemaType = cellItem.schemaType.fields.find(
+                  (field) => field.name === 'content',
+                ) as ArraySchemaType<PortableTextBlock>
                 return (
                   <Fragment key={cellItem.id}>
                     {/* CONTEXT MENU BUTTON */}
@@ -185,6 +191,7 @@ const Table: ComponentType<
                       value={cellValue}
                       key={cellItem.id}
                       readOnly={props.readOnly}
+                      schemaType={cellContentSchemaType}
                       // @ts-expect-error role prop not in type but needed for accessibility
                       role="cell"
                     />

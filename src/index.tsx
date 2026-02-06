@@ -1,8 +1,9 @@
-import {definePlugin} from 'sanity'
+import {definePlugin, ImageDefinition, ObjectDefinition} from 'sanity'
+import {ComponentType} from 'react'
 
 import cellObject, {RichTableCellType} from './schemas/cell.object'
 import columnHeaderObject, {ColumnHeader} from './schemas/columnHeader.object'
-import content from './schemas/content'
+import {defineContentArrayMember} from './schemas/content'
 import richTableBlock from './schemas/richTable.block'
 import richTableObject, {RichTableType} from './schemas/richTable.object'
 import rowObject, {RichTableRowType} from './schemas/row.object'
@@ -10,12 +11,23 @@ import rowObject, {RichTableRowType} from './schemas/row.object'
 // Re-export types for consumers
 export type {RichTableType, RichTableRowType, RichTableCellType, ColumnHeader}
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- config options coming soon
-interface RichTablePluginOptions {}
-/**
- * Rich Table Plugin for Sanity
+interface CustomBlockType {
+  // TODO: adjust type so that helper functions work
+  type: ObjectDefinition | ImageDefinition
+  icon: ComponentType
+  defaultValues?: Record<string, unknown>
+}
+export interface RichTablePluginOptions {
+  // TODO: add more configs or try complete PT schema customisation
+  customBlockTypes?: Array<CustomBlockType>
+  customInlineBlockTypes?: Array<CustomBlockType>
+}
+
+/** # Rich Table Plugin for Sanity by Saskia Bobinska
  *
- * A comprehensive rich table solution for Sanity Studio with Portable Text support.
+ * WIP!!!
+ * This plugin adds a rich table object type and block type to your schemas.
+ * It allows users to create and manage rich tables both in documents and in Portable Text.
  *
  * Features:
  * - Rich table object type with customizable rows and columns
@@ -61,11 +73,18 @@ interface RichTablePluginOptions {}
  *
  * @see {@link https://github.com/bobinska-dev/sanity-plugin-rich-table} for full documentation
  */
-export const richTablePlugin = definePlugin<RichTablePluginOptions>(() => ({
+export const richTablePlugin = definePlugin<RichTablePluginOptions>(({customBlockTypes, customInlineBlockTypes}) => ({
   name: 'rich-table',
   title: 'Rich Table Plugin',
 
   schema: {
-    types: [richTableObject, rowObject, cellObject, columnHeaderObject, richTableBlock, content],
+    types: [
+      richTableObject,
+      rowObject,
+      cellObject,
+      columnHeaderObject,
+      richTableBlock,
+      defineContentArrayMember({customBlockTypes, customInlineBlockTypes}),
+    ],
   },
 }))

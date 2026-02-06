@@ -16,6 +16,7 @@ import ExpandedTableDialog from './ExpandedTableDialog'
 import InitialiseTable from './InitialiseTable'
 import LoadingIndicator from './LoadingIndicator'
 import Table from './Table'
+import styled from 'styled-components'
 
 const RichTableInput: ComponentType<
   ObjectInputProps<RichTableType> & {isInPortableText?: boolean}
@@ -194,10 +195,32 @@ const RichTableInput: ComponentType<
           </Inline>
         </Flex>
       </Flex>
-      {debug &&
+      {/* TEST WITH HIDDEN BUT RENDERED INPUT */}
+      <HiddenInputBox $debug={debug}>{props.renderDefault(props)}</HiddenInputBox>
+{/*      {debug &&
         // Default inputs (rows, columnHeaders)
-        props.renderDefault(props)}
+        props.renderDefault(props)}*/}
     </Stack>
   )
 }
+const HiddenInputBox = styled(Box)<{$debug?: boolean}>`
+// only hide visually but keep it in the DOM unless in debug mode
+${(props) =>
+  props.$debug
+    ? ''
+    : `
+  border: 0 !important;
+  clip: rect(1px, 1px, 1px, 1px) !important;
+  -webkit-clip-path: inset(50%) !important;
+          clip-path: inset(50%) !important;
+  height: 1px !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  position: absolute !important;
+  width: 1px !important;
+`}
+
+`
+
 export default RichTableInput

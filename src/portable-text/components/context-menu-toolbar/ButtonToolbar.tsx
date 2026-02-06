@@ -28,6 +28,12 @@ import AnnotationButton from './AnnotationButton'
 import DecoratorButton from './DecoratorButton'
 import FloatingButton from './FloatingButton'
 import ListButton from './ListButton'
+import {ArraySchemaType, Path, PortableTextBlock} from 'sanity'
+import BlockButton from '../BlockButton'
+import ObjectFormDialog from '../ObjectFormDialog'
+import BlockPopover from '../custom-blocks/BlockPopover'
+
+// TODO: check status of icon bug: https://linear.app/sanity/issue/CRX-1894/usetoolbarschema-or-toolbarschema-icons-stripped-from-schema
 
 const StyledFloatingButton = styled(FloatingButton)<{
   $isFocused: boolean
@@ -36,17 +42,19 @@ const StyledFloatingButton = styled(FloatingButton)<{
   opacity: ${(props) => (props.$isFocused ? 1 : 0.2)};
 `
 
-const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<EditorConfig>}> = ({
-  focused,
-  editorRef,
-}) => {
+const ButtonToolbar: ComponentType<{
+  focused: boolean
+  editorRef: RefObject<EditorConfig>
+  schemaType?: ArraySchemaType<PortableTextBlock>
+  path: Path
+}> = ({focused, editorRef, schemaType, path}) => {
   const toolbarSchema = useToolbarSchema({
     extendDecorator,
     extendAnnotation,
     extendStyle,
     extendList,
-    extendBlockObject,
-    extendInlineObject,
+    // extendBlockObject,
+    // extendInlineObject,
   })
 
   // STATES
@@ -299,6 +307,15 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
               {toolbarSchema.lists?.map((list) => (
                 <ListButton key={list.name} list={list} />
               ))}
+              {toolbarSchema.blockObjects?.map((blockObject) => {
+                // @ts-ignore
+                const blockIcon = schemaType?.type?.of?.find(
+                  // @ts-ignore
+                  (block) => blockObject.name === block.name,
+                )?.icon
+                const blockObjectWithIcon = {...blockObject, icon: blockIcon}
+                return <BlockButton key={blockObject.name} blockObject={blockObjectWithIcon} />
+              })}
             </Flex>
           </Box>
         }
@@ -322,6 +339,7 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
         />
       </Popover>
       {toolbarSchema.annotations && <AnnotationPopover schemaTypes={toolbarSchema.annotations} />}
+      {toolbarSchema.blockObjects && <BlockPopover schemaTypes={toolbarSchema.blockObjects} path={path}/>}
     </>
   )
 }
