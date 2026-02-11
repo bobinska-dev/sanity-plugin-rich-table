@@ -17,9 +17,7 @@ import {
 import styled from 'styled-components'
 
 import {extendAnnotation} from '../../configs/extendAnnotation'
-import {extendBlockObject} from '../../configs/extendBlockObject'
 import extendDecorator from '../../configs/extendDecorators'
-import {extendInlineObject} from '../../configs/extendInlineObject'
 import {extendList} from '../../configs/extendList'
 import extendStyle from '../../configs/extendStyles'
 import AnnotationPopover from '../annotation/AnnotationPopover'
@@ -29,8 +27,7 @@ import DecoratorButton from './DecoratorButton'
 import FloatingButton from './FloatingButton'
 import ListButton from './ListButton'
 import {ArraySchemaType, Path, PortableTextBlock} from 'sanity'
-import BlockButton from '../BlockButton'
-import ObjectFormDialog from '../ObjectFormDialog'
+import BlockButton from './BlockButton'
 import BlockPopover from '../custom-blocks/BlockPopover'
 
 // TODO: check status of icon bug: https://linear.app/sanity/issue/CRX-1894/usetoolbarschema-or-toolbarschema-icons-stripped-from-schema
