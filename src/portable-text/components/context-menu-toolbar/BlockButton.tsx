@@ -3,11 +3,11 @@ import {Box, Button, Text, Tooltip} from '@sanity/ui'
 import {ToolbarBlockObjectSchemaType, useBlockObjectButton} from '@portabletext/toolbar'
 import {useDocumentPane} from 'sanity/structure'
 
-
+// TODO: CHRISTIAN HALP
 // TODO: Make onPathOpen work like it does in the Studio form -> might work without custom dialog then
 const BlockButton: ComponentType<{blockObject: ToolbarBlockObjectSchemaType}> = ({blockObject}) => {
   const {send} = useBlockObjectButton({schemaType: blockObject})
-  console.log(blockObject)
+  // console.log(blockObject)
   const {onPathOpen} = useDocumentPane()
 
   return (
@@ -22,7 +22,8 @@ const BlockButton: ComponentType<{blockObject: ToolbarBlockObjectSchemaType}> = 
         <Button
           key={blockObject.name}
           onClick={
-            () => {
+            (e) => {
+              console.log(e, blockObject)
               send({
                 type: 'insert',
                 value: blockObject.defaultValues || { _type: blockObject.name },

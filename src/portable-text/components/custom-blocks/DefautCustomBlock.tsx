@@ -6,7 +6,7 @@ import styled from 'styled-components'
 
 // TODO: file bug for props.value not updating (Christian)
 const DefaultCustomBlock:ComponentType<BlockRenderProps> = (props) => {
-  console.log(props)
+
 
   const getPreviewSelection =() => {
     // we use the props.schemaType.preview select to get the field values from props.value, and then use the preview prepare function to format the title for the block preview

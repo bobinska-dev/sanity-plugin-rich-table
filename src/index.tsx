@@ -1,4 +1,4 @@
-import {definePlugin, ImageDefinition, ObjectDefinition} from 'sanity'
+import {definePlugin, ImageDefinition, ObjectDefinition, ReferenceDefinition} from 'sanity'
 import {ComponentType} from 'react'
 
 import cellObject, {RichTableCellType} from './schemas/cell.object'
@@ -13,7 +13,7 @@ export type {RichTableType, RichTableRowType, RichTableCellType, ColumnHeader}
 
 interface CustomBlockType {
   // TODO: adjust type so that helper functions work
-  type: ObjectDefinition | ImageDefinition
+  type: ObjectDefinition | ImageDefinition | ReferenceDefinition
   icon: ComponentType
   defaultValues?: Record<string, unknown>
 }

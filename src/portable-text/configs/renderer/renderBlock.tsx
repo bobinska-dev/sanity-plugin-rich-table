@@ -1,6 +1,7 @@
 import {RenderBlockFunction} from '@portabletext/editor'
 import ImageBlock from '../../components/custom-blocks/ImageBlock'
 import DefaultCustomBlock from '../../components/custom-blocks/DefautCustomBlock'
+import ReferenceBlock from '../../components/custom-blocks/ReferenceBlock'
 
 export const renderBlock: RenderBlockFunction = (props) => {
   if (props.listItem) return props.children
@@ -9,6 +10,8 @@ export const renderBlock: RenderBlockFunction = (props) => {
     // if(props.schemaType.components?.block) return props.schemaType.components.block
     return <ImageBlock {...props} />
   }
+  if(props.schemaType.name === 'reference') return <ReferenceBlock {...props} />
+
   if(props.schemaType.name === 'block') return <div style={{padding: '0.25rem 0'}}>{props.children}</div>
   return <DefaultCustomBlock {...props} />
 }

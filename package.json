@@ -57,6 +57,7 @@
     "@sanity/ui": "^3.1.11",
     "emojilib": "^4.0.2",
     "fuse.js": "^7.1.0",
+    "groq": "^5.9.0",
     "react-icons": "^5.5.0",
     "styled-components": "^6.3.8"
   },

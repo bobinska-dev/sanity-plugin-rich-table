@@ -5,6 +5,7 @@ import {structureTool} from 'sanity/structure'
 import {AsteriskIcon, ImageIcon} from '@sanity/icons'
 import {richTablePlugin} from 'sanity-plugin-rich-table'
 import TestBlock from './TestBlock'
+import {TbDog} from 'react-icons/tb'
 
 export default defineConfig({
   name: 'default',
@@ -33,6 +34,17 @@ export default defineConfig({
               block: TestBlock
             }*/
           },
+        },
+        {
+          icon: TbDog,
+          type: {
+            name: 'reference',
+            type: 'reference',
+            title: 'Reference',
+            to: [{type: 'myRichTableDocument'}],
+            icon: TbDog,
+          },
+          defaultValues: {}
         },
         {
           icon: AsteriskIcon,
@@ -98,6 +110,10 @@ export default defineConfig({
               }),
             ],
           }),
+          defineField({
+            name: 'title',
+            type: 'string',
+          })
         ],
       }),
     ],

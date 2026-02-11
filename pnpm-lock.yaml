@@ -26,6 +26,9 @@ importers:
       fuse.js:
         specifier: ^7.1.0
         version: 7.1.0
+      groq:
+        specifier: ^5.9.0
+        version: 5.11.0
       react-icons:
         specifier: ^5.5.0
         version: 5.5.0(react@19.2.4)
@@ -4671,12 +4674,8 @@ packages:
     resolution: {integrity: sha512-6TZD6H1y3P7zk0BQharjFa7BOivV9nFL6KKVZbRZRH0yOSSyu2xHglTO48b1/2mCEdYoBQpvE7rjCDUf6XmQYQ==}
     engines: {node: '>=18'}
 
-  groq@5.8.0:
-    resolution: {integrity: sha512-oMvHSMnzwqjwdp4EBO7+PLVSU7VPqeVZhnZJwmJ4k4oZ+S5WwzRCs6+hQ5QQnQrtMpoQfr8GoGywGcn/aXiP3w==}
-    engines: {node: '>=20.19 <22 || >=22.12'}
-
-  groq@5.8.1:
-    resolution: {integrity: sha512-A0bPbxTK7tfFpCf8fHKNXumnmgBLvPPIL7VXvqHgKAcsCadyo43/qWYScVxHihC5eC2uJ7s4EJ9wz+Cs7iwSZA==}
+  groq@5.11.0:
+    resolution: {integrity: sha512-qkEEsyiPLqIFHncsIUYP21zeIqHcApivEDalUSkwyaMfU4CtjHh0VWUD14H7Su3g0s+DRY/ZTLLgOBsn2mI8Hw==}
     engines: {node: '>=20.19 <22 || >=22.12'}
 
   gunzip-maybe@1.4.2:
@@ -10345,7 +10344,7 @@ snapshots:
       chokidar: 3.6.0
       debug: 4.4.3(supports-color@8.1.1)
       globby: 11.1.0
-      groq: 5.8.0
+      groq: 5.11.0
       groq-js: 1.26.0
       json5: 2.2.3
       lodash-es: 4.17.23
@@ -10389,7 +10388,7 @@ snapshots:
       chokidar: 3.6.0
       debug: 4.4.3(supports-color@8.1.1)
       globby: 11.1.0
-      groq: 5.8.1
+      groq: 5.11.0
       groq-js: 1.27.1
       json5: 2.2.3
       lodash-es: 4.17.23
@@ -13391,9 +13390,7 @@ snapshots:
 
   groq@3.88.1-typegen-experimental.0: {}
 
-  groq@5.8.0: {}
-
-  groq@5.8.1: {}
+  groq@5.11.0: {}
 
   gunzip-maybe@1.4.2:
     dependencies:
@@ -13479,7 +13476,7 @@ snapshots:
 
   hosted-git-info@9.0.2:
     dependencies:
-      lru-cache: 11.2.5
+      lru-cache: 11.2.6
 
   hotscript@1.0.13: {}
 
