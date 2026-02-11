@@ -1,21 +1,27 @@
 import { BlockRenderProps } from '@portabletext/editor'
 import {ComponentType, useEffect, useState} from 'react'
-import {Card} from '@sanity/ui'
+import {Box, Card, Flex, Stack, Text} from '@sanity/ui'
 import {Image, ReferenceSchemaType, ReferenceValue} from '@sanity/types'
 import groq, {defineQuery} from 'groq'
 import {PortableTextBlock, useClient} from 'sanity'
 import {Subscription} from 'rxjs'
+import {createImageUrlBuilder} from '@sanity/image-url'
+import {DocumentIcon} from '@sanity/icons'
+import {PREVIEW_SIZE} from '../../configs/renderer/renderBlock'
 
 const ReferenceBlock:ComponentType<BlockRenderProps> = (props) => {
+  // * CLIENT & IMAGE
   const client = useClient({apiVersion:'2026-02-01'}).withConfig({requestTagPrefix: `ReferenceBlock-${props.value._key}`, perspective:'drafts'})
+  const imageBuilder = createImageUrlBuilder(client)
 
+  // * PREP
   const schemaType = props.schemaType as ReferenceSchemaType
   const value = props.value as PortableTextBlock & ReferenceValue
+  const refSchemaTypes = schemaType.to
 
-  // States
+  // * STATES
   const [refDoc, setRefDoc] = useState<{_type: string, title:string, subtitle:string, image:Image }|null>(null)
 
-  const refSchemaTypes = schemaType.to
   const getPreviewConfigs =() => {
     // since a reference will only show the preview of the referenced document we need to check the ref schemaTypes for the preview select and prepare functions
      return refSchemaTypes.map((refSchemaType) => {
@@ -29,6 +35,7 @@ const ReferenceBlock:ComponentType<BlockRenderProps> = (props) => {
      })
   }
   const configs = getPreviewConfigs()
+
   const preparePreviewQuery = ()=> {
     const titleOptions = configs
       .map((config) => config?.select?.title)
@@ -111,7 +118,53 @@ const ReferenceBlock:ComponentType<BlockRenderProps> = (props) => {
       }
     }
   }, [value._ref])
-  console.log('refDoc', refDoc)
+
+  const renderMedia = () => {
+    if (!refDoc?.image){
+      // if there is no image we will return the schema icon and if not the document icon from Sanity Icons
+      const refSchema = refSchemaTypes.find((schema) => schema.name === refDoc?._type)
+      if(props?.schemaType.icon) return (
+        <props.schemaType.icon
+          // @ts-ignore - the icon property on the schema type can be a React component but the type definitions don't reflect that, so we need to ignore the type check here
+          style={{
+            width: `${PREVIEW_SIZE}px`,
+            height: `${PREVIEW_SIZE}px`,
+            objectFit: 'cover',
+
+            borderRadius: '4px',
+            border: '1px solid var(--card-border-color)',
+          }}
+        />
+      )
+      return (
+        <DocumentIcon // @ts-ignore - the icon property on the schema type can be a React component but the type definitions don't reflect that, so we need to ignore the type check here
+          style={{
+            width: `${PREVIEW_SIZE}px`,
+            height: `${PREVIEW_SIZE}px`,
+            objectFit: 'cover',
+            borderRadius: '4px',
+            border: '1px solid var(--card-border-color)',
+          }}
+        />
+      )
+    }
+    const imageUrl = imageBuilder.image(refDoc.image).width(PREVIEW_SIZE).height(PREVIEW_SIZE).url()
+    return (
+      <img
+        src={imageUrl}
+        alt={refDoc.title}
+        style={{
+          width: `${PREVIEW_SIZE}px`,
+          height: `${PREVIEW_SIZE}px`,
+          objectFit: 'cover',
+          borderRadius: '4px',
+          border: '1px solid var(--card-border-color)',
+        }}
+      />
+    )
+  }
+
+  console.log('refDoc', refDoc, props)
 
   return (
     <Card
@@ -129,7 +182,25 @@ const ReferenceBlock:ComponentType<BlockRenderProps> = (props) => {
           : undefined
       }
     >
-      hello
+      <Flex align={'center'} gap={2}>
+        {renderMedia()}
+        <Stack space={2}>
+          {refDoc?.title && (
+            <Box>
+              <Text size={1} textOverflow={'ellipsis'}>
+                {refDoc.title}
+              </Text>
+            </Box>
+          )}
+          {refDoc?.subtitle && (
+            <Box paddingTop={1}>
+              <Text size={0} muted textOverflow={'ellipsis'}>
+                {refDoc.subtitle}
+              </Text>
+            </Box>
+          )}
+        </Stack>
+      </Flex>
     </Card>
   )
 }

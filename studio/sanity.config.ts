@@ -2,7 +2,7 @@ import {visionTool} from '@sanity/vision'
 import {defineArrayMember, defineConfig, defineField, defineType} from 'sanity'
 
 import {structureTool} from 'sanity/structure'
-import {AsteriskIcon, ImageIcon} from '@sanity/icons'
+import {AsteriskIcon, IceCreamIcon, ImageIcon} from '@sanity/icons'
 import {richTablePlugin} from 'sanity-plugin-rich-table'
 import TestBlock from './TestBlock'
 import {TbDog} from 'react-icons/tb'
@@ -36,13 +36,13 @@ export default defineConfig({
           },
         },
         {
-          icon: TbDog,
+          icon: IceCreamIcon,
           type: {
             name: 'reference',
             type: 'reference',
             title: 'Reference',
             to: [{type: 'myRichTableDocument'}],
-            icon: TbDog,
+            icon: IceCreamIcon,
           },
           defaultValues: {}
         },
@@ -112,6 +112,14 @@ export default defineConfig({
           }),
           defineField({
             name: 'title',
+            type: 'string',
+          }),
+          defineField({
+            name: 'image',
+            type: 'image',
+          }),
+          defineField({
+            name: 'description',
             type: 'string',
           })
         ],

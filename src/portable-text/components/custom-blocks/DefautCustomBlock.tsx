@@ -3,6 +3,7 @@ import {BlockRenderProps} from '@portabletext/editor'
 import {Box, Card, Flex, Stack, Text} from '@sanity/ui'
 import {PreviewValue} from '@sanity/types'
 import styled from 'styled-components'
+import {PREVIEW_SIZE} from '../../configs/renderer/renderBlock'
 
 // TODO: file bug for props.value not updating (Christian)
 const DefaultCustomBlock:ComponentType<BlockRenderProps> = (props) => {
@@ -26,15 +27,36 @@ const DefaultCustomBlock:ComponentType<BlockRenderProps> = (props) => {
     return {title: props.schemaType.title}
   }
 
-  const preview = useMemo(() => getPreviewSelection(), [getPreviewSelection, props.value])
+  const preview = getPreviewSelection()
 
   const renderMedia = (): ReactNode => {
     if (!preview.media && !props.schemaType.icon) return null
-    if (!preview.media && props.schemaType.icon) return <props.schemaType.icon />
+    if (!preview.media && props.schemaType.icon) return (
+      <props.schemaType.icon
+      // @ts-ignore - the icon property on the schema type can be a React component but the type definitions don't reflect that, so we need to ignore the type check here
+        style={{
+          width: `${PREVIEW_SIZE}px`,
+          height: `${PREVIEW_SIZE}px`,
+          objectFit: 'cover',
+          borderRadius: '4px',
+          border: '1px solid var(--card-border-color)',
+        }}
+      />
+    )
     // If media is a component type (function/class), instantiate it
     if (typeof preview.media === 'function') {
       const Media = preview.media as ComponentType<any>
-      return <Media />
+      return (
+        <Media
+          style={{
+            width: `${PREVIEW_SIZE}px`,
+            height: `${PREVIEW_SIZE}px`,
+            objectFit: 'cover',
+            borderRadius: '4px',
+            border: '1px solid var(--card-border-color)',
+          }}
+        />
+      )
     }
     // Otherwise assume it's already a React node (element, string, etc.)
     return preview.media as ReactNode

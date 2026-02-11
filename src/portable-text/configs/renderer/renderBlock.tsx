@@ -3,6 +3,7 @@ import ImageBlock from '../../components/custom-blocks/ImageBlock'
 import DefaultCustomBlock from '../../components/custom-blocks/DefautCustomBlock'
 import ReferenceBlock from '../../components/custom-blocks/ReferenceBlock'
 
+export const PREVIEW_SIZE = 30
 export const renderBlock: RenderBlockFunction = (props) => {
   if (props.listItem) return props.children
   if(props.schemaType.name === 'image'){

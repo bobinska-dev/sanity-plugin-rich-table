@@ -19,7 +19,7 @@ const ImageBlock:ComponentType<BlockRenderProps> = (props) => {
   return (
     <Card
       shadow={1}
-      padding={1}
+      padding={2}
       radius={1}
       marginY={2}
       style={
@@ -33,13 +33,29 @@ const ImageBlock:ComponentType<BlockRenderProps> = (props) => {
       }
     >
       <Flex gap={2} align={'center'}>
-        <Flex justify={'center'} align={'center'}>
-          {imageUrl && <img src={imageUrl} alt={altText} />}
-        </Flex>
-        <Stack>
+        {imageUrl && (
+          <img
+            src={imageUrl}
+            alt={altText}
+            style={{
+              width: '30px',
+              height: '30px',
+              objectFit: 'cover',
+              borderRadius: '4px',
+              border: '1px solid var(--card-border-color)',
+            }}
+          />
+        )}
+
+        <Stack space={2}>
           <Box>
-            <Text muted size={0}>
+            <Text size={1} textOverflow={'ellipsis'}>
               {props.schemaType.title || 'Image block'}
+            </Text>
+          </Box>
+          <Box>
+            <Text muted size={0} textOverflow={'ellipsis'}>
+              Image block
             </Text>
           </Box>
         </Stack>
