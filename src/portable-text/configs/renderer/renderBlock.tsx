@@ -7,7 +7,7 @@ export const PREVIEW_SIZE = 30
 export const renderBlock: RenderBlockFunction = (props) => {
   if (props.listItem) return props.children
   if(props.schemaType.name === 'image'){
-    // TODO: Christian - the custom components passed down from the schema are not being rendered when passed down like this
+    // TODO: check status https://linear.app/sanity/issue/CRX-1914/standalone-pte-blockrenderprops-strips-down-schematype-and-removes
     // if(props.schemaType.components?.block) return props.schemaType.components.block
     return <ImageBlock {...props} />
   }

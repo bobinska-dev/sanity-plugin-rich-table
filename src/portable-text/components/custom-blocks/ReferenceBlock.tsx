@@ -123,6 +123,7 @@ const ReferenceBlock:ComponentType<BlockRenderProps> = (props) => {
     if (!refDoc?.image){
       // if there is no image we will return the schema icon and if not the document icon from Sanity Icons
       const refSchema = refSchemaTypes.find((schema) => schema.name === refDoc?._type)
+
       if(props?.schemaType.icon) return (
         <props.schemaType.icon
           // @ts-ignore - the icon property on the schema type can be a React component but the type definitions don't reflect that, so we need to ignore the type check here
@@ -163,8 +164,6 @@ const ReferenceBlock:ComponentType<BlockRenderProps> = (props) => {
       />
     )
   }
-
-  console.log('refDoc', refDoc, props)
 
   return (
     <Card

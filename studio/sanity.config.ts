@@ -28,8 +28,8 @@ export default defineConfig({
             title: 'Image test',
             options: {hotspot: true},
             icon: ImageIcon,
-            /* TODO: check why block component is not rendered if passed down like this
-                components: {
+            // TODO: check status https://linear.app/sanity/issue/CRX-1914/standalone-pte-blockrenderprops-strips-down-schematype-and-removes
+            /*      components: {
               //@ts-ignore
               block: TestBlock
             }*/
@@ -44,7 +44,7 @@ export default defineConfig({
             to: [{type: 'myRichTableDocument'}],
             icon: IceCreamIcon,
           },
-          defaultValues: {}
+          defaultValues: {},
         },
         {
           icon: AsteriskIcon,
@@ -66,7 +66,7 @@ export default defineConfig({
                 name: 'testField2',
                 type: 'string',
                 title: 'Test field 2',
-              }
+              },
             ],
             preview: {
               select: {title: 'testField', subtitle: 'testField2'},
@@ -121,7 +121,7 @@ export default defineConfig({
           defineField({
             name: 'description',
             type: 'string',
-          })
+          }),
         ],
       }),
     ],
