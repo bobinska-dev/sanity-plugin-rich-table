@@ -1,4 +1,4 @@
-import {Button, Card, Flex, Inline, Switch, Text} from '@sanity/ui'
+import {Card, Flex, Inline, Switch, Text} from '@sanity/ui'
 import {ChangeEvent, ComponentType, Fragment} from 'react'
 import {
   ArrayOfObjectsFormNode,
@@ -27,8 +27,6 @@ import RowHeaderWithInput from './RowHeaderWithInput'
 import TableButtons from './TableButtons'
 import TableGrid from './TableGrid'
 import TableScrollWrapper from './TableScrollWrapper'
-import {SparkleIcon} from '@sanity/icons'
-import {useDocumentPane} from 'sanity/structure'
 
 // TODO: make row title / context menu sticky to the left side when scrolling horizontally?
 const Table: ComponentType<
@@ -39,8 +37,19 @@ const Table: ComponentType<
     /** Patch function from Sanity document operations for optimistic changes */
     patch: OperationsAPI['patch']
     id?: string
+    portableTextSchemaTypeName?: string
   }
-> = ({isInDialog = false, handleOpen, value, onChange, patch, isInPortableText, id, ...props}) => {
+> = ({
+  isInDialog = false,
+  handleOpen,
+  value,
+  onChange,
+  patch,
+  isInPortableText,
+  id,
+  portableTextSchemaTypeName,
+  ...props
+}) => {
   // * Prepare the path
   const path = pathToString(props.path)
   const tableId = id ?? `rich-table-${path}`
@@ -194,6 +203,7 @@ const Table: ComponentType<
                       schemaType={cellContentSchemaType}
                       // @ts-expect-error role prop not in type but needed for accessibility
                       role="cell"
+                      portableTextSchemaTypeName={portableTextSchemaTypeName}
                     />
                   </Fragment>
                 )

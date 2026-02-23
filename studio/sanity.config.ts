@@ -1,11 +1,11 @@
 import {visionTool} from '@sanity/vision'
 import {defineArrayMember, defineConfig, defineField, defineType} from 'sanity'
 
-import {structureTool} from 'sanity/structure'
 import {AsteriskIcon, IceCreamIcon, ImageIcon} from '@sanity/icons'
 import {richTablePlugin} from 'sanity-plugin-rich-table'
+import {structureTool} from 'sanity/structure'
+import CustomBock from './components/CustomBock'
 import TestBlock from './TestBlock'
-import {TbDog} from 'react-icons/tb'
 
 export default defineConfig({
   name: 'default',
@@ -19,6 +19,7 @@ export default defineConfig({
     visionTool(),
     // @ts-ignore
     richTablePlugin({
+      portableTextSchemaTypeName: 'customPT',
       customBlockTypes: [
         {
           icon: ImageIcon,
@@ -111,16 +112,45 @@ export default defineConfig({
             ],
           }),
           defineField({
-            name: 'title',
-            type: 'string',
-          }),
-          defineField({
             name: 'image',
             type: 'image',
           }),
           defineField({
             name: 'description',
             type: 'string',
+          }),
+        ],
+      }),
+      defineType({
+        name: 'customPT',
+        type: 'array',
+        of: [
+          defineArrayMember({
+            type: 'block',
+          }),
+          defineArrayMember({
+            type: 'image',
+            options: {
+              hotspot: true,
+            },
+            components: {
+              tableBlock: TestBlock,
+            },
+            icon: ImageIcon,
+          }),
+          defineArrayMember({
+            type: 'object',
+            name: 'customBlock',
+            icon: AsteriskIcon,
+            components: {
+              tableBlock: CustomBock,
+            },
+            fields: [
+              defineField({
+                name: 'title',
+                type: 'string',
+              }),
+            ],
           }),
         ],
       }),

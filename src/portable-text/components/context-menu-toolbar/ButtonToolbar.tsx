@@ -11,24 +11,27 @@ import {
   RefObject,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react'
 import styled from 'styled-components'
 
+import {ArraySchemaType, Path, PortableTextBlock} from 'sanity'
 import {extendAnnotation} from '../../configs/extendAnnotation'
+import type {SanityBlockSchemaLike} from '../../configs/extendBlockObject'
+import {createExtendBlockObject} from '../../configs/extendBlockObject'
 import extendDecorator from '../../configs/extendDecorators'
 import {extendList} from '../../configs/extendList'
 import extendStyle from '../../configs/extendStyles'
 import AnnotationPopover from '../annotation/AnnotationPopover'
+import BlockPopover from '../custom-blocks/BlockPopover'
 import StyleSelector from '../StyleSelector'
 import AnnotationButton from './AnnotationButton'
+import BlockButton from './BlockButton'
 import DecoratorButton from './DecoratorButton'
 import FloatingButton from './FloatingButton'
 import ListButton from './ListButton'
-import {ArraySchemaType, Path, PortableTextBlock} from 'sanity'
-import BlockButton from './BlockButton'
-import BlockPopover from '../custom-blocks/BlockPopover'
 
 // TODO: check status of icon bug: https://linear.app/sanity/issue/CRX-1894/usetoolbarschema-or-toolbarschema-icons-stripped-from-schema
 
@@ -45,14 +48,22 @@ const ButtonToolbar: ComponentType<{
   schemaType?: ArraySchemaType<PortableTextBlock>
   path: Path
 }> = ({focused, editorRef, schemaType, path}) => {
+  const blockSchemas = useMemo((): ReadonlyArray<SanityBlockSchemaLike> | undefined => {
+    const schema = schemaType as {type?: {of?: unknown[]}; of?: unknown[]} | undefined
+    const of = schema?.type?.of ?? schema?.of
+    return of as ReadonlyArray<SanityBlockSchemaLike> | undefined
+  }, [schemaType])
+
+  const extendBlockObject = useMemo(() => createExtendBlockObject(blockSchemas), [blockSchemas])
+
   const toolbarSchema = useToolbarSchema({
     extendDecorator,
     extendAnnotation,
     extendStyle,
     extendList,
-    // extendBlockObject,
-    // extendInlineObject,
+    extendBlockObject,
   })
+  console.log('TOOLBAR SCHEMA', toolbarSchema)
 
   // STATES
   const [open, setOpen] = useState(false)
@@ -305,13 +316,17 @@ const ButtonToolbar: ComponentType<{
                 <ListButton key={list.name} list={list} />
               ))}
               {toolbarSchema.blockObjects?.map((blockObject) => {
-                // @ts-ignore
-                const blockIcon = schemaType?.type?.of?.find(
-                  // @ts-ignore
-                  (block) => blockObject.name === block.name,
-                )?.icon
-                const blockObjectWithIcon = {...blockObject, icon: blockIcon}
-                return <BlockButton key={blockObject.name} blockObject={blockObjectWithIcon} />
+                const customBlockSchemaType = schemaType?.of?.find(
+                  (schema) => schema.name === blockObject.name,
+                ) as any
+                console.log('CUSTOM BLOCK SCHEMA TYPE', customBlockSchemaType)
+                return (
+                  <BlockButton
+                    key={blockObject.name}
+                    blockObject={blockObject}
+                    customBlockSchemaType={customBlockSchemaType}
+                  />
+                )
               })}
             </Flex>
           </Box>
@@ -336,7 +351,9 @@ const ButtonToolbar: ComponentType<{
         />
       </Popover>
       {toolbarSchema.annotations && <AnnotationPopover schemaTypes={toolbarSchema.annotations} />}
-      {toolbarSchema.blockObjects && <BlockPopover schemaTypes={toolbarSchema.blockObjects} path={path}/>}
+      {toolbarSchema.blockObjects && (
+        <BlockPopover schemaTypes={toolbarSchema.blockObjects} path={path} />
+      )}
     </>
   )
 }

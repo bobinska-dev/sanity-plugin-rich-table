@@ -67,3 +67,68 @@ export default defineType({
     }),
   },
 })
+
+export const defineRichTableObject = ({
+  portableTextSchemaTypeName,
+}: {
+  portableTextSchemaTypeName?: string
+}) => {
+  return defineType({
+    name: 'richTable',
+    title: 'Rich Table',
+    type: 'object',
+    icon: TbTable,
+    components: {
+      input: (inputProps) => (
+        <RichTableInput
+          {...(inputProps as ObjectInputProps<RichTableType>)}
+          portableTextSchemaTypeName={portableTextSchemaTypeName}
+        />
+      ),
+      block: RichTableBock,
+    },
+    fields: [
+      defineField({
+        name: 'rows',
+        title: 'Rows',
+        type: 'array',
+        validation: (Rule) => Rule.min(1).error('A table must have at least one row.').required(),
+        of: [
+          defineArrayMember({
+            name: 'row',
+            type: 'richTableRow',
+          }),
+        ],
+      }),
+      defineField({
+        name: 'columnHeaders',
+        title: 'Column Headers',
+        type: 'array',
+        of: [
+          defineArrayMember({
+            name: 'columnHeader',
+            type: 'columnHeader',
+          }),
+        ],
+      }),
+      defineField({
+        name: 'hasColumnTitles',
+        title: 'Has Column Titles',
+        type: 'boolean',
+        initialValue: true,
+      }),
+      defineField({
+        name: 'hasRowTitles',
+        title: 'Has Row Titles',
+        type: 'boolean',
+        initialValue: true,
+      }),
+    ],
+    preview: {
+      prepare: () => ({
+        title: 'Rich Table',
+        icon: TbTable,
+      }),
+    },
+  })
+}

@@ -9,6 +9,7 @@ import {
   useFormValue,
 } from 'sanity'
 
+import styled from 'styled-components'
 import {useToggleTitles} from '../hooks/useToggleTitles'
 import {RichTableType} from '../schemas/richTable.object'
 import ConfirmClearTableDialog from './ConfirmClearTableDialog'
@@ -16,14 +17,17 @@ import ExpandedTableDialog from './ExpandedTableDialog'
 import InitialiseTable from './InitialiseTable'
 import LoadingIndicator from './LoadingIndicator'
 import Table from './Table'
-import styled from 'styled-components'
 
 const RichTableInput: ComponentType<
-  ObjectInputProps<RichTableType> & {isInPortableText?: boolean}
+  ObjectInputProps<RichTableType> & {
+    isInPortableText?: boolean
+    portableTextSchemaTypeName?: string
+  }
 > = (props) => {
   const _id = useFormValue(['_id']) as string
   const _type = useFormValue(['_type']) as string
 
+  console.log(props.portableTextSchemaTypeName)
   // Document operations -> with optimistic changes
   const {patch} = useDocumentOperation(getPublishedId(_id), _type)
 
@@ -133,6 +137,7 @@ const RichTableInput: ComponentType<
                 key={openDialog ? 'table-in-dialog-open' : 'table-in-dialog-closed'}
                 readOnly={props.isInPortableText ? true : props.readOnly}
                 id={tableId}
+                portableTextSchemaTypeName={props.portableTextSchemaTypeName}
               />
             </Box>
             {openDialog && (
@@ -197,18 +202,18 @@ const RichTableInput: ComponentType<
       </Flex>
       {/* TEST WITH HIDDEN BUT RENDERED INPUT */}
       <HiddenInputBox $debug={debug}>{props.renderDefault(props)}</HiddenInputBox>
-{/*      {debug &&
+      {/*      {debug &&
         // Default inputs (rows, columnHeaders)
         props.renderDefault(props)}*/}
     </Stack>
   )
 }
 const HiddenInputBox = styled(Box)<{$debug?: boolean}>`
-// only hide visually but keep it in the DOM unless in debug mode
-${(props) =>
-  props.$debug
-    ? ''
-    : `
+  // only hide visually but keep it in the DOM unless in debug mode
+  ${(props) =>
+    props.$debug
+      ? ''
+      : `
   border: 0 !important;
   clip: rect(1px, 1px, 1px, 1px) !important;
   -webkit-clip-path: inset(50%) !important;
@@ -220,7 +225,6 @@ ${(props) =>
   position: absolute !important;
   width: 1px !important;
 `}
-
 `
 
 export default RichTableInput

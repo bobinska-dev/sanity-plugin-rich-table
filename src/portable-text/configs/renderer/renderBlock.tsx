@@ -1,18 +1,33 @@
 import {RenderBlockFunction} from '@portabletext/editor'
-import ImageBlock from '../../components/custom-blocks/ImageBlock'
+import {ArraySchemaType, PortableTextBlock} from 'sanity'
 import DefaultCustomBlock from '../../components/custom-blocks/DefautCustomBlock'
+import ImageBlock from '../../components/custom-blocks/ImageBlock'
 import ReferenceBlock from '../../components/custom-blocks/ReferenceBlock'
 
 export const PREVIEW_SIZE = 30
-export const renderBlock: RenderBlockFunction = (props) => {
-  if (props.listItem) return props.children
-  if(props.schemaType.name === 'image'){
-    // TODO: check status https://linear.app/sanity/issue/CRX-1914/standalone-pte-blockrenderprops-strips-down-schematype-and-removes
-    // if(props.schemaType.components?.block) return props.schemaType.components.block
-    return <ImageBlock {...props} />
-  }
-  if(props.schemaType.name === 'reference') return <ReferenceBlock {...props} />
 
-  if(props.schemaType.name === 'block') return <div style={{padding: '0.25rem 0'}}>{props.children}</div>
-  return <DefaultCustomBlock {...props} />
+export interface RenderBlockOptions {
+  configSchema?: ArraySchemaType<PortableTextBlock>
+}
+
+export const renderBlock = (options?: RenderBlockOptions): RenderBlockFunction => {
+  // Captured in closure when ContentPortableTextEditor calls renderBlock({ portableTextSchemaTypeName })
+  const customPTschema = options?.configSchema
+  return (props) => {
+    const currentSchema = customPTschema?.of?.find(
+      (schema) => schema.name === props.schemaType.name,
+    )
+    const CustomBlock = currentSchema?.components?.block
+    if (CustomBlock) return <CustomBlock {...props} />
+
+    if (props.listItem) return props.children
+    if (props.schemaType.name === 'image') {
+      return <ImageBlock {...props} />
+    }
+    if (props.schemaType.name === 'reference') return <ReferenceBlock {...props} />
+
+    if (props.schemaType.name === 'block')
+      return <div style={{padding: '0.25rem 0'}}>{props.children}</div>
+    return <DefaultCustomBlock {...props} />
+  }
 }

@@ -8,6 +8,7 @@ import {
   pathToString,
   PortableTextBlock,
   useFormValue,
+  useSchema,
 } from 'sanity'
 
 import LoadingIndicator from '../components/LoadingIndicator'
@@ -41,6 +42,7 @@ interface ContentPortableTextInputProps {
    * Defaults to {@link content} schema
    */
   schemaType?: ArraySchemaType<PortableTextBlock> | ArrayDefinition
+  portableTextSchemaTypeName?: string
 }
 
 /** # ContentPortableTextInput
@@ -55,20 +57,24 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
 
   const handleFocus = useCallback((state: boolean) => setFocused(state), [])
 
+  const schema = useSchema()
+  const configSchema = props.portableTextSchemaTypeName
+    ? (schema.get(props.portableTextSchemaTypeName) as ArraySchemaType<PortableTextBlock>)
+    : undefined
+
   // * INITIAL CONFIG FOR EDITOR PROVIDER
-  const pteSchemaType = props.schemaType
-    ? // @ts-ignore
-      props.schemaType.type.type // TODO change type in props to remove Boolean schemaType etc.
-    : content
+  const pteSchemaType = configSchema
+    ? configSchema
+    : props.schemaType
+      ? // @ts-ignore
+        props.schemaType.type.type // TODO change type in props to remove Boolean schemaType etc.
+      : content
 
   const initialConfig = useRef<EditorConfig>({
     initialValue: props.value,
     readOnly: props.readOnly ?? false,
 
-    schema: props.schemaType
-      ? props.schemaType
-      : // Backup so that undefined schemaType doesn't break the component
-        content,
+    schema: pteSchemaType,
   })
 
   // TODO: fullscreen handling
@@ -140,7 +146,9 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
           <StyledPortableTextEditable
             renderStyle={renderStyle}
             renderDecorator={renderDecorator}
-            renderBlock={renderBlock}
+            renderBlock={renderBlock({
+              configSchema,
+            })}
             renderListItem={renderListItem}
             renderAnnotation={renderAnnotation}
           />
@@ -148,7 +156,7 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
             <ButtonToolbar
               focused={focused}
               editorRef={initialConfig}
-              schemaType={props.schemaType as ArraySchemaType<PortableTextBlock>}
+              schemaType={pteSchemaType}
               path={props.path}
             />
           )}
