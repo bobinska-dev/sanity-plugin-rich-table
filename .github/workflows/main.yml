@@ -53,7 +53,7 @@ jobs:
         with:
           cache: pnpm
           node-version: lts/*
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --filter=!studio
         # Linting can be skipped
       - run: pnpm run lint
         if: github.event.inputs.test != 'false'
@@ -96,7 +96,7 @@ jobs:
         with:
           cache: pnpm
           node-version: ${{ matrix.node }}
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --filter=!studio
       - run: pnpm test
 
   release:
@@ -124,7 +124,7 @@ jobs:
           cache: pnpm
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --filter=!studio
         # Branches that will release new versions are defined in .releaserc.json
       - run: pnpm dlx semantic-release
         # Don't allow interrupting the release step if the job is cancelled, as it can lead to an inconsistent state
