@@ -28,18 +28,25 @@ Please be aware, that this plugin is still growing - so while this first version
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Column context menu                                                                                                                                            | Row context menu                                                                                                                                               |
 
+## Compatibility
+
+| Plugin version | Sanity | React | Node   |
+| -------------- | ------ | ----- | ------ |
+| **≥ 1.1.0**   | **5.x** (≥ 5.11.0) | 19    | ≥ 18   |
+| 1.0.5          | 3.x / 4.x / 5.x (< 5.13) | 18–19 | ≥ 18   |
+
+> **Why the change?** Starting with Sanity **5.13.0**, the internal `@portabletext/sanity-bridge` package was upgraded to v3, which requires `@portabletext/editor` v6 and `@portabletext/toolbar` v7. These packages in turn require **React 19**. Plugin versions **≥ 1.1.0** ship the updated `@portabletext/*` stack so that studio builds (`sanity build`, `sanity deploy`, etc.) work correctly.
+>
+> If you are on **Sanity 3 or 4** (React 18), pin the plugin to the last compatible release:
+>
+> ```sh
+> npm install sanity-plugin-rich-table@1.0.5
+> ```
+
 ## Installation
-
-**Sanity version support:** The plugin is tested with **Sanity 3, 4, and 5**. For **Sanity 5** you can install normally. For **Sanity 3 or 4**, peer dependency resolution may require one of:
-
-- **npm:** `npm install sanity-plugin-rich-table --legacy-peer-deps`
-- **pnpm:** add to `package.json`: `"packageManager": "pnpm@..."` and use `pnpm add sanity-plugin-rich-table` (pnpm is more lenient with peers); if you see peer warnings in a monorepo, you can add an `overrides` / `pnpm.overrides` entry for the reported package.
 
 ```sh
 npm install sanity-plugin-rich-table
-# or (Sanity 3/4)
-npm install sanity-plugin-rich-table --legacy-peer-deps
-
 # or
 pnpm add sanity-plugin-rich-table
 # or

@@ -5,7 +5,7 @@ import {Box, Heading, Text} from '@sanity/ui'
 const renderStyle: RenderStyleFunction = (props) => {
   if (props.schemaType.value === 'normal') {
     return (
-      <Box paddingBottom={3} as="p">
+      <Box paddingBottom={3}>
         <Text size={1}>{props.children}</Text>
       </Box>
     )

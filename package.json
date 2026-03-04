@@ -1,6 +1,6 @@
 {
   "name": "sanity-plugin-rich-table",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "Rich table solution for Sanity",
   "keywords": [
     "sanity",
@@ -53,15 +53,14 @@
   },
   "dependencies": {
     "@floating-ui/react-dom": "^2.1.7",
-    "@portabletext/editor": "^5.1.1",
+    "@portabletext/editor": "^6.0.4",
     "@portabletext/keyboard-shortcuts": "^2.1.2",
-    "@portabletext/plugin-emoji-picker": "^5.0.6",
-    "@portabletext/plugin-markdown-shortcuts": "^6.0.6",
-    "@portabletext/plugin-typeahead-picker": "^4.0.6",
-    "@portabletext/toolbar": "^6.0.6",
+    "@portabletext/plugin-emoji-picker": "^6.0.4",
+    "@portabletext/plugin-markdown-shortcuts": "^7.0.4",
+    "@portabletext/plugin-typeahead-picker": "^5.0.4",
+    "@portabletext/toolbar": "^7.0.4",
     "@sanity/icons": "^3.7.4",
     "@sanity/ui": "^3.1.11",
-    "emojilib": "^4.0.2",
     "fuse.js": "^7.1.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -71,6 +70,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.2",
+    "emojilib": "^4.0.2",
     "@commitlint/config-conventional": "^20.4.2",
     "@eslint/compat": "^2.0.2",
     "@eslint/eslintrc": "^3.3.4",
