@@ -1,6 +1,6 @@
 import {AnnotationPath, PortableTextObject} from '@portabletext/editor'
 import {ToolbarAnnotationSchemaType} from '@portabletext/toolbar'
-import {Button, Card, Dialog, Flex, Stack, Text, TextInput} from '@sanity/ui'
+import {Button, Card, Dialog, Flex, Stack, Switch, Text, TextInput} from '@sanity/ui'
 import {ComponentType, useState} from 'react'
 
 /** Dialog component for editing an annotation's properties.
@@ -38,7 +38,7 @@ const AnnotationDialog: ComponentType<{
       header={`Edit ${props.annotation.schemaType.title}`}
       onClose={props.onClose}
     >
-      <Stack padding={4}>
+      <Stack padding={4} space={4}>
         {props.annotation.schemaType.fields?.map((field, index) => {
           if (field.type === 'string') {
             return (
@@ -54,6 +54,20 @@ const AnnotationDialog: ComponentType<{
                   // TODO: add validation based on field definition
                 />
               </Stack>
+            )
+          }
+          if (field.type === 'boolean') {
+            return (
+              <Flex align={'center'} gap={3} key={field.name}>
+                <Switch
+                  id={field.name}
+                  checked={!!value[field.name]}
+                  onChange={(e) => setValue({...value, [field.name]: e.currentTarget.checked})}
+                />
+                <Text as={'label'} size={1} htmlFor={field.name}>
+                  {field.title}
+                </Text>
+              </Flex>
             )
           }
           return (

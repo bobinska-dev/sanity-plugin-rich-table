@@ -33,6 +33,7 @@ const DecoratorButton: ComponentType<{decorator: ToolbarDecoratorSchemaType}> = 
         aria-pressed={decoratorButton.snapshot.matches({enabled: 'active'})}
         aria-label={decorator.title}
         icon={decorator.icon}
+        text={decorator.icon ? undefined : decorator.title}
         as={'button'}
         padding={2}
         tone={'default'}

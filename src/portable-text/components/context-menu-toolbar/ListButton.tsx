@@ -23,6 +23,7 @@ const ListButton: ComponentType<{list: ToolbarListSchemaType}> = ({list}) => {
       onClick={() => listButton.send({type: 'toggle'})}
       selected={listButton.snapshot.matches({enabled: 'active'})}
       icon={list.icon}
+      text={list.icon ? undefined : list.title}
       padding={2}
       tone={'default'}
       mode={'bleed'}

@@ -3,18 +3,22 @@ import {ChangeEvent, ComponentType, Fragment} from 'react'
 import {
   ArrayOfObjectsFormNode,
   ArrayOfObjectsItemMember,
+  ArraySchemaType,
   FieldMember,
   ObjectArrayFormNode,
   ObjectFormNode,
   ObjectInputProps,
   ObjectItem,
+  ObjectSchemaType,
   OperationsAPI,
   pathToString,
+  PortableTextBlock,
+  useSchema,
 } from 'sanity'
 
 import {useToggleTitles} from '../hooks/useToggleTitles'
 import ContentPortableTextInput from '../portable-text/ContentPortableTextEditor'
-import {RichTableCellType} from '../schemas/cell.object'
+import {RichTableCellType, RICH_TABLE_CELL_TYPE_NAME} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
@@ -69,6 +73,12 @@ const Table: ComponentType<
   const columnHeaderMembers = columnHeaderFieldMember?.field.members as ArrayOfObjectsItemMember<
     ObjectArrayFormNode<ColumnHeader & ObjectItem>
   >[]
+
+  const schema = useSchema()
+  const richTableCellType = schema.get(RICH_TABLE_CELL_TYPE_NAME) as ObjectSchemaType | undefined
+  const cellContentSchemaType = richTableCellType?.fields?.find(
+    (f: {name: string}) => f.name === 'content',
+  )?.type as ArraySchemaType<PortableTextBlock> | undefined
 
   const {hasColumnTitles, hasRowTitles} = value!
   const {toggleColumnTitles, toggleRowTitles} = useToggleTitles(
@@ -185,6 +195,7 @@ const Table: ComponentType<
                       value={cellValue}
                       key={cellItem.id}
                       readOnly={props.readOnly}
+                      schemaType={cellContentSchemaType}
                       // @ts-expect-error role prop not in type but needed for accessibility
                       role="cell"
                     />

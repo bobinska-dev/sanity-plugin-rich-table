@@ -43,6 +43,7 @@ const StyleSelector: ComponentType<{toolbarSchema: ToolbarSchema}> = ({toolbarSc
                   onClick={() => styleButton.send({type: 'toggle', style: style.name})}
                   selected={currentStyle == style.name}
                   icon={style.icon}
+                  text={style.icon ? undefined : style.title}
                   as={'button'}
                   padding={2}
                   tone={'default'}

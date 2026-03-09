@@ -36,6 +36,7 @@ const AnnotationButton: ComponentType<{annotation: ToolbarAnnotationSchemaType}>
       aria-label={annotation.title}
       aria-keyshortcuts={annotation.shortcut?.keys.join('+')}
       icon={annotation.icon}
+      text={annotation.icon ? undefined : annotation.title}
       padding={2}
       mode={'bleed'}
       title={annotation.shortcut?.keys.join('+')}

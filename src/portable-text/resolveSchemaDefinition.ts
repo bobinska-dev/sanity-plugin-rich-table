@@ -141,8 +141,97 @@ export function sanitySchemaToDefinition(
 }
 
 /**
- * Resolve the SchemaDefinition for the PTE from either a resolved Sanity
- * ArraySchemaType or from the built-in defaults.
+ * Extract a SchemaDefinition from an ArraySchemaType whose block member is a
+ * fully compiled `BlockSchemaType` — the shape you get when using `useSchema()`.
+ * In this case `ArraySchemaType.of` contains `ObjectSchemaType` instances, so the
+ * block configuration lives inside `block.fields` as typed field objects rather
+ * than as direct `marks`/`styles`/`lists` properties.
+ *
+ * Field mapping:
+ * - `style` field → `type.options.list` → styles
+ * - `listItem` field → `type.options.list` → lists
+ * - `children` field → span member's `decorators` → decorators
+ * - `markDefs` field → `type.of` → annotations
+ */
+function sanitySchemaToDefinitionFromFields(
+  schemaType: ArraySchemaType<PortableTextBlock>,
+): SchemaDefinition {
+  const block = findBlockMember(schemaType)
+  if (!block || !Array.isArray(block.fields)) return defaultSchemaDefinition
+
+  const styleField = block.fields.find((f: SanityBlockMember) => f.name === 'style')
+  const listItemField = block.fields.find((f: SanityBlockMember) => f.name === 'listItem')
+  const childrenField = block.fields.find((f: SanityBlockMember) => f.name === 'children')
+  const markDefsField = block.fields.find((f: SanityBlockMember) => f.name === 'markDefs')
+
+  const styles =
+    styleField?.type?.options?.list?.map((s: {value: string; title?: string}) => ({
+      name: s.value,
+      title: s.title,
+    })) ?? defaultSchemaDefinition.styles
+
+  const lists =
+    listItemField?.type?.options?.list?.map((l: {value: string; title?: string}) => ({
+      name: l.value,
+      title: l.title,
+    })) ?? defaultSchemaDefinition.lists
+
+  // Decorators live directly on the span member (spanMember.decorators),
+  // not under spanMember.marks. Entries use {value, title} in this resolved format.
+  const spanMember = childrenField?.type?.of?.find(
+    (m: SanityBlockMember) => m.name === 'span' || m.type?.name === 'span',
+  )
+  const decorators =
+    spanMember?.decorators?.map((d: {value?: string; name?: string; title?: string}) => ({
+      name: (d.name ?? d.value) as string,
+      title: d.title,
+    })) ?? defaultSchemaDefinition.decorators
+
+  // Annotations live in the markDefs field's array members
+  const annotations =
+    markDefsField?.type?.of?.map((a: SanityBlockMember) => ({
+      name: a.name as string,
+      title: a.title as string | undefined,
+      fields:
+        a.fields?.map((f: SanityBlockMember) => ({
+          name: f.name as string,
+          // f.title may be undefined in compiled schemas; the title is on f.type.title.
+          title: (f.title ?? f.type?.title) as string | undefined,
+          type: (f.type?.name ?? f.type ?? 'string') as string,
+        })) ?? [],
+    })) ?? defaultSchemaDefinition.annotations
+
+  // Inline objects are non-block members of the outer array
+  const nonBlockMembers = schemaType.of?.filter((member) => {
+    const m = member as SanityBlockMember
+    return m.name !== 'block' && m.type?.name !== 'block'
+  })
+
+  const inlineObjects =
+    nonBlockMembers?.map((obj: SanityBlockMember) => ({
+      name: obj.name as string,
+      title: obj.title as string | undefined,
+      fields:
+        obj.fields?.map((f: SanityBlockMember) => ({
+          name: f.name as string,
+          title: (f.title ?? f.type?.title) as string | undefined,
+          type: (f.type?.name ?? f.type ?? 'string') as string,
+        })) ?? [],
+    })) ?? []
+
+  return {decorators, styles, lists, annotations, inlineObjects}
+}
+
+/**
+ * Resolve the SchemaDefinition for the PTE from a Sanity ArraySchemaType.
+ *
+ * Dispatches based on the shape of the block member inside the array:
+ * - When `ArraySchemaType.of` contains a fully compiled `BlockSchemaType`
+ *   (e.g. from `useSchema()`), the block configuration is inside `block.fields`
+ *   → handled by `sanitySchemaToDefinitionFromFields`.
+ * - When the block member retains definition-level `marks`/`styles`/`lists`
+ *   directly → handled by `sanitySchemaToDefinition`.
+ * - Otherwise (unresolved / raw schema) → returns `defaultSchemaDefinition`.
  */
 export function resolveSchemaDefinition(
   schemaType?: ArraySchemaType<PortableTextBlock>,
@@ -151,11 +240,22 @@ export function resolveSchemaDefinition(
     return defaultSchemaDefinition
   }
 
+  const block = findBlockMember(schemaType)
+  if (!block) return defaultSchemaDefinition
+
   // If the schemaType looks like a resolved Sanity schema (has `of` with block members
   // that have `marks`/`styles`/`lists`), convert it
-  const block = findBlockMember(schemaType)
-  if (block && (block.marks || block.styles || block.lists)) {
+  if (block.marks || block.styles || block.lists) {
     return sanitySchemaToDefinition(schemaType)
+  }
+
+  if (
+    Array.isArray(block.fields) &&
+    block.fields.some((f: SanityBlockMember) =>
+      ['style', 'listItem', 'children', 'markDefs'].includes(f.name),
+    )
+  ) {
+    return sanitySchemaToDefinitionFromFields(schemaType)
   }
 
   // Unresolved definition (e.g. raw defineType result) — use defaults

@@ -1,6 +1,6 @@
-import {definePlugin} from 'sanity'
+import {ArrayDefinition, ArraySchemaType, definePlugin, defineType, PortableTextBlock} from 'sanity'
 
-import cellObject, {RichTableCellType} from './schemas/cell.object'
+import createCellObject, {RichTableCellType} from './schemas/cell.object'
 import columnHeaderObject, {ColumnHeader} from './schemas/columnHeader.object'
 import content from './schemas/content'
 import richTableBlock from './schemas/richTable.block'
@@ -10,8 +10,10 @@ import rowObject, {RichTableRowType} from './schemas/row.object'
 // Re-export types for consumers
 export type {RichTableType, RichTableRowType, RichTableCellType, ColumnHeader}
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- config options coming soon
-interface RichTablePluginOptions {}
+interface RichTablePluginOptions {
+  /** Custom portable text schema for table cell content */
+  cellContentSchema?: ArraySchemaType<PortableTextBlock> | ArrayDefinition
+}
 /**
  * Rich Table Plugin for Sanity
  *
@@ -61,11 +63,30 @@ interface RichTablePluginOptions {}
  *
  * @see {@link https://github.com/bobinska-dev/sanity-plugin-rich-table} for full documentation
  */
-export const richTablePlugin = definePlugin<RichTablePluginOptions>(() => ({
-  name: 'rich-table',
-  title: 'Rich Table Plugin',
+export const richTablePlugin = definePlugin<RichTablePluginOptions>((options) => {
+  // Create custom cell object using factory function
+  const customCellObject = createCellObject(options?.cellContentSchema)
 
-  schema: {
-    types: [richTableObject, rowObject, cellObject, columnHeaderObject, richTableBlock, content],
-  },
-}))
+  // Build schema types array
+  const schemaTypes: ReturnType<typeof defineType>[] = [
+    richTableObject,
+    rowObject,
+    customCellObject,
+    columnHeaderObject,
+    richTableBlock,
+  ]
+
+  // Only add content schema if we're using the default (custom schemas should already be registered)
+  if (!options?.cellContentSchema) {
+    schemaTypes.push(content)
+  }
+
+  return {
+    name: 'rich-table',
+    title: 'Rich Table Plugin',
+
+    schema: {
+      types: schemaTypes,
+    },
+  }
+})

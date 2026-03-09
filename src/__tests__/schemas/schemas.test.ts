@@ -1,9 +1,16 @@
 import {describe, expect, it} from 'vitest'
 
-import cellObject from '../../schemas/cell.object'
+import createCellObject from '../../schemas/cell.object'
 import columnHeaderObject from '../../schemas/columnHeader.object'
 import richTableObject from '../../schemas/richTable.object'
 import rowObject from '../../schemas/row.object'
+
+// Create default cell object for testing
+const cellObject = createCellObject() as unknown as {
+  name: string
+  type: string
+  fields: Array<{name: string; type: string}>
+}
 
 describe('richTableObject schema', () => {
   it('has correct name', () => {
