@@ -4,7 +4,7 @@ import {styled} from 'styled-components'
 const MINMAX_HEADER_ROW_HEIGHT = 30 // in px
 const ROW_COLUMN_WIDTH = 2 // in rem
 
-const rowTitleColumnTrack = '1fr'
+const rowTitleColumnTrack = '4rem'
 const rowContextColumnTrack = `${ROW_COLUMN_WIDTH}rem`
 /** A styled Card component that uses CSS Grid to layout its children in a grid format.
  */
