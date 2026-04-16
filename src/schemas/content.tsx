@@ -1,5 +1,7 @@
 import {defineArrayMember, defineType} from 'sanity'
 
+type ArrayMember = ReturnType<typeof defineArrayMember>
+
 /**
  * Sanity schema type for table cell content.
  *
@@ -12,27 +14,49 @@ import {defineArrayMember, defineType} from 'sanity'
  * instead, which provides the same defaults in the format expected by
  * `@portabletext/editor` v6.
  */
-export default defineType({
+const defaultBlockMember = defineArrayMember({
+  type: 'block',
+  options: {
+    oneLine: false,
+  },
+})
+
+const defaultContent = defineType({
   name: 'content',
   title: 'Rich table content',
   type: 'array',
-  of: [
-    defineArrayMember({
-      type: 'block',
-      // TODO: add customizations for block and inline block types, decorators, annotations, etc. as needed
-      options: {
-        // Restrict to a single line for table cell content to make it more manageable
-        oneLine: false,
-      },
-    }),
-
-    /*    defineArrayMember({
-      type: 'image',
-      name: 'image',
-      title: 'Image',
-      options: { hotspot: true },
-      // TODO: Add small preview and block component so that less real estate is being used inside of the table cell
-    }),*/
-    // TODO: test out richTable inside of portable text
-  ],
+  of: [defaultBlockMember],
 })
+
+export default defaultContent
+
+/**
+ * Create the `content` schema type, optionally appending extra array members
+ * to the default block member. The returned type always keeps `name: 'content'`
+ * so that the cell schema reference (`type: 'content'`) continues to resolve.
+ *
+ * @param additionalMembers - Extra array members to include alongside the
+ *   default `block` type (e.g. image, custom objects).
+ * @param blockOverrides - Optional partial overrides for the default block
+ *   member (e.g. custom styles, marks, decorators). Merged on top of the
+ *   default block definition.
+ */
+export function createContentType(
+  additionalMembers?: ArrayMember[],
+  blockOverrides?: Record<string, unknown>,
+): ReturnType<typeof defineType> {
+  const blockMember = blockOverrides
+    ? defineArrayMember({...defaultBlockMember, ...blockOverrides, type: 'block'})
+    : defaultBlockMember
+
+  const members = additionalMembers ? [blockMember, ...additionalMembers] : [blockMember]
+
+  if (!additionalMembers && !blockOverrides) return defaultContent
+
+  return defineType({
+    name: 'content',
+    title: 'Rich table content',
+    type: 'array',
+    of: members,
+  })
+}

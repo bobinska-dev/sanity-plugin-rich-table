@@ -97,16 +97,25 @@ export const slashCommands: CommandMatch[] = [
     keywords: ['number', 'ol', 'list', 'ordered'],
     action: {type: 'list item.toggle', listItem: 'number'},
   },
-  /*  {
-    key: 'image',
-    label: 'Image',
-    description: 'Insert an image block',
-    icon: <ImageIcon />,
-    keywords: ['image', 'img', 'picture'],
-    action: {
-      type: 'insert.block',
-      block: { _type: 'image' },
-    },
-  },*/
-  // TODO ADD MORE COMMANDS FOR RICH TABLE PORTABLE TEXT
 ]
+
+/**
+ * Build a complete list of slash commands by appending `insert.block`
+ * entries for any block objects registered in the PTE schema.
+ */
+export function buildSlashCommands(
+  blockObjects?: Array<{name: string; title?: string}>,
+): CommandMatch[] {
+  if (!blockObjects || blockObjects.length === 0) return slashCommands
+
+  const blockObjectCommands: CommandMatch[] = blockObjects.map((obj) => ({
+    key: obj.name,
+    label: obj.title ?? obj.name,
+    description: `Insert ${obj.title ?? obj.name}`,
+    icon: <TextIcon />,
+    keywords: [obj.name, ...(obj.title ? obj.title.toLowerCase().split(/\s+/) : [])],
+    action: {type: 'insert.block' as const, block: {_type: obj.name}},
+  }))
+
+  return [...slashCommands, ...blockObjectCommands]
+}
