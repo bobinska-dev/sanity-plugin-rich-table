@@ -1,5 +1,13 @@
 import {Card, Flex, Inline, Switch, Text} from '@sanity/ui'
-import {ChangeEvent, ComponentType, Fragment} from 'react'
+import {
+  ChangeEvent,
+  ComponentType,
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   ArrayOfObjectsFormNode,
   ArrayOfObjectsItemMember,
@@ -8,16 +16,18 @@ import {
   ObjectFormNode,
   ObjectInputProps,
   ObjectItem,
+  ObjectMember,
   OperationsAPI,
+  PortableTextInput,
   pathToString,
 } from 'sanity'
 
 import {useToggleTitles} from '../hooks/useToggleTitles'
-import ContentPortableTextInput from '../portable-text/ContentPortableTextEditor'
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
+import CellEditDialog from './CellEditDialog'
 import ColumnContextMenu from './ColumnContextMenu'
 import ColumnHeaderWithInput from './ColumnHeaderWithInput'
 import RowContextMenu from './RowContextMenu'
@@ -26,41 +36,125 @@ import TableButtons from './TableButtons'
 import TableGrid from './TableGrid'
 import TableScrollWrapper from './TableScrollWrapper'
 
-// TODO: make row title / context menu sticky to the left side when scrolling horizontally?
-const Table: ComponentType<
-  ObjectInputProps<RichTableType> & {
-    handleOpen?: () => void
-    isInDialog?: boolean
-    isInPortableText?: boolean
-    /** Patch function from Sanity document operations for optimistic changes */
-    patch: OperationsAPI['patch']
-    id?: string
-  }
-> = ({isInDialog = false, handleOpen, value, onChange, patch, isInPortableText, id, ...props}) => {
-  // * Prepare the path
+type TableProps = ObjectInputProps<RichTableType> & {
+  isInDialog?: boolean
+  patch: OperationsAPI['patch']
+  id?: string
+}
+
+interface CellPosition {
+  rowIndex: number
+  cellIndex: number
+  cellKey: string
+}
+
+const toPlainText = (blocks: any[]) =>
+  blocks
+    .filter((b) => b._type === 'block' && Array.isArray(b.children))
+    .map((b) => b.children.map((c: any) => c.text ?? '').join(''))
+    .join('\n')
+
+const getColumnLabel = (index: number) => {
+  let label = ''
+  let i = index
+  do {
+    label = String.fromCharCode(65 + (i % 26)) + label
+    i = Math.floor(i / 26) - 1
+  } while (i >= 0)
+  return label
+}
+
+const Table: ComponentType<TableProps> = ({
+  isInDialog = false,
+  value,
+  onChange: onChangeProp,
+  patch,
+  id,
+  ...props
+}) => {
   const path = pathToString(props.path)
   const tableId = id ?? `rich-table-${path}`
-  // * Prepare members
+
+  // Wrap onChange to log all patches — helps debug path issues
+  const onChange = useCallback(
+    (...args: Parameters<typeof onChangeProp>) => {
+      console.log('[Table onChange]', JSON.stringify(args))
+      return onChangeProp(...args)
+    },
+    [onChangeProp],
+  )
+
+  const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null)
+  const [editingPosition, setEditingPosition] = useState<CellPosition | null>(null)
+
+  useEffect(() => {
+    const handler = (event: ErrorEvent) => {
+      if (event.message?.includes('Cannot resolve a Slate point')) {
+        event.preventDefault()
+        const selection = window.getSelection()
+        console.group('[Slate Error]')
+        console.log('message:', event.message)
+        console.log('anchor node:', selection?.anchorNode)
+        console.log('anchor node parent:', selection?.anchorNode?.parentElement)
+        console.log('anchor offset:', selection?.anchorOffset)
+        console.log('focus node:', selection?.focusNode)
+        console.log(
+          'is contenteditable:',
+          (selection?.anchorNode?.parentElement as HTMLElement)?.isContentEditable,
+        )
+        console.log(
+          'closest slate editor:',
+          (selection?.anchorNode?.parentElement as HTMLElement)?.closest('[data-slate-editor]'),
+        )
+        console.log(
+          'all slate editors on page:',
+          document.querySelectorAll('[data-slate-editor]').length,
+        )
+        console.log(
+          'other editors:',
+          Array.from(document.querySelectorAll('[data-slate-editor]')).map(
+            (el) =>
+              el.closest('[data-testid]')?.getAttribute('data-testid') ??
+              el.id ??
+              el.className.slice(0, 50),
+          ),
+        )
+        console.groupEnd()
+      }
+    }
+    window.addEventListener('error', handler)
+    return () => window.removeEventListener('error', handler)
+  }, [])
+
   const tableObjectMembers = props.members as FieldMember[]
 
   const rowsFieldMember = tableObjectMembers?.find(
     (member) => member.name === 'rows',
   ) as FieldMember<ArrayOfObjectsFormNode<Array<RichTableRowType>>>
 
-  const rowMembersWithCellMembers = rowsFieldMember?.field.members.map((rowI) => {
-    const row = rowI as ArrayOfObjectsItemMember<ObjectArrayFormNode<RichTableRowType>>
-    const rowItem = row.item
-    const rowItemObjectMembers = rowItem.members as FieldMember<
-      ObjectFormNode<Array<RichTableCellType>>
-    >[]
-    const cellsFieldMember = rowItemObjectMembers?.find((member) => member.name === 'cells')?.field
-    return {
-      rowMember: row,
-      cellMembers: cellsFieldMember?.members as
-        | ArrayOfObjectsItemMember<ObjectArrayFormNode<RichTableCellType>>[]
-        | undefined,
-    }
-  })
+  const rowKeys = value?.rows?.map((r) => r._key).join(',') ?? ''
+
+  const rowMembersWithCellMembers = useMemo(
+    () =>
+      rowsFieldMember?.field.members.map((rowI) => {
+        const row = rowI as ArrayOfObjectsItemMember<ObjectArrayFormNode<RichTableRowType>>
+        const rowItem = row.item
+        const rowItemObjectMembers = rowItem.members as FieldMember<
+          ObjectFormNode<Array<RichTableCellType>>
+        >[]
+        const cellsFieldMember = rowItemObjectMembers?.find(
+          (member) => member.name === 'cells',
+        )?.field
+        return {
+          rowMember: row,
+          cellMembers: cellsFieldMember?.members as
+            | ArrayOfObjectsItemMember<ObjectArrayFormNode<RichTableCellType>>[]
+            | undefined,
+        }
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rowsFieldMember],
+  )
 
   const columnHeaderFieldMember = tableObjectMembers?.find(
     (member) => member.name === 'columnHeaders',
@@ -78,15 +172,54 @@ const Table: ComponentType<
     path,
   )
 
+  const totalRows = value?.rows?.length ?? 0
+  const totalCols = value?.columnHeaders?.length ?? 0
+
+  const getCellMember = useCallback(
+    (rowIndex: number, cellIndex: number): FieldMember | undefined => {
+      const row = rowMembersWithCellMembers?.[rowIndex]
+      if (!row) return undefined
+      const cellMember = row.cellMembers?.[cellIndex]
+      if (!cellMember) return undefined
+      const cellItem = cellMember.item
+      return (cellItem.members as ObjectMember[])?.find(
+        (m): m is FieldMember => m.kind === 'field' && m.name === 'content',
+      )
+    },
+    [rowMembersWithCellMembers],
+  )
+
+  const getCellLabel = useCallback((rowIndex: number, cellIndex: number): string => {
+    return `Cell ${getColumnLabel(cellIndex)}${rowIndex + 1}`
+  }, [])
+
+  const handleNavigate = useCallback((pos: CellPosition) => {
+    setEditingPosition(pos)
+    setSelectedCellKey(pos.cellKey)
+  }, [])
+
   return (
-    <Card
-      padding={3}
-      border
-      radius={2}
-      onDoubleClick={() => (isInPortableText && handleOpen?.() ? handleOpen() : undefined)}
-      as="section"
-      aria-label="Rich table"
-    >
+    <Card padding={3} border radius={2} as="section" aria-label="Rich table">
+      {editingPosition && (
+        <CellEditDialog
+          position={editingPosition}
+          totalRows={totalRows}
+          totalCols={totalCols}
+          getCellMember={getCellMember}
+          getCellLabel={getCellLabel}
+          renderField={props.renderField}
+          renderItem={props.renderItem}
+          renderPreview={props.renderPreview}
+          renderInlineBlock={props.renderInlineBlock}
+          renderAnnotation={props.renderAnnotation}
+          renderBlock={props.renderBlock}
+          renderInput={(inputProps) => <PortableTextInput {...inputProps} />}
+          onClose={() => setEditingPosition(null)}
+          onNavigate={handleNavigate}
+          patch={patch}
+        />
+      )}
+
       <TableButtons
         path={path}
         value={value!}
@@ -98,19 +231,16 @@ const Table: ComponentType<
           <TableGrid
             id={tableId}
             $rowCount={value?.rows?.length || 0}
-            // we need to add one extra column for the row titles / context menu
             $columnCount={value?.columnHeaders?.length ? value?.columnHeaders?.length + 1 : 0}
             $isInDialog={false}
             $hasRowTitles={hasRowTitles}
             role="table"
           >
-            {/* Placeholder for row title column */}
             <div className={'placeholder-cell'} />
 
             {/* HEADER ROW */}
             {columnHeaderMembers?.map((colHeaderMember, columnIndex) => {
               const colHeaderItem = colHeaderMember.item.value
-              // TODO: force remount when columnHeader value has changed in dialog but not in inline table input -> this is maybe caused by missing blur event in the input👇
               return (
                 <Fragment key={colHeaderItem._key}>
                   {hasColumnTitles && (
@@ -150,12 +280,15 @@ const Table: ComponentType<
             {rowMembersWithCellMembers?.map(({rowMember, cellMembers}, rowIndex) =>
               cellMembers?.map((cellMember, cellIndex) => {
                 const cellItem = cellMember.item
-                const cellPTEPath = cellItem.path.concat('content')
-                const cellValue = value?.rows?.[rowIndex]?.cells?.[cellIndex]?.content
+                const cellKey = `${rowIndex}-${cellIndex}`
+                const safeId = `cell-${cellKey}`
+                const isSelected = selectedCellKey === cellKey
+                const isEditing = editingPosition?.cellKey === cellKey
+
+                const plainText = cellItem.value?.content ? toPlainText(cellItem.value.content) : ''
 
                 return (
-                  <Fragment key={cellItem.id}>
-                    {/* CONTEXT MENU BUTTON */}
+                  <div key={cellKey} id={safeId} role="cell" style={{minWidth: 0, minHeight: 0}}>
                     {cellIndex === 0 && hasRowTitles && (
                       <RowHeaderWithInput
                         row={rowMember.item.value}
@@ -178,23 +311,64 @@ const Table: ComponentType<
                         role="rowheader"
                       />
                     )}
-                    {/* PTE CELL CONTENT */}
-                    <ContentPortableTextInput
-                      onChange={onChange}
-                      path={cellPTEPath}
-                      value={cellValue}
-                      key={cellItem.id}
-                      readOnly={props.readOnly}
-                      // @ts-expect-error role prop not in type but needed for accessibility
-                      role="cell"
-                    />
-                  </Fragment>
+
+                    <div
+                      tabIndex={props.readOnly ? -1 : 0}
+                      onClick={() => !props.readOnly && setSelectedCellKey(cellKey)}
+                      onDoubleClick={() => {
+                        if (props.readOnly) return
+                        setSelectedCellKey(cellKey)
+                        setEditingPosition({rowIndex, cellIndex, cellKey})
+                      }}
+                      onKeyDown={(e) => {
+                        if (props.readOnly) return
+                        if (e.key === 'Enter' || e.key === 'F2') {
+                          e.preventDefault()
+                          setEditingPosition({rowIndex, cellIndex, cellKey})
+                        }
+                        if (e.key === 'Tab') {
+                          e.preventDefault()
+                          const nextCell = e.shiftKey ? cellIndex - 1 : cellIndex + 1
+                          if (nextCell >= 0 && nextCell < totalCols) {
+                            setSelectedCellKey(`${rowIndex}-${nextCell}`)
+                          } else if (!e.shiftKey && rowIndex < totalRows - 1) {
+                            setSelectedCellKey(`${rowIndex + 1}-0`)
+                          } else if (e.shiftKey && rowIndex > 0) {
+                            setSelectedCellKey(`${rowIndex - 1}-${totalCols - 1}`)
+                          }
+                        }
+                        if (e.key === 'Escape') setSelectedCellKey(null)
+                      }}
+                      style={{
+                        minHeight: 32,
+                        padding: '4px 8px',
+                        cursor: props.readOnly ? 'default' : 'pointer',
+                        outline:
+                          isEditing || isSelected
+                            ? '2px solid var(--card-focus-ring-color)'
+                            : '2px solid transparent',
+                        outlineOffset: -2,
+                        borderRadius: 2,
+                        color: plainText ? 'inherit' : 'var(--card-muted-fg-color)',
+                        fontSize: 'inherit',
+                        lineHeight: '1.5',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        userSelect: 'none',
+                      }}
+                      aria-label={getCellLabel(rowIndex, cellIndex)}
+                      aria-selected={isSelected}
+                    >
+                      {plainText || '—'}
+                    </div>
+                  </div>
                 )
               }),
             )}
           </TableGrid>
         </TableScrollWrapper>
       </TableButtons>
+
       {isInDialog && (
         <Flex gap={3} justify={'flex-end'} align={'center'} paddingTop={3}>
           <Inline space={2}>
@@ -229,4 +403,5 @@ const Table: ComponentType<
     </Card>
   )
 }
+
 export default Table

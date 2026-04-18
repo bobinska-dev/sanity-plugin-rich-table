@@ -49,7 +49,9 @@
     "test:coverage": "vitest run --coverage",
     "test:studio-install": "node scripts/test-studio-install.mjs",
     "watch": "pkg-utils watch --strict",
-    "prepare": "husky"
+    "prepare": "husky",
+    "yalc:push": "yalc push",
+    "yalc:refresh": "npm run build && npm run yalc:push && cd ../f5-com-frontend/studio && rm -rf node_modules/sanity-plugin-rich-table && cp -R .yalc/sanity-plugin-rich-table node_modules/sanity-plugin-rich-table && rm -rf node_modules/.sanity/vite"
   },
   "dependencies": {
     "@floating-ui/react-dom": "^2.1.7",
