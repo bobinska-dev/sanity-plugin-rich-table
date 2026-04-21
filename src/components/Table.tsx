@@ -12,6 +12,7 @@ import {
   ArrayOfObjectsFormNode,
   ArrayOfObjectsItemMember,
   FieldMember,
+  InputProps,
   ObjectArrayFormNode,
   ObjectFormNode,
   ObjectInputProps,
@@ -19,6 +20,7 @@ import {
   ObjectMember,
   OperationsAPI,
   PortableTextInput,
+  PortableTextInputProps,
   pathToString,
 } from 'sanity'
 
@@ -182,9 +184,30 @@ const Table: ComponentType<TableProps> = ({
       const cellMember = row.cellMembers?.[cellIndex]
       if (!cellMember) return undefined
       const cellItem = cellMember.item
-      return (cellItem.members as ObjectMember[])?.find(
+      const member = (cellItem.members as ObjectMember[])?.find(
         (m): m is FieldMember => m.kind === 'field' && m.name === 'content',
       )
+      console.log(
+        '[cell member names]',
+        (cellItem.members as ObjectMember[])?.map((m) => (m.kind === 'field' ? m.name : m.kind)),
+      )
+      console.log(
+        '[getCellMember] member.field.schemaType.typeName:',
+        (member?.field as any)?.schemaType?.typeName,
+      )
+      console.log(
+        '[getCellMember] member.field.schemaType.jsonType:',
+        (member?.field as any)?.schemaType?.jsonType,
+      )
+      console.log(
+        '[getCellMember] member.field.schemaType.of[0].jsonType:',
+        (member?.field as any)?.schemaType?.of?.[0]?.jsonType,
+      )
+      console.log(
+        '[getCellMember] member.field.schemaType.of[0].type?.jsonType:',
+        (member?.field as any)?.schemaType?.of?.[0]?.type?.jsonType,
+      )
+      return member
     },
     [rowMembersWithCellMembers],
   )
@@ -213,7 +236,26 @@ const Table: ComponentType<TableProps> = ({
           renderInlineBlock={props.renderInlineBlock}
           renderAnnotation={props.renderAnnotation}
           renderBlock={props.renderBlock}
-          renderInput={(inputProps) => <PortableTextInput {...inputProps} />}
+          renderInput={(inputProps: PortableTextInputProps) => {
+            const schemaType = inputProps.schemaType as any
+            const isPTE =
+              schemaType?.jsonType === 'array' &&
+              schemaType?.of?.some((m: any) => m.name === 'block')
+
+            if (!isPTE) {
+              // Let the default form handle non-PTE inputs (object block edit forms etc)
+              return props.renderInput(inputProps)
+            }
+
+            console.log(
+              '[renderInput schemaType.of]',
+              schemaType?.of?.map((m: any) => ({
+                name: m.name,
+                jsonType: m.jsonType,
+              })),
+            )
+            return <PortableTextInput {...inputProps} />
+          }}
           onClose={() => setEditingPosition(null)}
           onNavigate={handleNavigate}
           patch={patch}

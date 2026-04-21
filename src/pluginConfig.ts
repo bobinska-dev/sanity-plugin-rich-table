@@ -2,10 +2,6 @@ import type {SchemaDefinition} from '@portabletext/editor'
 
 type BlockObjectDef = NonNullable<SchemaDefinition['blockObjects']>[number]
 
-/**
- * Module-level store for additional block objects configured via plugin options.
- * Set once at plugin init, read by the PTE editor component.
- */
 let _additionalBlockObjects: BlockObjectDef[] = []
 
 export function setAdditionalBlockObjects(objects: BlockObjectDef[]): void {

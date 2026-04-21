@@ -59,42 +59,6 @@ const CellEditDialog: ComponentType<CellEditDialogProps> = ({
     }
   }, [])
 
-  // Called when our editor mounts — run once only
-  const handleEditorId = useCallback((_id: string) => {
-    if (editorFixedRef.current) return
-
-    // Disable other slate editors
-    document.querySelectorAll<HTMLElement>('[data-slate-editor]').forEach((el) => {
-      if (
-        el.getAttribute('aria-describedby')?.includes('heroData') ||
-        el.getAttribute('data-read-only') === 'true'
-      ) {
-        el.setAttribute('contenteditable', 'false')
-        el.setAttribute('data-rich-table-disabled', 'true')
-      }
-    })
-
-    // Fix non-slate wrapper divs inside our editor after it mounts
-    setTimeout(() => {
-      const ourEditor = Array.from(
-        document.querySelectorAll<HTMLElement>('[data-slate-editor]'),
-      ).find((el) => el.getAttribute('contenteditable') === 'true')
-
-      if (ourEditor) {
-        ourEditor.querySelectorAll('[data-slate-node="element"]').forEach((slateNode) => {
-          Array.from(slateNode.children).forEach((child) => {
-            const el = child as HTMLElement
-            if (!el.hasAttribute('data-slate-node')) {
-              el.setAttribute('contenteditable', 'false')
-              el.style.userSelect = 'none'
-            }
-          })
-        })
-        editorFixedRef.current = true
-      }
-    }, 100)
-  }, [])
-
   const navigateTo = useCallback(
     (nextRow: number, nextCell: number) => {
       if (nextRow < 0 || nextRow >= totalRows) return
@@ -122,28 +86,43 @@ const CellEditDialog: ComponentType<CellEditDialogProps> = ({
     }
   }, [rowIndex, cellIndex, totalCols, totalRows, navigateTo])
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const active = document.activeElement
-      const isInEditor = active?.closest('[data-slate-editor]')
-      if (e.key === 'Escape') {
-        onClose()
-        return
-      }
-      if (e.key === 'Tab' && !isInEditor) {
-        e.preventDefault()
-        if (e.shiftKey) {
-          handlePrev()
-        } else {
-          handleNext()
-        }
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleNext, handlePrev, onClose])
+  // useEffect(() => {
+  //   const handleKeyDown = (e: KeyboardEvent) => {
+  //     const active = document.activeElement
+  //     const isInEditor = active?.closest('[data-slate-editor]')
+  //     if (e.key === 'Escape') {
+  //       onClose()
+  //       return
+  //     }
+  //     if (e.key === 'Tab' && !isInEditor) {
+  //       e.preventDefault()
+  //       if (e.shiftKey) {
+  //         handlePrev()
+  //       } else {
+  //         handleNext()
+  //       }
+  //     }
+  //   }
+  //   window.addEventListener('keydown', handleKeyDown)
+  //   return () => window.removeEventListener('keydown', handleKeyDown)
+  // }, [handleNext, handlePrev, onClose])
 
   const contentMember = getCellMember(rowIndex, cellIndex)
+  const contentSchemaType = contentMember?.field?.schemaType as any
+  console.log('[cell content schemaType name]', contentSchemaType?.name)
+  console.log('[cell content schemaType of[0] keys]', Object.keys(contentSchemaType?.of?.[0] ?? {}))
+  console.log('[cell content schemaType of[0] name]', contentSchemaType?.of?.[0]?.name)
+  const blockMember = (contentMember?.field?.schemaType as any)?.of?.[0]
+  console.log('[block member]', {
+    name: blockMember?.name,
+    jsonType: blockMember?.jsonType,
+    typeName: blockMember?.type?.name,
+    hasMarks: !!blockMember?.marks,
+    hasStyles: !!blockMember?.styles,
+    hasLists: !!blockMember?.lists,
+    typeJsonType: blockMember?.type?.jsonType,
+    parentTypeName: blockMember?.type?.type?.name,
+  })
   const cellBasePath = contentMember?.field?.path?.slice(0, -1) ?? []
 
   const patchedCallbacks = {

@@ -25,6 +25,15 @@ const RichTableInput: ComponentType<
   const _id = useFormValue(['_id']) as string
   const _type = useFormValue(['_type']) as string
   const schema = useSchema()
+  const fbb = schema.get('f5BlogBlockContent') as any
+  console.log('[f5BlogBlockContent keys]', Object.keys(fbb ?? {}))
+  console.log('[f5BlogBlockContent of length]', fbb?.of?.length)
+  console.log('[f5BlogBlockContent of[0] keys]', Object.keys(fbb?.of?.[0] ?? {}))
+  console.log('[f5BlogBlockContent of[0] name]', fbb?.of?.[0]?.name)
+  console.log(
+    '[f5BlogBlockContent of[0] hasChildren]',
+    fbb?.of?.[0]?.fields?.some((f: any) => f.name === 'children'),
+  )
 
   // Document operations -> with optimistic changes
   const {patch} = useDocumentOperation(getPublishedId(_id), _type)
@@ -42,16 +51,19 @@ const RichTableInput: ComponentType<
       }),
     [_type, props.isInPortableText, props.path, props.schemaType.name, schema],
   )
+
   // table ID
   const tableId = `table-${props.id}`
 
   // * Debug mode
-  const [debug, setDebug] = useState(false)
+  const [debug, setDebug] = useState(true)
   const handleDebugChange = useCallback(() => setDebug(!debug), [debug])
+
   // * Expand table dialog
   const [openDialog, setOpenDialog] = useState(false)
   const handleOpen = useCallback(() => setOpenDialog(true), [])
   const handleClose = useCallback(() => setOpenDialog(false), [])
+
   // * Confirm clear table dialog
   const [openConfirmClearDialog, setOpenConfirmClearDialog] = useState(false)
   const handleOpenConfirmClearDialog = useCallback(() => setOpenConfirmClearDialog(true), [])
@@ -66,8 +78,8 @@ const RichTableInput: ComponentType<
   )
 
   return (
-    <Stack space={4} as={'section'} aria-label={'Rich table input'}>
-      <Suspense fallback={<LoadingIndicator />} name={'RichTableInput Suspense'}>
+    <Stack space={4} as="section" aria-label="Rich table input">
+      <Suspense fallback={<LoadingIndicator />} name="RichTableInput Suspense">
         {!props.value?.rows && (
           <InitialiseTable
             patch={patch}
@@ -79,11 +91,12 @@ const RichTableInput: ComponentType<
             schemaTypeName={props.schemaType.name}
           />
         )}
+
         {props.value && props.value.rows && (
           <>
             <Box>
               {/* EXPAND TABLE BUTTON */}
-              <Flex justify={'flex-end'} gap={4}>
+              <Flex justify="flex-end" gap={4}>
                 <Tooltip
                   content={
                     <Box>
@@ -95,16 +108,17 @@ const RichTableInput: ComponentType<
                   <Button
                     iconRight={ResetIcon}
                     onClick={handleOpenConfirmClearDialog}
-                    mode={'bleed'}
+                    mode="bleed"
                     fontSize={0}
-                    text={'Clear table'}
+                    text="Clear table"
                     muted
                     disabled={props.readOnly}
-                    aria-label={'Clear table'}
+                    aria-label="Clear table"
                     aria-controls={tableId}
                     type="button"
                   />
                 </Tooltip>
+
                 <Tooltip
                   content={
                     <Box>
@@ -116,7 +130,7 @@ const RichTableInput: ComponentType<
                   <Button
                     iconRight={ExpandIcon}
                     onClick={handleOpen}
-                    mode={'bleed'}
+                    mode="bleed"
                     fontSize={0}
                     text={
                       props.isInPortableText && !props.readOnly
@@ -150,12 +164,14 @@ const RichTableInput: ComponentType<
                 id={tableId}
               />
             </Box>
+
             {openDialog && (
               <ExpandedTableDialog {...props} isInDialog handleClose={handleClose} patch={patch} />
             )}
           </>
         )}
       </Suspense>
+
       {openConfirmClearDialog && (
         <ConfirmClearTableDialog
           open={openConfirmClearDialog}
@@ -165,22 +181,24 @@ const RichTableInput: ComponentType<
           readOnly={props.readOnly}
         />
       )}
-      {/* DEBUG SWITCH*/}
-      <Flex justify={'space-between'} align={'center'} gap={2} key={`debug-switch-${openDialog}`}>
+
+      {/* DEBUG SWITCH */}
+      <Flex justify="space-between" align="center" gap={2} key={`debug-switch-${openDialog}`}>
         <Inline space={2}>
           <Switch
             checked={debug}
             onChange={handleDebugChange}
-            label={'Open field to debug'}
-            id={'debug-toggle'}
+            label="Open field to debug"
+            id="debug-toggle"
           />
-          <Text as={'label'} htmlFor={'debug-toggle'} size={0} muted>
+          <Text as="label" htmlFor="debug-toggle" size={0} muted>
             Debug mode
           </Text>
         </Inline>
-        <Flex gap={3} justify={'flex-end'} align={'center'}>
+
+        <Flex gap={3} justify="flex-end" align="center">
           <Inline space={2}>
-            <Text as={'label'} htmlFor={'row-title-toggle'} size={0} muted>
+            <Text as="label" htmlFor="row-title-toggle" size={0} muted>
               Show row titles
             </Text>
             <Switch
@@ -190,12 +208,13 @@ const RichTableInput: ComponentType<
                 toggleRowTitles(e.currentTarget.checked)
               }
               disabled={props.readOnly}
-              label={'Show row titles'}
-              id={'row-title-toggle'}
+              label="Show row titles"
+              id="row-title-toggle"
             />
           </Inline>
+
           <Inline space={2}>
-            <Text as={'label'} htmlFor={'column-title-toggle'} size={0} muted>
+            <Text as="label" htmlFor="column-title-toggle" size={0} muted>
               Show column titles
             </Text>
             <Switch
@@ -204,16 +223,16 @@ const RichTableInput: ComponentType<
                 toggleColumnTitles(e.currentTarget.checked)
               }
               disabled={props.readOnly}
-              label={'Show column titles'}
-              id={'column-title-toggle'}
+              label="Show column titles"
+              id="column-title-toggle"
             />
           </Inline>
         </Flex>
       </Flex>
-      {debug &&
-        // Default inputs (rows, columnHeaders)
-        props.renderDefault(props)}
+
+      {debug && props.renderDefault(props)}
     </Stack>
   )
 }
+
 export default RichTableInput

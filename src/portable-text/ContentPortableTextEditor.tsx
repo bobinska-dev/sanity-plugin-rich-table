@@ -52,7 +52,10 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
     ...defaultSchemaDefinition,
     ...(additionalBlockObjects.length > 0 ? {blockObjects: additionalBlockObjects} : {}),
   }
-  console.log('[rich-table] schemaDefinition passed to EditorProvider:', JSON.stringify(schemaDefinition.blockObjects))
+  console.log(
+    '[rich-table] schemaDefinition passed to EditorProvider:',
+    JSON.stringify(schemaDefinition, null, 2),
+  )
 
   // * INITIAL CONFIG FOR EDITOR PROVIDER
   const initialConfig = useRef<EditorConfig>({

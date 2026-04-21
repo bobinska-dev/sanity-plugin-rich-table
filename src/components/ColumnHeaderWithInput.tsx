@@ -45,6 +45,7 @@ export const ColumnHeaderWithInput: ComponentType<ColumnHeaderWithInputProps> = 
   const [isFocused, setIsFocused] = useState(false)
 
   const newColumnTitle = getLetterBasedOnIndex(columnIndex)
+  //  const id = `column-header-input-${path}-${columnHeader._key}`
   const sanitizeId = (raw: string) => raw.replace(/[^a-zA-Z0-9-_]/g, '-')
   const id = sanitizeId(`column-header-input-${path}-${columnHeader._key}`)
 
