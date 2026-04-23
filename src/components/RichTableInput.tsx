@@ -56,7 +56,7 @@ const RichTableInput: ComponentType<
   const tableId = `table-${props.id}`
 
   // * Debug mode
-  const [debug, setDebug] = useState(true)
+  const [debug, setDebug] = useState(false)
   const handleDebugChange = useCallback(() => setDebug(!debug), [debug])
 
   // * Expand table dialog
@@ -151,8 +151,15 @@ const RichTableInput: ComponentType<
                   />
                 </Tooltip>
               </Flex>
-
               <Table
+                {...props}
+                isInDialog={false}
+                patch={patch}
+                // remove the key that flips on dialog open/close
+                readOnly={props.readOnly} // don’t force true unless you intend to
+                id={tableId}
+              />
+              {/* <Table
                 {...props}
                 isInDialog={false}
                 handleOpen={handleOpen}
@@ -162,7 +169,7 @@ const RichTableInput: ComponentType<
                 key={openDialog ? 'table-in-dialog-open' : 'table-in-dialog-closed'}
                 readOnly={props.isInPortableText ? true : props.readOnly}
                 id={tableId}
-              />
+              /> */}
             </Box>
 
             {openDialog && (

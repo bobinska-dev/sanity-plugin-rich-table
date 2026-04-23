@@ -50,11 +50,13 @@ interface CellPosition {
   cellKey: string
 }
 
-const toPlainText = (blocks: any[]) =>
-  blocks
+const toPlainText = (blocks: any[]) => {
+  if (!Array.isArray(blocks)) return ''
+  return blocks
     .filter((b) => b._type === 'block' && Array.isArray(b.children))
     .map((b) => b.children.map((c: any) => c.text ?? '').join(''))
     .join('\n')
+}
 
 const getColumnLabel = (index: number) => {
   let label = ''
