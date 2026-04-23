@@ -1,6 +1,7 @@
 import {ArrowLeftIcon, ArrowRightIcon, CloseIcon} from '@sanity/icons'
 import {Box, Button, Card, Dialog, Flex, Text} from '@sanity/ui'
 import {ComponentType, useCallback, useEffect, useRef} from 'react'
+
 import {FieldMember, MemberField, ObjectInputProps, OperationsAPI, pathToString} from 'sanity'
 // or
 import {useFormCallbacks, FormCallbacksProvider} from 'sanity'
@@ -46,18 +47,17 @@ const CellEditDialog: ComponentType<CellEditDialogProps> = ({
   patch,
 }) => {
   const {rowIndex, cellIndex} = position
-  const editorFixedRef = useRef(false)
   const callbacks = useFormCallbacks()
 
   // Restore other editors on unmount
-  useEffect(() => {
-    return () => {
-      document.querySelectorAll<HTMLElement>('[data-rich-table-disabled]').forEach((el) => {
-        el.setAttribute('contenteditable', 'true')
-        el.removeAttribute('data-rich-table-disabled')
-      })
-    }
-  }, [])
+  // useEffect(() => {
+  //   return () => {
+  //     document.querySelectorAll<HTMLElement>('[data-rich-table-disabled]').forEach((el) => {
+  //       el.setAttribute('contenteditable', 'true')
+  //       el.removeAttribute('data-rich-table-disabled')
+  //     })
+  //   }
+  // }, [])
 
   const navigateTo = useCallback(
     (nextRow: number, nextCell: number) => {

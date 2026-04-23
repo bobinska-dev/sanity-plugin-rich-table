@@ -89,45 +89,6 @@ const Table: ComponentType<TableProps> = ({
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null)
   const [editingPosition, setEditingPosition] = useState<CellPosition | null>(null)
 
-  useEffect(() => {
-    const handler = (event: ErrorEvent) => {
-      if (event.message?.includes('Cannot resolve a Slate point')) {
-        event.preventDefault()
-        const selection = window.getSelection()
-        console.group('[Slate Error]')
-        console.log('message:', event.message)
-        console.log('anchor node:', selection?.anchorNode)
-        console.log('anchor node parent:', selection?.anchorNode?.parentElement)
-        console.log('anchor offset:', selection?.anchorOffset)
-        console.log('focus node:', selection?.focusNode)
-        console.log(
-          'is contenteditable:',
-          (selection?.anchorNode?.parentElement as HTMLElement)?.isContentEditable,
-        )
-        console.log(
-          'closest slate editor:',
-          (selection?.anchorNode?.parentElement as HTMLElement)?.closest('[data-slate-editor]'),
-        )
-        console.log(
-          'all slate editors on page:',
-          document.querySelectorAll('[data-slate-editor]').length,
-        )
-        console.log(
-          'other editors:',
-          Array.from(document.querySelectorAll('[data-slate-editor]')).map(
-            (el) =>
-              el.closest('[data-testid]')?.getAttribute('data-testid') ??
-              el.id ??
-              el.className.slice(0, 50),
-          ),
-        )
-        console.groupEnd()
-      }
-    }
-    window.addEventListener('error', handler)
-    return () => window.removeEventListener('error', handler)
-  }, [])
-
   const tableObjectMembers = props.members as FieldMember[]
 
   const rowsFieldMember = tableObjectMembers?.find(
@@ -247,14 +208,12 @@ const Table: ComponentType<TableProps> = ({
               return props.renderInput(inputProps)
             }
 
-            console.log(
-              '[renderInput schemaType.of]',
-              schemaType?.of?.map((m: any) => ({
-                name: m.name,
-                jsonType: m.jsonType,
-              })),
+            // Forward elementProps for correct focus handling
+            return (
+              <span tabIndex={0}>
+                <PortableTextInput {...inputProps} {...inputProps.elementProps} />
+              </span>
             )
-            return <PortableTextInput {...inputProps} />
           }}
           onClose={() => setEditingPosition(null)}
           onNavigate={handleNavigate}
