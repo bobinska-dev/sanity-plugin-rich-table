@@ -1,6 +1,5 @@
 import {defineArrayMember, definePlugin} from 'sanity'
 
-import {setAdditionalBlockObjects} from './pluginConfig'
 import {
   CellContentSchema,
   createCellObject,
@@ -9,6 +8,7 @@ import {
   RichTableCellType,
 } from './schemas/cell.object'
 import columnHeaderObject, {ColumnHeader} from './schemas/columnHeader.object'
+import content from './schemas/content'
 import richTableBlock from './schemas/richTable.block'
 import richTableObject, {RichTableType} from './schemas/richTable.object'
 import rowObject, {RichTableRowType} from './schemas/row.object'
@@ -25,29 +25,6 @@ interface RichTablePluginOptions {
 }
 
 export const richTablePlugin = definePlugin<RichTablePluginOptions>((options) => {
-  console.log('[rich-table] richTablePlugin called with options:', options)
-
-  // Extract block objects from schema for the PTE editor (only for inline object definitions)
-  if (options?.cellContentSchema && typeof options.cellContentSchema === 'object') {
-    const schema = options.cellContentSchema as CellContentSchema
-    if (schema.of?.length) {
-      const blockObjects = schema.of
-        .filter((member) => {
-          const m = member as any
-          return m.type !== 'block'
-        })
-        .map((member) => {
-          const m = member as any
-          return {
-            name: (m.name ?? m.type) as string,
-            title: m.title as string | undefined,
-            fields: m?.type?.fields ?? m?.fields ?? [],
-          }
-        })
-      setAdditionalBlockObjects(blockObjects)
-    }
-  }
-
   // Create the cell object based on the schema option type
   let cellObject
   if (!options?.cellContentSchema) {
@@ -64,7 +41,7 @@ export const richTablePlugin = definePlugin<RichTablePluginOptions>((options) =>
     name: 'rich-table',
     title: 'Rich Table Plugin',
     schema: {
-      types: [richTableObject, rowObject, columnHeaderObject, richTableBlock, cellObject],
+      types: [richTableObject, rowObject, columnHeaderObject, richTableBlock, cellObject, content],
     },
   }
 })

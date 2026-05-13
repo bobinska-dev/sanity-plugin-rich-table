@@ -101,8 +101,7 @@ export function sanitySchemaToDefinition(
         })) ?? [],
     })) ?? defaultSchemaDefinition.annotations
 
-  // block.of contains inline objects (objects that appear within text, e.g. inline mentions)
-  const inlineObjects =
+  const blockObjects =
     block.of?.map((obj: SanityBlockMember) => ({
       name: obj.name as string,
       title: obj.title as string | undefined,
@@ -114,13 +113,12 @@ export function sanitySchemaToDefinition(
         })) ?? [],
     })) ?? []
 
-  // Non-block array members are block objects (objects that appear between blocks, e.g. images)
   const nonBlockMembers = schemaType.of?.filter((member) => {
     const m = member as SanityBlockMember
-    return m.name !== 'block' && m.type?.name !== 'block'
+    return m.name !== 'block' && m.jsonType !== 'object' && m.type?.name !== 'block'
   })
 
-  const blockObjects =
+  const inlineObjects =
     nonBlockMembers?.map((obj: SanityBlockMember) => ({
       name: obj.name as string,
       title: obj.title as string | undefined,

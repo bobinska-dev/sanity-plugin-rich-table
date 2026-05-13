@@ -25,7 +25,6 @@ import extendStyle from '../../configs/extendStyles'
 import AnnotationPopover from '../annotation/AnnotationPopover'
 import StyleSelector from '../StyleSelector'
 import AnnotationButton from './AnnotationButton'
-import BlockObjectButton from './BlockObjectButton'
 import DecoratorButton from './DecoratorButton'
 import FloatingButton from './FloatingButton'
 import ListButton from './ListButton'
@@ -258,15 +257,12 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
     // Ignore clicks on the style selector button (id="style-select")
     if (clickedFocusable?.id === 'style-selection') return
 
-    // Ignore clicks on the block object menu button — it opens its own submenu
-    if (clickedFocusable?.closest('[data-ui="MenuButton"]')) return
-
     if (clickedFocusable && popoverRef.current.contains(clickedFocusable)) {
       // allow activation to proceed, then close & refocus
       setTimeout(() => closePopover(true), 0)
     }
   }
-  console.log('toolbarR!', toolbarSchema)
+
   return (
     <>
       <Popover
@@ -303,12 +299,6 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
               {toolbarSchema.lists?.map((list) => (
                 <ListButton key={list.name} list={list} />
               ))}
-              {toolbarSchema?.blockObjects && toolbarSchema.blockObjects.length > 0 && (
-                <>
-                  <Card borderRight />
-                  <BlockObjectButton blockObjects={toolbarSchema.blockObjects} />
-                </>
-              )}
             </Flex>
           </Box>
         }

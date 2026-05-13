@@ -25,15 +25,6 @@ const RichTableInput: ComponentType<
   const _id = useFormValue(['_id']) as string
   const _type = useFormValue(['_type']) as string
   const schema = useSchema()
-  const fbb = schema.get('f5BlogBlockContent') as any
-  console.log('[f5BlogBlockContent keys]', Object.keys(fbb ?? {}))
-  console.log('[f5BlogBlockContent of length]', fbb?.of?.length)
-  console.log('[f5BlogBlockContent of[0] keys]', Object.keys(fbb?.of?.[0] ?? {}))
-  console.log('[f5BlogBlockContent of[0] name]', fbb?.of?.[0]?.name)
-  console.log(
-    '[f5BlogBlockContent of[0] hasChildren]',
-    fbb?.of?.[0]?.fields?.some((f: any) => f.name === 'children'),
-  )
 
   // Document operations -> with optimistic changes
   const {patch} = useDocumentOperation(getPublishedId(_id), _type)
@@ -151,17 +142,6 @@ const RichTableInput: ComponentType<
                 readOnly={props.readOnly} // don’t force true unless you intend to
                 id={tableId}
               />
-              {/* <Table
-                {...props}
-                isInDialog={false}
-                handleOpen={handleOpen}
-                patch={patch}
-                isInPortableText={props.isInPortableText}
-                // We need this key to force remounting the table when opening/closing the dialog
-                key={openDialog ? 'table-in-dialog-open' : 'table-in-dialog-closed'}
-                readOnly={props.isInPortableText ? true : props.readOnly}
-                id={tableId}
-              /> */}
             </Box>
 
             {openDialog && (

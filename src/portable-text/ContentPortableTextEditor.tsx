@@ -2,9 +2,8 @@ import {EditorConfig, EditorProvider} from '@portabletext/editor'
 import {MarkdownShortcutsPlugin} from '@portabletext/plugin-markdown-shortcuts'
 import {Card} from '@sanity/ui'
 import {ComponentType, Suspense, useCallback, useRef, useState} from 'react'
-import {InputProps, pathToString, PortableTextBlock, useFormValue} from 'sanity'
+import {ArraySchemaType, InputProps, pathToString, PortableTextBlock, useFormValue} from 'sanity'
 
-import {getAdditionalBlockObjects} from '../pluginConfig'
 import LoadingIndicator from '../components/LoadingIndicator'
 import ButtonToolbar from './components/context-menu-toolbar/ButtonToolbar'
 import CustomListenerPlugin from './components/EventListenerPlugin'
@@ -17,7 +16,7 @@ import {renderListItem} from './configs/renderer/renderListItem'
 import renderStyle from './configs/renderer/renderStyle'
 import {EmojiPickerPlugin} from './emoji-picker/EmojiPicker'
 import {SlashCommandPickerPlugin} from './pte-slash-commands/SlashCommandPicker'
-import {defaultSchemaDefinition} from './resolveSchemaDefinition'
+import {resolveSchemaDefinition} from './resolveSchemaDefinition'
 
 // import { useFullscreenPTE } from './hooks/useFullScreenPTE'
 
@@ -30,6 +29,10 @@ interface ContentPortableTextInputProps {
   readOnly?: InputProps['readOnly']
   /** onChange handler */
   onChange: InputProps['onChange']
+  /** pass down the resolved richText ArraySchemaType of your choice.
+   * When omitted, standard PTE defaults are used (bold, italic, headings, lists, etc.)
+   */
+  schemaType?: ArraySchemaType<PortableTextBlock>
 }
 
 /** # ContentPortableTextInput
@@ -43,25 +46,11 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
   const [focused, setFocused] = useState<boolean>(false)
 
   const handleFocus = useCallback((state: boolean) => setFocused(state), [])
-
-  // Build the schema definition for the PTE.
-  // Start from defaults, then merge any additional block objects
-  // that were configured via plugin options (stored at module level).
-  const additionalBlockObjects = getAdditionalBlockObjects()
-  const schemaDefinition = {
-    ...defaultSchemaDefinition,
-    ...(additionalBlockObjects.length > 0 ? {blockObjects: additionalBlockObjects} : {}),
-  }
-  console.log(
-    '[rich-table] schemaDefinition passed to EditorProvider:',
-    JSON.stringify(schemaDefinition, null, 2),
-  )
-
   // * INITIAL CONFIG FOR EDITOR PROVIDER
   const initialConfig = useRef<EditorConfig>({
     initialValue: props.value,
     readOnly: props.readOnly ?? false,
-    schemaDefinition,
+    schemaDefinition: resolveSchemaDefinition(props.schemaType),
   })
 
   // TODO: fullscreen handling

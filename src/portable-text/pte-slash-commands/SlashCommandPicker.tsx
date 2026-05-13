@@ -4,12 +4,13 @@ import {defineTypeaheadPicker, useTypeaheadPicker} from '@portabletext/plugin-ty
 import type {ToolbarBlockObjectSchemaType} from '@portabletext/toolbar'
 import {Box, Dialog, Text} from '@sanity/ui'
 import Fuse from 'fuse.js'
-import {useMemo, useEffect, useState} from 'react'
+import {useEffect, useState} from 'react'
 
 import {FloatingPanel} from '../components/FloatingPanel'
+//import { InsertBlockObjectForm } from './toolbar/form.insert-block-object'
 import {extendBlockObject} from '../configs/extendBlockObject'
 import CommandListBox from './CommandListBox'
-import {buildSlashCommands, CommandMatch, slashCommands} from './commands'
+import {CommandMatch, slashCommands} from './commands'
 
 type BlockObjectDialogState = {
   patternSelection: NonNullable<EditorSelection>
@@ -19,10 +20,6 @@ type BlockObjectDialogState = {
 type OpenBlockObjectDialogEvent = {
   type: 'custom.slash-command.open-block-object-dialog'
 } & BlockObjectDialogState
-
-// Mutable reference for the active command list — updated by the component
-// when block objects are available from the editor schema.
-let activeCommands: CommandMatch[] = slashCommands
 
 const commandsFuse = new Fuse(slashCommands, {
   keys: [
@@ -35,11 +32,9 @@ const commandsFuse = new Fuse(slashCommands, {
 
 function matchCommands({keyword}: {keyword: string}): CommandMatch[] {
   if (keyword === '') {
-    return activeCommands
+    return slashCommands
   }
 
-  // Re-index in case activeCommands has changed
-  commandsFuse.setCollection(activeCommands)
   return commandsFuse.search(keyword).map((result) => result.item)
 }
 
@@ -112,12 +107,6 @@ export function SlashCommandPickerPlugin() {
   const editor = useEditor()
   const picker = useTypeaheadPicker(slashCommandPicker)
   const {keyword, matches, selectedIndex} = picker.snapshot.context
-
-  // Build dynamic commands from block objects in the editor schema
-  const editorBlockObjects = editor.getSnapshot().context.schema.blockObjects
-  useMemo(() => {
-    activeCommands = buildSlashCommands(editorBlockObjects)
-  }, [editorBlockObjects])
 
   const [blockObjectDialogState, setBlockObjectDialogState] =
     useState<BlockObjectDialogState | null>(null)
