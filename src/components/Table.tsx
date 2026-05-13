@@ -13,18 +13,13 @@ import {
   ArrayOfObjectsFormNode,
   ArrayOfObjectsItemMember,
   FieldMember,
-  FormCallbacksProvider,
-  MemberField,
   ObjectArrayFormNode,
   ObjectFormNode,
   ObjectInputProps,
   ObjectItem,
   ObjectMember,
   OperationsAPI,
-  PortableTextInput,
-  PortableTextInputProps,
   pathToString,
-  useFormCallbacks,
 } from 'sanity'
 import {styled} from 'styled-components'
 
@@ -33,6 +28,8 @@ import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
+import CellEdit from './CellEdit'
+import CellPreview from './CellPreview'
 import ColumnContextMenu from './ColumnContextMenu'
 import ColumnHeaderWithInput from './ColumnHeaderWithInput'
 import RowContextMenu from './RowContextMenu'
@@ -74,146 +71,6 @@ const EditButton = styled.button`
     outline-offset: 2px;
   }
 `
-
-// Styled wrapper that makes preview non-interactive and hides toolbar
-const CellPreviewWrapper = styled.div`
-  pointer-events: none;
-  font-size: 0.875rem;
-  max-height: 100px;
-  overflow: hidden !important;
-
-  /* Hide any scrollbars */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Hide the PTE toolbar */
-  [data-testid='pt-editor__toolbar-card'] {
-    display: none !important;
-  }
-
-  /* Make all children non-interactive */
-  * {
-    pointer-events: none !important;
-    user-select: none !important;
-  }
-`
-
-// Simple read-only cell preview - no FormCallbacksProvider needed since it's non-interactive
-const CellPreview: ComponentType<{
-  member: FieldMember
-  renderInput: ObjectInputProps['renderInput']
-  renderField: ObjectInputProps['renderField']
-  renderItem: ObjectInputProps['renderItem']
-  renderPreview: ObjectInputProps['renderPreview']
-  renderBlock: ObjectInputProps['renderBlock']
-  renderInlineBlock: ObjectInputProps['renderInlineBlock']
-  renderAnnotation: ObjectInputProps['renderAnnotation']
-}> = ({
-  member,
-  renderInput,
-  renderField,
-  renderItem,
-  renderPreview,
-  renderBlock,
-  renderInlineBlock,
-  renderAnnotation,
-}) => {
-  return (
-    <CellPreviewWrapper>
-      <MemberField
-        member={member}
-        renderInput={(inputProps) => renderInput({...inputProps, readOnly: true} as any)}
-        renderField={(fieldProps) => fieldProps.children}
-        renderItem={renderItem}
-        renderPreview={renderPreview}
-        renderBlock={renderBlock}
-        renderInlineBlock={renderInlineBlock}
-        renderAnnotation={renderAnnotation}
-      />
-    </CellPreviewWrapper>
-  )
-}
-
-// Editable cell - wraps MemberField with FormCallbacksProvider for path rewriting
-const CellEdit: ComponentType<{
-  member: FieldMember
-  cellBasePath: any[]
-  patch: OperationsAPI['patch']
-  renderInput: ObjectInputProps['renderInput']
-  renderField: ObjectInputProps['renderField']
-  renderItem: ObjectInputProps['renderItem']
-  renderPreview: ObjectInputProps['renderPreview']
-  renderBlock: ObjectInputProps['renderBlock']
-  renderInlineBlock: ObjectInputProps['renderInlineBlock']
-  renderAnnotation: ObjectInputProps['renderAnnotation']
-}> = ({
-  member,
-  cellBasePath,
-  patch,
-  renderInput,
-  renderField,
-  renderItem,
-  renderPreview,
-  renderBlock,
-  renderInlineBlock,
-  renderAnnotation,
-}) => {
-  const parentCallbacks = useFormCallbacks()
-
-  // Only override onChange to rewrite paths
-  const patchedCallbacks = {
-    ...parentCallbacks,
-    onChange: (event: any) => {
-      if (!event?.patches) {
-        parentCallbacks.onChange?.(event)
-        return
-      }
-      const rewrittenPatches = event.patches.map((p: any) => {
-        const fullPath = [...cellBasePath, ...(p.path ?? [])]
-        const pathStr = pathToString(fullPath)
-        if (p.type === 'set') return {set: {[pathStr]: p.value}}
-        if (p.type === 'setIfMissing') return {setIfMissing: {[pathStr]: p.value}}
-        if (p.type === 'unset') return {unset: [pathStr]}
-        if (p.type === 'insert') return {insert: {[p.position]: pathStr, items: p.items}}
-        if (p.type === 'diffMatchPatch') return {diffMatchPatch: {[pathStr]: p.value}}
-        return p
-      })
-      patch.execute(rewrittenPatches)
-    },
-  }
-
-  return (
-    <FormCallbacksProvider {...patchedCallbacks}>
-      <MemberField
-        member={member}
-        renderInput={(inputProps: PortableTextInputProps) => {
-          const schemaType = inputProps.schemaType as any
-          const isPTE =
-            schemaType?.jsonType === 'array' && schemaType?.of?.some((m: any) => m.name === 'block')
-          if (!isPTE) {
-            return renderInput(inputProps)
-          }
-          return <PortableTextInput {...inputProps} />
-        }}
-        renderField={(fieldProps) => {
-          // Only hide the label for the top-level 'content' field, keep labels for nested fields
-          if (fieldProps.name === 'content') {
-            return fieldProps.children
-          }
-          return renderField(fieldProps)
-        }}
-        renderItem={renderItem}
-        renderPreview={renderPreview}
-        renderBlock={renderBlock}
-        renderInlineBlock={renderInlineBlock}
-        renderAnnotation={renderAnnotation}
-      />
-    </FormCallbacksProvider>
-  )
-}
 
 // Get column label (A, B, C... AA, AB, etc.)
 const getColumnLabel = (index: number): string => {
