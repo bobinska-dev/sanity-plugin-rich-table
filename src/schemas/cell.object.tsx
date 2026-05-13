@@ -6,14 +6,15 @@ export interface RichTableCellType extends ObjectItem {
   content: Array<PortableTextBlock>
 }
 
-export function createCellObject(
-  additionalMembers?: ArrayMember[],
-  blockOverrides?: Record<string, unknown>,
-) {
-  const blockMember = blockOverrides
-    ? defineArrayMember({type: 'block', title: 'Block', ...blockOverrides})
-    : defineArrayMember({type: 'block', title: 'Block'})
+export interface CellContentSchema {
+  type: 'array'
+  of: ArrayMember[]
+}
 
+/**
+ * Create cell object with default block-only content
+ */
+export function createCellObject() {
   return defineType({
     name: 'richTableCell',
     title: 'Rich Table Cell',
@@ -23,13 +24,16 @@ export function createCellObject(
         name: 'content',
         title: 'Content',
         type: 'array',
-        of: [blockMember, ...(additionalMembers ?? [])],
+        of: [defineArrayMember({type: 'block', title: 'Block'})],
       }),
     ],
   })
 }
 
-export function createCellObjectWithType(contentTypeName: string) {
+/**
+ * Create cell object with inline schema definition
+ */
+export function createCellObjectWithSchema(schema: CellContentSchema) {
   return defineType({
     name: 'richTableCell',
     title: 'Rich Table Cell',
@@ -38,7 +42,26 @@ export function createCellObjectWithType(contentTypeName: string) {
       defineField({
         name: 'content',
         title: 'Content',
-        type: contentTypeName,
+        type: schema.type,
+        of: schema.of,
+      }),
+    ],
+  })
+}
+
+/**
+ * Create cell object referencing an existing schema type by name
+ */
+export function createCellObjectWithTypeName(typeName: string) {
+  return defineType({
+    name: 'richTableCell',
+    title: 'Rich Table Cell',
+    type: 'object',
+    fields: [
+      defineField({
+        name: 'content',
+        title: 'Content',
+        type: typeName,
       }),
     ],
   })

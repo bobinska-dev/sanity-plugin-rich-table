@@ -132,18 +132,10 @@ const RichTableInput: ComponentType<
                     onClick={handleOpen}
                     mode="bleed"
                     fontSize={0}
-                    text={
-                      props.isInPortableText && !props.readOnly
-                        ? 'Open table to edit'
-                        : 'Expand table'
-                    }
+                    text="Expand table"
                     muted
                     disabled={props.readOnly}
-                    aria-label={
-                      props.isInPortableText && !props.readOnly
-                        ? 'Open table to edit'
-                        : 'Expand table'
-                    }
+                    aria-label="Expand table"
                     aria-haspopup="dialog"
                     aria-expanded={openDialog}
                     aria-controls={tableId}

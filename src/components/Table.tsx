@@ -1,18 +1,11 @@
 import {Card, Flex, Inline, Switch, Text} from '@sanity/ui'
-import {
-  ChangeEvent,
-  ComponentType,
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import React, {ChangeEvent, ComponentType, Fragment, useCallback, useMemo, useState} from 'react'
 import {
   ArrayOfObjectsFormNode,
   ArrayOfObjectsItemMember,
   FieldMember,
-  InputProps,
+  FormCallbacksProvider,
+  MemberField,
   ObjectArrayFormNode,
   ObjectFormNode,
   ObjectInputProps,
@@ -22,14 +15,15 @@ import {
   PortableTextInput,
   PortableTextInputProps,
   pathToString,
+  useFormCallbacks,
 } from 'sanity'
+import {styled} from 'styled-components'
 
 import {useToggleTitles} from '../hooks/useToggleTitles'
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
-import CellEditDialog from './CellEditDialog'
 import ColumnContextMenu from './ColumnContextMenu'
 import ColumnHeaderWithInput from './ColumnHeaderWithInput'
 import RowContextMenu from './RowContextMenu'
@@ -44,21 +38,141 @@ type TableProps = ObjectInputProps<RichTableType> & {
   id?: string
 }
 
-interface CellPosition {
-  rowIndex: number
-  cellIndex: number
-  cellKey: string
+// Styled wrapper that makes preview non-interactive and hides toolbar
+const CellPreviewWrapper = styled.div`
+  pointer-events: none;
+  font-size: 0.875rem;
+  max-height: 100px;
+  overflow: hidden;
+
+  /* Hide the PTE toolbar */
+  [data-testid='pt-editor__toolbar-card'] {
+    display: none !important;
+  }
+
+  /* Make all children non-interactive */
+  * {
+    pointer-events: none !important;
+    user-select: none !important;
+  }
+`
+
+// Simple read-only cell preview - no FormCallbacksProvider needed since it's non-interactive
+const CellPreview: ComponentType<{
+  member: FieldMember
+  renderInput: ObjectInputProps['renderInput']
+  renderField: ObjectInputProps['renderField']
+  renderItem: ObjectInputProps['renderItem']
+  renderPreview: ObjectInputProps['renderPreview']
+  renderBlock: ObjectInputProps['renderBlock']
+  renderInlineBlock: ObjectInputProps['renderInlineBlock']
+  renderAnnotation: ObjectInputProps['renderAnnotation']
+}> = ({
+  member,
+  renderInput,
+  renderField,
+  renderItem,
+  renderPreview,
+  renderBlock,
+  renderInlineBlock,
+  renderAnnotation,
+}) => {
+  return (
+    <CellPreviewWrapper>
+      <MemberField
+        member={member}
+        renderInput={(inputProps) => renderInput({...inputProps, readOnly: true} as any)}
+        renderField={(fieldProps) => fieldProps.children}
+        renderItem={renderItem}
+        renderPreview={renderPreview}
+        renderBlock={renderBlock}
+        renderInlineBlock={renderInlineBlock}
+        renderAnnotation={renderAnnotation}
+      />
+    </CellPreviewWrapper>
+  )
 }
 
-const toPlainText = (blocks: any[]) => {
-  if (!Array.isArray(blocks)) return ''
-  return blocks
-    .filter((b) => b._type === 'block' && Array.isArray(b.children))
-    .map((b) => b.children.map((c: any) => c.text ?? '').join(''))
-    .join('\n')
+// Editable cell - wraps MemberField with FormCallbacksProvider for path rewriting
+const CellEdit: ComponentType<{
+  member: FieldMember
+  cellBasePath: any[]
+  patch: OperationsAPI['patch']
+  renderInput: ObjectInputProps['renderInput']
+  renderField: ObjectInputProps['renderField']
+  renderItem: ObjectInputProps['renderItem']
+  renderPreview: ObjectInputProps['renderPreview']
+  renderBlock: ObjectInputProps['renderBlock']
+  renderInlineBlock: ObjectInputProps['renderInlineBlock']
+  renderAnnotation: ObjectInputProps['renderAnnotation']
+}> = ({
+  member,
+  cellBasePath,
+  patch,
+  renderInput,
+  renderField,
+  renderItem,
+  renderPreview,
+  renderBlock,
+  renderInlineBlock,
+  renderAnnotation,
+}) => {
+  const parentCallbacks = useFormCallbacks()
+
+  // Only override onChange to rewrite paths
+  const patchedCallbacks = {
+    ...parentCallbacks,
+    onChange: (event: any) => {
+      if (!event?.patches) {
+        parentCallbacks.onChange?.(event)
+        return
+      }
+      const rewrittenPatches = event.patches.map((p: any) => {
+        const fullPath = [...cellBasePath, ...(p.path ?? [])]
+        const pathStr = pathToString(fullPath)
+        if (p.type === 'set') return {set: {[pathStr]: p.value}}
+        if (p.type === 'setIfMissing') return {setIfMissing: {[pathStr]: p.value}}
+        if (p.type === 'unset') return {unset: [pathStr]}
+        if (p.type === 'insert') return {insert: {[p.position]: pathStr, items: p.items}}
+        if (p.type === 'diffMatchPatch') return {diffMatchPatch: {[pathStr]: p.value}}
+        return p
+      })
+      patch.execute(rewrittenPatches)
+    },
+  }
+
+  return (
+    <FormCallbacksProvider {...patchedCallbacks}>
+      <MemberField
+        member={member}
+        renderInput={(inputProps: PortableTextInputProps) => {
+          const schemaType = inputProps.schemaType as any
+          const isPTE =
+            schemaType?.jsonType === 'array' && schemaType?.of?.some((m: any) => m.name === 'block')
+          if (!isPTE) {
+            return renderInput(inputProps)
+          }
+          return <PortableTextInput {...inputProps} />
+        }}
+        renderField={(fieldProps) => {
+          // Only hide the label for the top-level 'content' field, keep labels for nested fields
+          if (fieldProps.name === 'content') {
+            return fieldProps.children
+          }
+          return renderField(fieldProps)
+        }}
+        renderItem={renderItem}
+        renderPreview={renderPreview}
+        renderBlock={renderBlock}
+        renderInlineBlock={renderInlineBlock}
+        renderAnnotation={renderAnnotation}
+      />
+    </FormCallbacksProvider>
+  )
 }
 
-const getColumnLabel = (index: number) => {
+// Get column label (A, B, C... AA, AB, etc.)
+const getColumnLabel = (index: number): string => {
   let label = ''
   let i = index
   do {
@@ -71,7 +185,7 @@ const getColumnLabel = (index: number) => {
 const Table: ComponentType<TableProps> = ({
   isInDialog = false,
   value,
-  onChange: onChangeProp,
+  onChange,
   patch,
   id,
   ...props
@@ -79,25 +193,11 @@ const Table: ComponentType<TableProps> = ({
   const path = pathToString(props.path)
   const tableId = id ?? `rich-table-${path}`
 
-  // Wrap onChange to log all patches — helps debug path issues
-  const onChange = useCallback(
-    (...args: Parameters<typeof onChangeProp>) => {
-      console.log('[Table onChange]', JSON.stringify(args))
-      return onChangeProp(...args)
-    },
-    [onChangeProp],
-  )
-
-  const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null)
-  const [editingPosition, setEditingPosition] = useState<CellPosition | null>(null)
-
   const tableObjectMembers = props.members as FieldMember[]
 
   const rowsFieldMember = tableObjectMembers?.find(
     (member) => member.name === 'rows',
   ) as FieldMember<ArrayOfObjectsFormNode<Array<RichTableRowType>>>
-
-  const rowKeys = value?.rows?.map((r) => r._key).join(',') ?? ''
 
   const rowMembersWithCellMembers = useMemo(
     () =>
@@ -117,7 +217,6 @@ const Table: ComponentType<TableProps> = ({
             | undefined,
         }
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [rowsFieldMember],
   )
 
@@ -137,9 +236,21 @@ const Table: ComponentType<TableProps> = ({
     path,
   )
 
-  const totalRows = value?.rows?.length ?? 0
-  const totalCols = value?.columnHeaders?.length ?? 0
+  // State for cell editing
+  const [editingCellKey, setEditingCellKey] = useState<string | null>(null)
+  const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null)
 
+  // Close editing on Escape key
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape' && editingCellKey) {
+        setEditingCellKey(null)
+      }
+    },
+    [editingCellKey],
+  )
+
+  // Get the content field member for a cell
   const getCellMember = useCallback(
     (rowIndex: number, cellIndex: number): FieldMember | undefined => {
       const row = rowMembersWithCellMembers?.[rowIndex]
@@ -147,80 +258,36 @@ const Table: ComponentType<TableProps> = ({
       const cellMember = row.cellMembers?.[cellIndex]
       if (!cellMember) return undefined
       const cellItem = cellMember.item
-      const member = (cellItem.members as ObjectMember[])?.find(
+      return (cellItem.members as ObjectMember[])?.find(
         (m): m is FieldMember => m.kind === 'field' && m.name === 'content',
       )
-      console.log(
-        '[cell member names]',
-        (cellItem.members as ObjectMember[])?.map((m) => (m.kind === 'field' ? m.name : m.kind)),
-      )
-      console.log(
-        '[getCellMember] member.field.schemaType.typeName:',
-        (member?.field as any)?.schemaType?.typeName,
-      )
-      console.log(
-        '[getCellMember] member.field.schemaType.jsonType:',
-        (member?.field as any)?.schemaType?.jsonType,
-      )
-      console.log(
-        '[getCellMember] member.field.schemaType.of[0].jsonType:',
-        (member?.field as any)?.schemaType?.of?.[0]?.jsonType,
-      )
-      console.log(
-        '[getCellMember] member.field.schemaType.of[0].type?.jsonType:',
-        (member?.field as any)?.schemaType?.of?.[0]?.type?.jsonType,
-      )
-      return member
     },
     [rowMembersWithCellMembers],
   )
 
+  // Get cell base path (without 'content') for path rewriting
+  const getCellBasePath = useCallback(
+    (rowIndex: number, cellIndex: number): any[] => {
+      const member = getCellMember(rowIndex, cellIndex)
+      return member?.field?.path?.slice(0, -1) ?? []
+    },
+    [getCellMember],
+  )
+
+  // Get cell label (e.g., "Cell A1")
   const getCellLabel = useCallback((rowIndex: number, cellIndex: number): string => {
     return `Cell ${getColumnLabel(cellIndex)}${rowIndex + 1}`
   }, [])
 
-  const handleNavigate = useCallback((pos: CellPosition) => {
-    setEditingPosition(pos)
-    setSelectedCellKey(pos.cellKey)
-  }, [])
-
   return (
     <Card padding={3} border radius={2} as="section" aria-label="Rich table">
-      {editingPosition && (
-        <CellEditDialog
-          position={editingPosition}
-          totalRows={totalRows}
-          totalCols={totalCols}
-          getCellMember={getCellMember}
-          getCellLabel={getCellLabel}
-          renderField={props.renderField}
-          renderItem={props.renderItem}
-          renderPreview={props.renderPreview}
-          renderInlineBlock={props.renderInlineBlock}
-          renderAnnotation={props.renderAnnotation}
-          renderBlock={props.renderBlock}
-          renderInput={(inputProps: PortableTextInputProps) => {
-            const schemaType = inputProps.schemaType as any
-            const isPTE =
-              schemaType?.jsonType === 'array' &&
-              schemaType?.of?.some((m: any) => m.name === 'block')
-
-            if (!isPTE) {
-              // Let the default form handle non-PTE inputs (object block edit forms etc)
-              return props.renderInput(inputProps)
-            }
-
-            // Forward elementProps for correct focus handling
-            return (
-              <span tabIndex={0}>
-                <PortableTextInput {...inputProps} {...inputProps.elementProps} />
-              </span>
-            )
-          }}
-          onClose={() => setEditingPosition(null)}
-          onNavigate={handleNavigate}
-          patch={patch}
-        />
+      {/* Info hint for editing */}
+      {!props.readOnly && !editingCellKey && (
+        <Flex paddingBottom={2}>
+          <Text size={0} muted>
+            Double-click a cell to edit. Press Escape to close.
+          </Text>
+        </Flex>
       )}
 
       <TableButtons
@@ -239,6 +306,7 @@ const Table: ComponentType<TableProps> = ({
             $hasRowTitles={hasRowTitles}
             role="table"
           >
+            {/* Placeholder for row title column */}
             <div className={'placeholder-cell'} />
 
             {/* HEADER ROW */}
@@ -283,15 +351,14 @@ const Table: ComponentType<TableProps> = ({
             {rowMembersWithCellMembers?.map(({rowMember, cellMembers}, rowIndex) =>
               cellMembers?.map((cellMember, cellIndex) => {
                 const cellItem = cellMember.item
+                const contentMember = getCellMember(rowIndex, cellIndex)
                 const cellKey = `${rowIndex}-${cellIndex}`
-                const safeId = `cell-${cellKey}`
-                const isSelected = selectedCellKey === cellKey
-                const isEditing = editingPosition?.cellKey === cellKey
-
-                const plainText = cellItem.value?.content ? toPlainText(cellItem.value.content) : ''
+                const cellLabel = getCellLabel(rowIndex, cellIndex)
+                const isEditing = editingCellKey === cellKey
 
                 return (
-                  <div key={cellKey} id={safeId} role="cell" style={{minWidth: 0, minHeight: 0}}>
+                  <Fragment key={cellItem.id}>
+                    {/* ROW HEADER / CONTEXT MENU (first column) */}
                     {cellIndex === 0 && hasRowTitles && (
                       <RowHeaderWithInput
                         row={rowMember.item.value}
@@ -315,56 +382,77 @@ const Table: ComponentType<TableProps> = ({
                       />
                     )}
 
-                    <div
-                      tabIndex={props.readOnly ? -1 : 0}
-                      onClick={() => !props.readOnly && setSelectedCellKey(cellKey)}
-                      onDoubleClick={() => {
-                        if (props.readOnly) return
-                        setSelectedCellKey(cellKey)
-                        setEditingPosition({rowIndex, cellIndex, cellKey})
-                      }}
-                      onKeyDown={(e) => {
-                        if (props.readOnly) return
-                        if (e.key === 'Enter' || e.key === 'F2') {
-                          e.preventDefault()
-                          setEditingPosition({rowIndex, cellIndex, cellKey})
-                        }
-                        if (e.key === 'Tab') {
-                          e.preventDefault()
-                          const nextCell = e.shiftKey ? cellIndex - 1 : cellIndex + 1
-                          if (nextCell >= 0 && nextCell < totalCols) {
-                            setSelectedCellKey(`${rowIndex}-${nextCell}`)
-                          } else if (!e.shiftKey && rowIndex < totalRows - 1) {
-                            setSelectedCellKey(`${rowIndex + 1}-0`)
-                          } else if (e.shiftKey && rowIndex > 0) {
-                            setSelectedCellKey(`${rowIndex - 1}-${totalCols - 1}`)
-                          }
-                        }
-                        if (e.key === 'Escape') setSelectedCellKey(null)
-                      }}
+                    {/* CELL CONTENT */}
+                    <Card
+                      border
+                      radius={1}
+                      padding={2}
                       style={{
+                        minWidth: 0,
                         minHeight: 32,
-                        padding: '4px 8px',
+                        maxHeight: isEditing ? 'none' : 120,
+                        overflow: isEditing ? 'visible' : 'hidden',
                         cursor: props.readOnly ? 'default' : 'pointer',
-                        outline:
-                          isEditing || isSelected
-                            ? '2px solid var(--card-focus-ring-color)'
+                        outline: isEditing
+                          ? '2px solid #2276fc'
+                          : selectedCellKey === cellKey
+                            ? '2px solid #2276fc'
                             : '2px solid transparent',
                         outlineOffset: -2,
-                        borderRadius: 2,
-                        color: plainText ? 'inherit' : 'var(--card-muted-fg-color)',
-                        fontSize: 'inherit',
-                        lineHeight: '1.5',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                        userSelect: 'none',
+                        transition: 'outline-color 0.15s ease',
+                        zIndex: isEditing ? 10 : 'auto',
+                        position: isEditing ? 'relative' : 'static',
                       }}
-                      aria-label={getCellLabel(rowIndex, cellIndex)}
-                      aria-selected={isSelected}
+                      onClick={() => {
+                        if (!props.readOnly && !isEditing) {
+                          setSelectedCellKey(cellKey)
+                        }
+                      }}
+                      onDoubleClick={() => {
+                        if (!props.readOnly && !isEditing) {
+                          setEditingCellKey(cellKey)
+                        }
+                      }}
+                      onKeyDown={handleKeyDown}
+                      tabIndex={isEditing ? 0 : undefined}
+                      // @ts-expect-error role prop needed for accessibility
+                      role="cell"
+                      aria-selected={selectedCellKey === cellKey}
+                      aria-label={cellLabel}
                     >
-                      {plainText || '—'}
-                    </div>
-                  </div>
+                      {contentMember ? (
+                        isEditing ? (
+                          <CellEdit
+                            member={contentMember}
+                            cellBasePath={getCellBasePath(rowIndex, cellIndex)}
+                            patch={patch}
+                            renderInput={props.renderInput}
+                            renderField={props.renderField}
+                            renderItem={props.renderItem}
+                            renderPreview={props.renderPreview}
+                            renderBlock={props.renderBlock}
+                            renderInlineBlock={props.renderInlineBlock}
+                            renderAnnotation={props.renderAnnotation}
+                          />
+                        ) : (
+                          <CellPreview
+                            member={contentMember}
+                            renderInput={props.renderInput}
+                            renderField={props.renderField}
+                            renderItem={props.renderItem}
+                            renderPreview={props.renderPreview}
+                            renderBlock={props.renderBlock}
+                            renderInlineBlock={props.renderInlineBlock}
+                            renderAnnotation={props.renderAnnotation}
+                          />
+                        )
+                      ) : (
+                        <Text size={1} muted>
+                          —
+                        </Text>
+                      )}
+                    </Card>
+                  </Fragment>
                 )
               }),
             )}
