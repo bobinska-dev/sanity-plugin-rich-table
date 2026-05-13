@@ -1,5 +1,14 @@
+import {EditIcon} from '@sanity/icons'
 import {Card, Flex, Inline, Switch, Text} from '@sanity/ui'
-import React, {ChangeEvent, ComponentType, Fragment, useCallback, useMemo, useState} from 'react'
+import React, {
+  ChangeEvent,
+  ComponentType,
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   ArrayOfObjectsFormNode,
   ArrayOfObjectsItemMember,
@@ -38,12 +47,47 @@ type TableProps = ObjectInputProps<RichTableType> & {
   id?: string
 }
 
+// Styled edit button for cell selection
+const EditButton = styled.button`
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #2276fc;
+  background: white;
+  color: #2276fc;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 0;
+
+  &:hover {
+    background: #f0f6ff;
+  }
+
+  &:focus {
+    outline: 2px solid #2276fc;
+    outline-offset: 2px;
+  }
+`
+
 // Styled wrapper that makes preview non-interactive and hides toolbar
 const CellPreviewWrapper = styled.div`
   pointer-events: none;
   font-size: 0.875rem;
   max-height: 100px;
-  overflow: hidden;
+  overflow: hidden !important;
+
+  /* Hide any scrollbars */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   /* Hide the PTE toolbar */
   [data-testid='pt-editor__toolbar-card'] {
@@ -240,14 +284,81 @@ const Table: ComponentType<TableProps> = ({
   const [editingCellKey, setEditingCellKey] = useState<string | null>(null)
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null)
 
-  // Close editing on Escape key
+  const totalRows = value?.rows?.length ?? 0
+  const totalCols = value?.columnHeaders?.length ?? 0
+
+  // Parse cell key to get row and cell indices
+  const parseCellKey = useCallback((key: string | null): {row: number; col: number} | null => {
+    if (!key) return null
+    const [row, col] = key.split('-').map(Number)
+    return {row, col}
+  }, [])
+
+  // Create cell key from indices
+  const makeCellKey = useCallback((row: number, col: number): string => `${row}-${col}`, [])
+
+  // Keyboard navigation handler
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape' && editingCellKey) {
-        setEditingCellKey(null)
+      // Escape: close editing or deselect
+      if (e.key === 'Escape') {
+        e.stopPropagation() // Prevent bubbling to parent (Sanity form navigation)
+        e.preventDefault()
+        if (editingCellKey) {
+          setEditingCellKey(null)
+        } else if (selectedCellKey) {
+          setSelectedCellKey(null)
+        }
+        return
+      }
+
+      // Don't intercept keyboard when editing - let inputs handle their own events
+      if (editingCellKey) return
+
+      // Only handle navigation when the cell Card itself is focused, not child elements
+      const target = e.target as HTMLElement
+      const cellCard = e.currentTarget as HTMLElement
+      if (target !== cellCard) return
+
+      const current = parseCellKey(selectedCellKey)
+      if (!current) return
+
+      let newRow = current.row
+      let newCol = current.col
+
+      // Arrow key navigation
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        newCol = Math.max(0, current.col - 1)
+      } else if (e.key === 'ArrowRight' || e.key === 'Tab') {
+        e.preventDefault()
+        if (current.col < totalCols - 1) {
+          newCol = current.col + 1
+        } else if (e.key === 'Tab' && current.row < totalRows - 1) {
+          // Tab wraps to next row
+          newRow = current.row + 1
+          newCol = 0
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        newRow = Math.max(0, current.row - 1)
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        newRow = Math.min(totalRows - 1, current.row + 1)
+      } else if (e.key === 'Enter') {
+        // Enter to start editing
+        e.preventDefault()
+        setEditingCellKey(selectedCellKey)
+        return
+      } else {
+        return
+      }
+
+      if (newRow !== current.row || newCol !== current.col) {
+        setSelectedCellKey(makeCellKey(newRow, newCol))
       }
     },
-    [editingCellKey],
+    [editingCellKey, selectedCellKey, parseCellKey, makeCellKey, totalRows, totalCols],
   )
 
   // Get the content field member for a cell
@@ -279,13 +390,22 @@ const Table: ComponentType<TableProps> = ({
     return `Cell ${getColumnLabel(cellIndex)}${rowIndex + 1}`
   }, [])
 
+  // Focus the selected cell when it changes (for keyboard navigation)
+  useEffect(() => {
+    if (selectedCellKey && !editingCellKey) {
+      const cell = document.querySelector(`[data-cell-key="${selectedCellKey}"]`) as HTMLElement
+      cell?.focus()
+    }
+  }, [selectedCellKey, editingCellKey])
+
   return (
     <Card padding={3} border radius={2} as="section" aria-label="Rich table">
       {/* Info hint for editing */}
       {!props.readOnly && !editingCellKey && (
         <Flex paddingBottom={2}>
           <Text size={0} muted>
-            Double-click a cell to edit. Press Escape to close.
+            Click to select, double-click or Enter to edit. Arrow keys to navigate, Escape to
+            deselect.
           </Text>
         </Flex>
       )}
@@ -390,8 +510,8 @@ const Table: ComponentType<TableProps> = ({
                       style={{
                         minWidth: 0,
                         minHeight: 32,
-                        maxHeight: isEditing ? 'none' : 120,
-                        overflow: isEditing ? 'visible' : 'hidden',
+                        maxHeight: 120,
+                        overflow: 'hidden',
                         cursor: props.readOnly ? 'default' : 'pointer',
                         outline: isEditing
                           ? '2px solid #2276fc'
@@ -400,26 +520,49 @@ const Table: ComponentType<TableProps> = ({
                             : '2px solid transparent',
                         outlineOffset: -2,
                         transition: 'outline-color 0.15s ease',
-                        zIndex: isEditing ? 10 : 'auto',
-                        position: isEditing ? 'relative' : 'static',
+                        position: 'relative',
                       }}
-                      onClick={() => {
-                        if (!props.readOnly && !isEditing) {
-                          setSelectedCellKey(cellKey)
+                      onClick={(e) => {
+                        if (!props.readOnly) {
+                          // Close current editing cell when selecting a different cell
+                          if (editingCellKey && editingCellKey !== cellKey) {
+                            setEditingCellKey(null)
+                          }
+                          // Only update selection and focus if not already editing this cell
+                          if (!isEditing) {
+                            setSelectedCellKey(cellKey)
+                            // Focus the cell so keyboard events work
+                            ;(e.currentTarget as HTMLElement).focus()
+                          }
                         }
                       }}
                       onDoubleClick={() => {
-                        if (!props.readOnly && !isEditing) {
+                        if (!props.readOnly) {
                           setEditingCellKey(cellKey)
                         }
                       }}
                       onKeyDown={handleKeyDown}
-                      tabIndex={isEditing ? 0 : undefined}
+                      tabIndex={selectedCellKey === cellKey || isEditing ? 0 : -1}
+                      data-cell-key={cellKey}
                       // @ts-expect-error role prop needed for accessibility
                       role="cell"
                       aria-selected={selectedCellKey === cellKey}
                       aria-label={cellLabel}
                     >
+                      {/* Edit icon shown when selected but not editing */}
+                      {!props.readOnly && selectedCellKey === cellKey && !isEditing && (
+                        <EditButton
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setEditingCellKey(cellKey)
+                          }}
+                          aria-label="Edit cell"
+                          title="Edit cell (or press Enter)"
+                        >
+                          <EditIcon style={{width: 14, height: 14}} />
+                        </EditButton>
+                      )}
                       {contentMember ? (
                         isEditing ? (
                           <CellEdit
