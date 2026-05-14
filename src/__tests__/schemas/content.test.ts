@@ -1,7 +1,6 @@
-import {defineArrayMember} from 'sanity'
 import {describe, expect, it} from 'vitest'
 
-import content, {createContentType} from '../../schemas/content'
+import content from '../../schemas/content'
 
 describe('content schema', () => {
   it('has correct name', () => {
@@ -33,44 +32,5 @@ describe('content schema', () => {
     // Cast to access the oneLine property
     const options = blockMember?.options as {oneLine?: boolean} | undefined
     expect(options?.oneLine).toBe(false)
-  })
-})
-
-describe('createContentType', () => {
-  it('returns default content when called without args', () => {
-    const result = createContentType()
-    expect(result.name).toBe('content')
-    expect(result).toEqual(content)
-  })
-
-  it('appends additional members after default block', () => {
-    const result = createContentType([
-      defineArrayMember({type: 'image', name: 'image', title: 'Image'}),
-    ]) as typeof content & {of: Array<{type: string; name?: string}>}
-    expect(result.name).toBe('content')
-    expect(result.of.length).toBe(2)
-    expect(result.of[0].type).toBe('block')
-    expect(result.of[1].type).toBe('image')
-  })
-
-  it('applies block overrides to the default block member', () => {
-    const result = createContentType(undefined, {
-      styles: [{title: 'Normal', value: 'normal'}],
-    }) as typeof content & {of: Array<{type: string; styles?: unknown[]}>}
-    expect(result.name).toBe('content')
-    expect(result.of.length).toBe(1)
-    expect(result.of[0].type).toBe('block')
-    expect(result.of[0].styles).toEqual([{title: 'Normal', value: 'normal'}])
-  })
-
-  it('combines additional members and block overrides', () => {
-    const result = createContentType(
-      [defineArrayMember({type: 'image', name: 'image', title: 'Image'})],
-      {styles: [{title: 'Normal', value: 'normal'}]},
-    ) as typeof content & {of: Array<{type: string; name?: string; styles?: unknown[]}>}
-    expect(result.of.length).toBe(2)
-    expect(result.of[0].type).toBe('block')
-    expect(result.of[0].styles).toEqual([{title: 'Normal', value: 'normal'}])
-    expect(result.of[1].type).toBe('image')
   })
 })

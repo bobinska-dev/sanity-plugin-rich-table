@@ -46,7 +46,6 @@ export const ColumnHeaderWithInput: ComponentType<ColumnHeaderWithInputProps> = 
 
   const newColumnTitle = getLetterBasedOnIndex(columnIndex)
   const id = `column-header-input-${path}-${columnHeader._key}`
-
   // key that includes the external title will force remount when that title changes elsewhere
   const remountKey = `${columnHeader._key}-${(columnHeader.title ?? '').replace(/[^a-zA-Z0-9-_:.]/g, '-')}`
 

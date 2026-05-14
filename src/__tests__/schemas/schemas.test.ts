@@ -91,7 +91,7 @@ describe('cellObject schema', () => {
   it('has content field', () => {
     const contentField = cellObject.fields.find((f) => f.name === 'content')
     expect(contentField).toBeDefined()
-    expect(contentField?.type).toBe('content')
+    expect(contentField?.type).toBe('array')
   })
 })
 
