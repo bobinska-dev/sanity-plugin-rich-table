@@ -13,7 +13,7 @@ import richTableBlock from './schemas/richTable.block'
 import richTableObject, {RichTableType} from './schemas/richTable.object'
 import rowObject, {RichTableRowType} from './schemas/row.object'
 
-export type {RichTableType, RichTableRowType, RichTableCellType, ColumnHeader, CellContentSchema}
+export type {CellContentSchema, ColumnHeader, RichTableCellType, RichTableRowType, RichTableType}
 
 interface RichTablePluginOptions {
   /**

@@ -44,5 +44,17 @@ export default [
         ...globals.browser,
       },
     },
+    rules: {
+      // React Compiler rule - disable for Sanity plugin patterns
+      'react-hooks/preserve-manual-memoization': 'off',
+    },
+  },
+  // Test file overrides - must come after main rules
+  {
+    files: ['**/__tests__/**/*.ts', '**/__tests__/**/*.tsx', '**/*.test.ts', '**/*.test.tsx'],
+    rules: {
+      'max-nested-callbacks': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
   },
 ]

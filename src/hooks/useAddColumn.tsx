@@ -20,12 +20,17 @@ export function useAddColumn({path, value, patch}: UseAddColumnParams) {
   return useCallback(() => {
     const colCount = value?.columnHeaders?.length || 0
 
-    // Template for a new empty cell (no _key; Sanity will generate it)
+    // Template for a new empty cell
     const newCellItem: RichTableCellType = {
       _type: 'richTableCell',
       _key: generateKey(),
       content: [
-        {_type: 'block', markDefs: [], children: [{_type: 'span', text: '', marks: []}]},
+        {
+          _type: 'block',
+          _key: generateKey(),
+          markDefs: [],
+          children: [{_type: 'span', text: '', marks: []}],
+        },
       ] as unknown as PortableTextBlock[],
     }
 

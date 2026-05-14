@@ -1,10 +1,9 @@
 import {EmojiMatch} from '@portabletext/plugin-emoji-picker'
+// Import with assertion to satisfy Node's JSON module requirement (ERR_IMPORT_ASSERTION_TYPE_MISSING)
+import emojis from 'emojilib/dist/emoji-en-US.json' with {type: 'json'}
 import Fuse from 'fuse.js'
 
 import {EmojiEntry} from './EmojiPicker'
-
-// Import with assertion to satisfy Node's JSON module requirement (ERR_IMPORT_ASSERTION_TYPE_MISSING)
-import emojis from 'emojilib/dist/emoji-en-US.json' with {type: 'json'}
 
 const emojiList: EmojiEntry[] = Object.entries(emojis).map(([emoji, keywords]) => ({
   emoji,

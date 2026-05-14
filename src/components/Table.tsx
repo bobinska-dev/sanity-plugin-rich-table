@@ -13,15 +13,15 @@ import {
 } from 'sanity'
 
 import {useCellNavigation} from '../hooks/useCellNavigation'
-import {getCellBasePath, getCellMember} from '../utils/cellUtils'
 import {useToggleTitles} from '../hooks/useToggleTitles'
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
-import PortableTextCell from './PortableTextCell'
+import {getCellBasePath, getCellMember} from '../utils/cellUtils'
 import ColumnContextMenu from './ColumnContextMenu'
 import ColumnHeaderWithInput from './ColumnHeaderWithInput'
+import PortableTextCell from './PortableTextCell'
 import RowContextMenu from './RowContextMenu'
 import RowHeaderWithInput from './RowHeaderWithInput'
 import TableButtons from './TableButtons'
@@ -37,7 +37,8 @@ type TableProps = ObjectInputProps<RichTableType> & {
 const Table: ComponentType<TableProps> = ({
   isInDialog = false,
   value,
-  onChange,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onChange: _onChange,
   patch,
   id,
   ...props
@@ -51,9 +52,11 @@ const Table: ComponentType<TableProps> = ({
     (member) => member.name === 'rows',
   ) as FieldMember<ArrayOfObjectsFormNode<Array<RichTableRowType>>>
 
+  const rowFieldMembers = rowsFieldMember?.field.members
+
   const rowMembersWithCellMembers = useMemo(
     () =>
-      rowsFieldMember?.field.members.map((rowI) => {
+      rowFieldMembers?.map((rowI) => {
         const row = rowI as ArrayOfObjectsItemMember<ObjectArrayFormNode<RichTableRowType>>
         const rowItem = row.item
         const rowItemObjectMembers = rowItem.members as FieldMember<
@@ -69,7 +72,7 @@ const Table: ComponentType<TableProps> = ({
             | undefined,
         }
       }),
-    [rowsFieldMember],
+    [rowFieldMembers],
   )
 
   const columnHeaderFieldMember = tableObjectMembers?.find(

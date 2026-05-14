@@ -53,8 +53,8 @@ const wrapper = ({children}: {children: ReactNode}) => (
 
 // Mock render props (required by component interface)
 const mockRenderProps = {
-  renderInput: vi.fn((props: any) => <div data-testid="render-input" />),
-  renderField: vi.fn((props: any) => <div>{props.children}</div>),
+  renderInput: vi.fn(() => <div data-testid="render-input" />),
+  renderField: vi.fn((props) => <div>{props.children}</div>),
   renderItem: vi.fn(),
   renderPreview: vi.fn(),
   renderBlock: vi.fn(),
@@ -72,9 +72,10 @@ const createMockMember = () =>
     },
   }) as any
 
-// Mock patch
+// Mock patch (disabled must be literal false, not boolean)
 const createMockPatch = () => ({
   execute: vi.fn(),
+  disabled: false as const,
 })
 
 describe('PortableTextCell', () => {
@@ -107,7 +108,7 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
+          isSelected
           isEditing={false}
           cellKey="0-0"
           cellLabel="Cell A1"
@@ -158,7 +159,7 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
+          isSelected
           isEditing={false}
           cellKey="0-0"
           cellLabel="Cell A1"
@@ -192,8 +193,8 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
-          isEditing={true}
+          isSelected
+          isEditing
           cellKey="0-0"
           cellLabel="Cell A1"
           onEditClick={vi.fn()}
@@ -209,9 +210,9 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
+          isSelected
           isEditing={false}
-          tableReadOnly={true}
+          tableReadOnly
           cellKey="0-0"
           cellLabel="Cell A1"
           onEditClick={vi.fn()}
@@ -228,7 +229,7 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
+          isSelected
           isEditing={false}
           cellKey="0-0"
           cellLabel="Cell A1"
@@ -248,7 +249,7 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
+          isSelected
           isEditing={false}
           cellKey="0-0"
           cellLabel="Cell A1"
@@ -310,7 +311,7 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
+          isSelected
           isEditing={false}
           cellKey="0-0"
           cellLabel="Cell A1"
@@ -329,7 +330,7 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
+          isSelected
           isEditing={false}
           cellKey="0-0"
           cellLabel="Cell A1"
@@ -364,8 +365,8 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
-          isEditing={true}
+          isSelected
+          isEditing
           cellKey="0-0"
           cellLabel="Cell A1"
           {...mockRenderProps}
@@ -380,8 +381,8 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
-          isEditing={true}
+          isSelected
+          isEditing
           cellKey="0-0"
           cellLabel="Cell A1"
           {...mockRenderProps}
@@ -401,8 +402,8 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
-          isEditing={true}
+          isSelected
+          isEditing
           cellBasePath={['rows', {_key: 'row1'}, 'cells', {_key: 'cell1'}]}
           patch={patch}
           cellKey="0-0"
@@ -429,8 +430,8 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
-          isEditing={true}
+          isSelected
+          isEditing
           cellBasePath={['rows', {_key: 'row1'}, 'cells', {_key: 'cell1'}]}
           patch={patch}
           cellKey="0-0"
@@ -455,8 +456,8 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
-          isEditing={true}
+          isSelected
+          isEditing
           cellBasePath={['rows', {_key: 'row1'}, 'cells', {_key: 'cell1'}]}
           patch={patch}
           cellKey="0-0"
@@ -481,8 +482,8 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
-          isEditing={true}
+          isSelected
+          isEditing
           cellBasePath={['rows', {_key: 'row1'}, 'cells', {_key: 'cell1'}]}
           patch={patch}
           cellKey="0-0"
@@ -514,8 +515,8 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
-          isEditing={true}
+          isSelected
+          isEditing
           cellBasePath={['rows', {_key: 'row1'}, 'cells', {_key: 'cell1'}]}
           patch={patch}
           cellKey="0-0"
@@ -573,8 +574,8 @@ describe('PortableTextCell', () => {
       render(
         <PortableTextCell
           member={createMockMember()}
-          isSelected={true}
-          isEditing={true}
+          isSelected
+          isEditing
           cellBasePath={['rows', {_key: 'row1'}, 'cells', {_key: 'cell1'}]}
           patch={patch}
           cellKey="0-0"

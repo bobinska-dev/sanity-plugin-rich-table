@@ -1,9 +1,15 @@
-import {FieldMember, ObjectMember} from 'sanity'
+import {
+  ArrayOfObjectsItemMember,
+  FieldMember,
+  ObjectArrayFormNode,
+  ObjectMember,
+  Path,
+} from 'sanity'
 
-import type {RichTableCellType} from '../schemas/cell.object'
+import type {RichTableRowType} from '../schemas/row.object'
 
 interface RowWithCellMembers {
-  rowMember: any
+  rowMember: ArrayOfObjectsItemMember<ObjectArrayFormNode<RichTableRowType>>
   cellMembers:
     | {
         item: {
@@ -36,6 +42,6 @@ export function getCellMember(
  * Get the base path for a cell (without 'content' suffix).
  * Used for path rewriting in the PortableTextCell component.
  */
-export function getCellBasePath(member: FieldMember | undefined): any[] {
+export function getCellBasePath(member: FieldMember | undefined): Path {
   return member?.field?.path?.slice(0, -1) ?? []
 }

@@ -1,15 +1,16 @@
 import {EditIcon} from '@sanity/icons'
 import {Card, Text} from '@sanity/ui'
-import {ComponentType} from 'react'
+import type {ComponentType, KeyboardEvent, MouseEvent} from 'react'
 import {
   FieldMember,
   FormCallbacksProvider,
   MemberField,
   ObjectInputProps,
   OperationsAPI,
+  Path,
+  pathToString,
   PortableTextInput,
   PortableTextInputProps,
-  pathToString,
   useFormCallbacks,
 } from 'sanity'
 import {styled} from 'styled-components'
@@ -87,15 +88,15 @@ export interface PortableTextCellProps extends RenderProps {
   /** Table-level read-only flag */
   tableReadOnly?: boolean
   /** Base path for the cell, used for path rewriting in patches */
-  cellBasePath?: any[]
+  cellBasePath?: Path
   /** Patch function from Sanity operations API */
   patch?: OperationsAPI['patch']
   /** Click handler for cell selection */
-  onClick?: (e: React.MouseEvent) => void
+  onClick?: (e: MouseEvent) => void
   /** Double-click handler for entering edit mode */
   onDoubleClick?: () => void
   /** Keyboard handler for navigation */
-  onKeyDown?: (e: React.KeyboardEvent) => void
+  onKeyDown?: (e: KeyboardEvent) => void
   /** Tab index for keyboard focus */
   tabIndex?: number
   /** Unique key for the cell (used for data attribute) */
@@ -163,11 +164,13 @@ const PortableTextCell: ComponentType<PortableTextCellProps> = ({
   // Patched callbacks for edit mode - rewrites paths for correct document location
   const patchedCallbacks = {
     ...parentCallbacks,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onChange: (event: any) => {
       if (!isEditing || !event?.patches) {
         parentCallbacks.onChange?.(event)
         return
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rewrittenPatches = event.patches.map((p: any) => {
         const fullPath = [...cellBasePath, ...(p.path ?? [])]
         const pathStr = pathToString(fullPath)
@@ -204,11 +207,14 @@ const PortableTextCell: ComponentType<PortableTextCellProps> = ({
           member={member}
           renderInput={(inputProps) => {
             if (!isEditing) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               return renderInput({...inputProps, readOnly: true} as any)
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const schemaType = inputProps.schemaType as any
             const isPTE =
               schemaType?.jsonType === 'array' &&
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               schemaType?.of?.some((m: any) => m.name === 'block')
             return isPTE ? (
               <PortableTextInput {...(inputProps as PortableTextInputProps)} />
