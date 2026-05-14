@@ -1,14 +1,5 @@
-import {EditIcon} from '@sanity/icons'
 import {Card, Flex, Inline, Switch, Text} from '@sanity/ui'
-import React, {
-  ChangeEvent,
-  ComponentType,
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import {ChangeEvent, ComponentType, Fragment, useCallback, useMemo} from 'react'
 import {
   ArrayOfObjectsFormNode,
   ArrayOfObjectsItemMember,
@@ -21,15 +12,14 @@ import {
   OperationsAPI,
   pathToString,
 } from 'sanity'
-import {styled} from 'styled-components'
 
+import {useCellNavigation} from '../hooks/useCellNavigation'
 import {useToggleTitles} from '../hooks/useToggleTitles'
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
-import CellEdit from './CellEdit'
-import CellPreview from './CellPreview'
+import PortableTextCell from './PortableTextCell'
 import ColumnContextMenu from './ColumnContextMenu'
 import ColumnHeaderWithInput from './ColumnHeaderWithInput'
 import RowContextMenu from './RowContextMenu'
@@ -42,45 +32,6 @@ type TableProps = ObjectInputProps<RichTableType> & {
   isInDialog?: boolean
   patch: OperationsAPI['patch']
   id?: string
-}
-
-// Styled edit button for cell selection
-const EditButton = styled.button`
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 1px solid #2276fc;
-  background: white;
-  color: #2276fc;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 0;
-
-  &:hover {
-    background: #f0f6ff;
-  }
-
-  &:focus {
-    outline: 2px solid #2276fc;
-    outline-offset: 2px;
-  }
-`
-
-// Get column label (A, B, C... AA, AB, etc.)
-const getColumnLabel = (index: number): string => {
-  let label = ''
-  let i = index
-  do {
-    label = String.fromCharCode(65 + (i % 26)) + label
-    i = Math.floor(i / 26) - 1
-  } while (i >= 0)
-  return label
 }
 
 const Table: ComponentType<TableProps> = ({
@@ -137,86 +88,17 @@ const Table: ComponentType<TableProps> = ({
     path,
   )
 
-  // State for cell editing
-  const [editingCellKey, setEditingCellKey] = useState<string | null>(null)
-  const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null)
-
+  // Cell selection and keyboard navigation
   const totalRows = value?.rows?.length ?? 0
   const totalCols = value?.columnHeaders?.length ?? 0
-
-  // Parse cell key to get row and cell indices
-  const parseCellKey = useCallback((key: string | null): {row: number; col: number} | null => {
-    if (!key) return null
-    const [row, col] = key.split('-').map(Number)
-    return {row, col}
-  }, [])
-
-  // Create cell key from indices
-  const makeCellKey = useCallback((row: number, col: number): string => `${row}-${col}`, [])
-
-  // Keyboard navigation handler
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      // Escape: close editing or deselect
-      if (e.key === 'Escape') {
-        e.stopPropagation() // Prevent bubbling to parent (Sanity form navigation)
-        e.preventDefault()
-        if (editingCellKey) {
-          setEditingCellKey(null)
-        } else if (selectedCellKey) {
-          setSelectedCellKey(null)
-        }
-        return
-      }
-
-      // Don't intercept keyboard when editing - let inputs handle their own events
-      if (editingCellKey) return
-
-      // Only handle navigation when the cell Card itself is focused, not child elements
-      const target = e.target as HTMLElement
-      const cellCard = e.currentTarget as HTMLElement
-      if (target !== cellCard) return
-
-      const current = parseCellKey(selectedCellKey)
-      if (!current) return
-
-      let newRow = current.row
-      let newCol = current.col
-
-      // Arrow key navigation
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault()
-        newCol = Math.max(0, current.col - 1)
-      } else if (e.key === 'ArrowRight' || e.key === 'Tab') {
-        e.preventDefault()
-        if (current.col < totalCols - 1) {
-          newCol = current.col + 1
-        } else if (e.key === 'Tab' && current.row < totalRows - 1) {
-          // Tab wraps to next row
-          newRow = current.row + 1
-          newCol = 0
-        }
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        newRow = Math.max(0, current.row - 1)
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        newRow = Math.min(totalRows - 1, current.row + 1)
-      } else if (e.key === 'Enter') {
-        // Enter to start editing
-        e.preventDefault()
-        setEditingCellKey(selectedCellKey)
-        return
-      } else {
-        return
-      }
-
-      if (newRow !== current.row || newCol !== current.col) {
-        setSelectedCellKey(makeCellKey(newRow, newCol))
-      }
-    },
-    [editingCellKey, selectedCellKey, parseCellKey, makeCellKey, totalRows, totalCols],
-  )
+  const {
+    selectedCellKey,
+    editingCellKey,
+    setSelectedCellKey,
+    setEditingCellKey,
+    handleKeyDown,
+    getCellLabel,
+  } = useCellNavigation({totalRows, totalCols, readOnly: props.readOnly})
 
   // Get the content field member for a cell
   const getCellMember = useCallback(
@@ -241,19 +123,6 @@ const Table: ComponentType<TableProps> = ({
     },
     [getCellMember],
   )
-
-  // Get cell label (e.g., "Cell A1")
-  const getCellLabel = useCallback((rowIndex: number, cellIndex: number): string => {
-    return `Cell ${getColumnLabel(cellIndex)}${rowIndex + 1}`
-  }, [])
-
-  // Focus the selected cell when it changes (for keyboard navigation)
-  useEffect(() => {
-    if (selectedCellKey && !editingCellKey) {
-      const cell = document.querySelector(`[data-cell-key="${selectedCellKey}"]`) as HTMLElement
-      cell?.focus()
-    }
-  }, [selectedCellKey, editingCellKey])
 
   return (
     <Card padding={3} border radius={2} as="section" aria-label="Rich table">
@@ -360,35 +229,20 @@ const Table: ComponentType<TableProps> = ({
                     )}
 
                     {/* CELL CONTENT */}
-                    <Card
-                      border
-                      radius={1}
-                      padding={2}
-                      style={{
-                        minWidth: 0,
-                        minHeight: 32,
-                        maxHeight: 120,
-                        overflow: 'hidden',
-                        cursor: props.readOnly ? 'default' : 'pointer',
-                        outline: isEditing
-                          ? '2px solid #2276fc'
-                          : selectedCellKey === cellKey
-                            ? '2px solid #2276fc'
-                            : '2px solid transparent',
-                        outlineOffset: -2,
-                        transition: 'outline-color 0.15s ease',
-                        position: 'relative',
-                      }}
+                    <PortableTextCell
+                      member={contentMember}
+                      isSelected={selectedCellKey === cellKey}
+                      isEditing={isEditing}
+                      tableReadOnly={props.readOnly}
+                      cellBasePath={getCellBasePath(rowIndex, cellIndex)}
+                      patch={patch}
                       onClick={(e) => {
                         if (!props.readOnly) {
-                          // Close current editing cell when selecting a different cell
                           if (editingCellKey && editingCellKey !== cellKey) {
                             setEditingCellKey(null)
                           }
-                          // Only update selection and focus if not already editing this cell
                           if (!isEditing) {
                             setSelectedCellKey(cellKey)
-                            // Focus the cell so keyboard events work
                             ;(e.currentTarget as HTMLElement).focus()
                           }
                         }
@@ -400,58 +254,17 @@ const Table: ComponentType<TableProps> = ({
                       }}
                       onKeyDown={handleKeyDown}
                       tabIndex={selectedCellKey === cellKey || isEditing ? 0 : -1}
-                      data-cell-key={cellKey}
-                      // @ts-expect-error role prop needed for accessibility
-                      role="cell"
-                      aria-selected={selectedCellKey === cellKey}
-                      aria-label={cellLabel}
-                    >
-                      {/* Edit icon shown when selected but not editing */}
-                      {!props.readOnly && selectedCellKey === cellKey && !isEditing && (
-                        <EditButton
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setEditingCellKey(cellKey)
-                          }}
-                          aria-label="Edit cell"
-                          title="Edit cell (or press Enter)"
-                        >
-                          <EditIcon style={{width: 14, height: 14}} />
-                        </EditButton>
-                      )}
-                      {contentMember ? (
-                        isEditing ? (
-                          <CellEdit
-                            member={contentMember}
-                            cellBasePath={getCellBasePath(rowIndex, cellIndex)}
-                            patch={patch}
-                            renderInput={props.renderInput}
-                            renderField={props.renderField}
-                            renderItem={props.renderItem}
-                            renderPreview={props.renderPreview}
-                            renderBlock={props.renderBlock}
-                            renderInlineBlock={props.renderInlineBlock}
-                            renderAnnotation={props.renderAnnotation}
-                          />
-                        ) : (
-                          <CellPreview
-                            member={contentMember}
-                            renderInput={props.renderInput}
-                            renderField={props.renderField}
-                            renderItem={props.renderItem}
-                            renderPreview={props.renderPreview}
-                            renderBlock={props.renderBlock}
-                            renderInlineBlock={props.renderInlineBlock}
-                            renderAnnotation={props.renderAnnotation}
-                          />
-                        )
-                      ) : (
-                        <Text size={1} muted>
-                          —
-                        </Text>
-                      )}
-                    </Card>
+                      cellKey={cellKey}
+                      cellLabel={cellLabel}
+                      onEditClick={() => setEditingCellKey(cellKey)}
+                      renderInput={props.renderInput}
+                      renderField={props.renderField}
+                      renderItem={props.renderItem}
+                      renderPreview={props.renderPreview}
+                      renderBlock={props.renderBlock}
+                      renderInlineBlock={props.renderInlineBlock}
+                      renderAnnotation={props.renderAnnotation}
+                    />
                   </Fragment>
                 )
               }),
