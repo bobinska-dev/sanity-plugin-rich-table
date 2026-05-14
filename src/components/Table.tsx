@@ -1,5 +1,5 @@
 import {Card, Flex, Inline, Switch, Text} from '@sanity/ui'
-import {ChangeEvent, ComponentType, Fragment, useCallback, useMemo} from 'react'
+import {ChangeEvent, ComponentType, Fragment, useMemo} from 'react'
 import {
   ArrayOfObjectsFormNode,
   ArrayOfObjectsItemMember,
@@ -8,12 +8,12 @@ import {
   ObjectFormNode,
   ObjectInputProps,
   ObjectItem,
-  ObjectMember,
   OperationsAPI,
   pathToString,
 } from 'sanity'
 
 import {useCellNavigation} from '../hooks/useCellNavigation'
+import {getCellBasePath, getCellMember} from '../utils/cellUtils'
 import {useToggleTitles} from '../hooks/useToggleTitles'
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
@@ -44,7 +44,7 @@ const Table: ComponentType<TableProps> = ({
 }) => {
   const path = pathToString(props.path)
   const tableId = id ?? `rich-table-${path}`
-
+  // * Prepare members
   const tableObjectMembers = props.members as FieldMember[]
 
   const rowsFieldMember = tableObjectMembers?.find(
@@ -98,31 +98,8 @@ const Table: ComponentType<TableProps> = ({
     setEditingCellKey,
     handleKeyDown,
     getCellLabel,
+    makeCellKey,
   } = useCellNavigation({totalRows, totalCols, readOnly: props.readOnly})
-
-  // Get the content field member for a cell
-  const getCellMember = useCallback(
-    (rowIndex: number, cellIndex: number): FieldMember | undefined => {
-      const row = rowMembersWithCellMembers?.[rowIndex]
-      if (!row) return undefined
-      const cellMember = row.cellMembers?.[cellIndex]
-      if (!cellMember) return undefined
-      const cellItem = cellMember.item
-      return (cellItem.members as ObjectMember[])?.find(
-        (m): m is FieldMember => m.kind === 'field' && m.name === 'content',
-      )
-    },
-    [rowMembersWithCellMembers],
-  )
-
-  // Get cell base path (without 'content') for path rewriting
-  const getCellBasePath = useCallback(
-    (rowIndex: number, cellIndex: number): any[] => {
-      const member = getCellMember(rowIndex, cellIndex)
-      return member?.field?.path?.slice(0, -1) ?? []
-    },
-    [getCellMember],
-  )
 
   return (
     <Card padding={3} border radius={2} as="section" aria-label="Rich table">
@@ -197,8 +174,8 @@ const Table: ComponentType<TableProps> = ({
             {rowMembersWithCellMembers?.map(({rowMember, cellMembers}, rowIndex) =>
               cellMembers?.map((cellMember, cellIndex) => {
                 const cellItem = cellMember.item
-                const contentMember = getCellMember(rowIndex, cellIndex)
-                const cellKey = `${rowIndex}-${cellIndex}`
+                const contentMember = getCellMember(rowMembersWithCellMembers, rowIndex, cellIndex)
+                const cellKey = makeCellKey(rowIndex, cellIndex)
                 const cellLabel = getCellLabel(rowIndex, cellIndex)
                 const isEditing = editingCellKey === cellKey
 
@@ -234,7 +211,7 @@ const Table: ComponentType<TableProps> = ({
                       isSelected={selectedCellKey === cellKey}
                       isEditing={isEditing}
                       tableReadOnly={props.readOnly}
-                      cellBasePath={getCellBasePath(rowIndex, cellIndex)}
+                      cellBasePath={getCellBasePath(contentMember)}
                       patch={patch}
                       onClick={(e) => {
                         if (!props.readOnly) {

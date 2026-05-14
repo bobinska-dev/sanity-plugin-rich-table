@@ -1,4 +1,5 @@
-import {studioTheme, ThemeProvider} from '@sanity/ui'
+import {ThemeProvider} from '@sanity/ui'
+import {buildTheme} from '@sanity/ui/theme'
 import {render, screen} from '@testing-library/react'
 import type {ReactNode} from 'react'
 import {describe, expect, it} from 'vitest'
@@ -7,7 +8,7 @@ import renderStyle from '../../../portable-text/configs/renderer/renderStyle'
 
 // Wrapper for Sanity UI components
 const wrapper = ({children}: {children: ReactNode}) => (
-  <ThemeProvider theme={studioTheme}>{children}</ThemeProvider>
+  <ThemeProvider theme={buildTheme()}>{children}</ThemeProvider>
 )
 
 describe('renderStyle', () => {
