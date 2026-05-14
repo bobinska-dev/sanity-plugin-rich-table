@@ -1,4 +1,4 @@
-import {defineArrayMember, definePlugin} from 'sanity'
+import {definePlugin} from 'sanity'
 
 import {
   CellContentSchema,
@@ -13,7 +13,7 @@ import richTableBlock from './schemas/richTable.block'
 import richTableObject, {RichTableType} from './schemas/richTable.object'
 import rowObject, {RichTableRowType} from './schemas/row.object'
 
-export type {RichTableType, RichTableRowType, RichTableCellType, ColumnHeader}
+export type {RichTableType, RichTableRowType, RichTableCellType, ColumnHeader, CellContentSchema}
 
 interface RichTablePluginOptions {
   /**
@@ -30,10 +30,8 @@ export const richTablePlugin = definePlugin<RichTablePluginOptions>((options) =>
   if (!options?.cellContentSchema) {
     cellObject = createCellObject()
   } else if (typeof options.cellContentSchema === 'string') {
-    // String type name reference
     cellObject = createCellObjectWithTypeName(options.cellContentSchema)
   } else {
-    // Inline object schema definition
     cellObject = createCellObjectWithSchema(options.cellContentSchema)
   }
 

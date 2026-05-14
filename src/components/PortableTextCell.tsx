@@ -24,8 +24,7 @@ interface CellCardProps {
 const CellCard = styled(Card)<CellCardProps>`
   min-width: 0;
   min-height: 32px;
-  max-height: 120px;
-  overflow: hidden;
+  align-self: start;
   cursor: ${({$readOnly}) => ($readOnly ? 'default' : 'pointer')};
   outline: 2px solid
     ${({$isSelected, $isEditing}) => ($isSelected || $isEditing ? '#2276fc' : 'transparent')};
@@ -34,23 +33,30 @@ const CellCard = styled(Card)<CellCardProps>`
   position: relative;
   font-size: 0.875rem;
 
-  /* Preview mode styles (when not editing) */
+  /* Preview mode: hide toolbar */
   ${({$isEditing}) =>
     !$isEditing &&
     `
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    &::-webkit-scrollbar {
-      display: none;
-    }
     [data-testid='pt-editor__toolbar-card'] {
+      display: none !important;
+    }
+  `}
+
+  /* Read-only mode: hide resize handles */
+  ${({$readOnly}) =>
+    $readOnly &&
+    `
+    [data-resize-handle],
+    [data-testid*='resize'] {
       display: none !important;
     }
   `}
 `
 
-// Wrapper for cell content - handles pointer-events separately from CellCard
+// Wrapper for cell content - handles pointer-events and constrains height
 const CellContent = styled.div<{$isEditing: boolean}>`
+  max-height: 120px;
+  overflow: hidden;
   ${({$isEditing}) =>
     !$isEditing &&
     `
@@ -59,7 +65,19 @@ const CellContent = styled.div<{$isEditing: boolean}>`
   `}
 `
 
-export interface PortableTextCellProps {
+/** Render props passed through from ObjectInputProps to MemberField */
+export type RenderProps = Pick<
+  ObjectInputProps,
+  | 'renderInput'
+  | 'renderField'
+  | 'renderItem'
+  | 'renderPreview'
+  | 'renderBlock'
+  | 'renderInlineBlock'
+  | 'renderAnnotation'
+>
+
+export interface PortableTextCellProps extends RenderProps {
   /** Content field member - if undefined, renders empty placeholder */
   member?: FieldMember
   /** Whether this cell is currently selected */
@@ -86,14 +104,6 @@ export interface PortableTextCellProps {
   cellLabel: string
   /** Handler to trigger edit mode when edit button is clicked */
   onEditClick?: () => void
-  // Render props from ObjectInputProps
-  renderInput: ObjectInputProps['renderInput']
-  renderField: ObjectInputProps['renderField']
-  renderItem: ObjectInputProps['renderItem']
-  renderPreview: ObjectInputProps['renderPreview']
-  renderBlock: ObjectInputProps['renderBlock']
-  renderInlineBlock: ObjectInputProps['renderInlineBlock']
-  renderAnnotation: ObjectInputProps['renderAnnotation']
 }
 
 // Edit button shown when cell is selected
@@ -146,11 +156,7 @@ const PortableTextCell: ComponentType<PortableTextCellProps> = ({
   onEditClick,
   renderInput,
   renderField,
-  renderItem,
-  renderPreview,
-  renderBlock,
-  renderInlineBlock,
-  renderAnnotation,
+  ...otherRenderProps
 }) => {
   const parentCallbacks = useFormCallbacks()
 
@@ -217,11 +223,7 @@ const PortableTextCell: ComponentType<PortableTextCellProps> = ({
             }
             return renderField(fieldProps)
           }}
-          renderItem={renderItem}
-          renderPreview={renderPreview}
-          renderBlock={renderBlock}
-          renderInlineBlock={renderInlineBlock}
-          renderAnnotation={renderAnnotation}
+          {...otherRenderProps}
         />
       </CellContent>
     </>

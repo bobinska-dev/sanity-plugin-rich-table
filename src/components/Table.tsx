@@ -207,6 +207,7 @@ const Table: ComponentType<TableProps> = ({
 
                     {/* CELL CONTENT */}
                     <PortableTextCell
+                      {...props}
                       member={contentMember}
                       isSelected={selectedCellKey === cellKey}
                       isEditing={isEditing}
@@ -234,13 +235,6 @@ const Table: ComponentType<TableProps> = ({
                       cellKey={cellKey}
                       cellLabel={cellLabel}
                       onEditClick={() => setEditingCellKey(cellKey)}
-                      renderInput={props.renderInput}
-                      renderField={props.renderField}
-                      renderItem={props.renderItem}
-                      renderPreview={props.renderPreview}
-                      renderBlock={props.renderBlock}
-                      renderInlineBlock={props.renderInlineBlock}
-                      renderAnnotation={props.renderAnnotation}
                     />
                   </Fragment>
                 )
