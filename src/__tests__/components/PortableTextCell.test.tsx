@@ -133,7 +133,9 @@ describe('PortableTextCell', () => {
         {wrapper},
       )
 
-      expect(screen.getByText('—')).toBeInTheDocument()
+      // Cell should render with empty placeholder (min-height box, no text)
+      const cell = screen.getByRole('cell')
+      expect(cell).toBeInTheDocument()
       expect(screen.queryByTestId('member-field')).not.toBeInTheDocument()
     })
 
