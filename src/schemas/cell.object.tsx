@@ -12,7 +12,25 @@ export interface CellContentSchema {
 }
 
 /**
- * Create cell object with default block-only content
+ * Create original cell object using the 'content' schema type
+ */
+export function createOriginalCellObject() {
+  return defineType({
+    name: 'richTableCell',
+    title: 'Rich Table Cell',
+    type: 'object',
+    fields: [
+      defineField({
+        name: 'content',
+        title: 'Content',
+        type: 'content',
+      }),
+    ],
+  })
+}
+
+/**
+ * Create cell object with default block-only content (for experimental mode)
  */
 export function createCellObject() {
   return defineType({
@@ -67,4 +85,5 @@ export function createCellObjectWithTypeName(typeName: string) {
   })
 }
 
-export default createCellObject()
+// Default export uses original 'content' type reference
+export default createOriginalCellObject()

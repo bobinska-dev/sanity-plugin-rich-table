@@ -4,9 +4,12 @@ import {styled} from 'styled-components'
 const MINMAX_HEADER_ROW_HEIGHT = 30 // in px
 const ROW_COLUMN_WIDTH = 2 // in rem
 
-const rowTitleColumnTrack = '1fr'
+const rowTitleColumnTrack = 'minmax(80px, 0.5fr)'
 const rowContextColumnTrack = `${ROW_COLUMN_WIDTH}rem`
-/** A styled Card component that uses CSS Grid to layout its children in a grid format.
+
+/**
+ * Experimental TableGrid with updated row title column sizing.
+ * Uses minmax(80px, 0.5fr) for row titles instead of 1fr.
  */
 export default styled(Card)<{
   $columnCount: number

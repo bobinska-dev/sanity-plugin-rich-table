@@ -10,6 +10,7 @@ import {
   useSchema,
 } from 'sanity'
 
+import {getPluginConfig} from '../config'
 import {useToggleTitles} from '../hooks/useToggleTitles'
 import {RichTableType} from '../schemas/richTable.object'
 import {isRichTableArrayMemberContext} from '../utils/isRichTableArrayMemberContext'
@@ -17,11 +18,32 @@ import ConfirmClearTableDialog from './ConfirmClearTableDialog'
 import ExpandedTableDialog from './ExpandedTableDialog'
 import InitialiseTable from './InitialiseTable'
 import LoadingIndicator from './LoadingIndicator'
-import Table from './Table'
+import TableWrapper from './TableWrapper'
+
+// Helper to determine table readOnly state without nested ternary
+function getTableReadOnly({
+  experimentalPortableTextCell,
+  isInPortableText,
+  readOnly,
+}: {
+  experimentalPortableTextCell?: boolean
+  isInPortableText?: boolean
+  readOnly?: boolean
+}): boolean {
+  if (experimentalPortableTextCell) {
+    return readOnly ?? false
+  }
+  // Non-experimental: force readOnly when embedded in PortableText
+  if (isInPortableText) {
+    return true
+  }
+  return readOnly ?? false
+}
 
 const RichTableInput: ComponentType<
   ObjectInputProps<RichTableType> & {isInPortableText?: boolean}
 > = (props) => {
+  const {experimentalPortableTextCell} = getPluginConfig()
   const _id = useFormValue(['_id']) as string
   const _type = useFormValue(['_type']) as string
   const schema = useSchema()
@@ -42,19 +64,16 @@ const RichTableInput: ComponentType<
       }),
     [_type, props.isInPortableText, props.path, props.schemaType.name, schema],
   )
-
   // table ID
   const tableId = `table-${props.id}`
 
   // * Debug mode
   const [debug, setDebug] = useState(false)
   const handleDebugChange = useCallback(() => setDebug(!debug), [debug])
-
   // * Expand table dialog
   const [openDialog, setOpenDialog] = useState(false)
   const handleOpen = useCallback(() => setOpenDialog(true), [])
   const handleClose = useCallback(() => setOpenDialog(false), [])
-
   // * Confirm clear table dialog
   const [openConfirmClearDialog, setOpenConfirmClearDialog] = useState(false)
   const handleOpenConfirmClearDialog = useCallback(() => setOpenConfirmClearDialog(true), [])
@@ -69,8 +88,8 @@ const RichTableInput: ComponentType<
   )
 
   return (
-    <Stack space={4} as="section" aria-label="Rich table input">
-      <Suspense fallback={<LoadingIndicator />} name="RichTableInput Suspense">
+    <Stack space={4} as={'section'} aria-label={'Rich table input'}>
+      <Suspense fallback={<LoadingIndicator />} name={'RichTableInput Suspense'}>
         {!props.value?.rows && (
           <InitialiseTable
             patch={patch}
@@ -82,12 +101,11 @@ const RichTableInput: ComponentType<
             schemaTypeName={props.schemaType.name}
           />
         )}
-
         {props.value && props.value.rows && (
           <>
             <Box>
               {/* EXPAND TABLE BUTTON */}
-              <Flex justify="flex-end" gap={4}>
+              <Flex justify={'flex-end'} gap={4}>
                 <Tooltip
                   content={
                     <Box>
@@ -99,17 +117,16 @@ const RichTableInput: ComponentType<
                   <Button
                     iconRight={ResetIcon}
                     onClick={handleOpenConfirmClearDialog}
-                    mode="bleed"
+                    mode={'bleed'}
                     fontSize={0}
-                    text="Clear table"
+                    text={'Clear table'}
                     muted
                     disabled={props.readOnly}
-                    aria-label="Clear table"
+                    aria-label={'Clear table'}
                     aria-controls={tableId}
                     type="button"
                   />
                 </Tooltip>
-
                 <Tooltip
                   content={
                     <Box>
@@ -121,12 +138,20 @@ const RichTableInput: ComponentType<
                   <Button
                     iconRight={ExpandIcon}
                     onClick={handleOpen}
-                    mode="bleed"
+                    mode={'bleed'}
                     fontSize={0}
-                    text="Expand table"
+                    text={
+                      props.isInPortableText && !props.readOnly && !experimentalPortableTextCell
+                        ? 'Open table to edit'
+                        : 'Expand table'
+                    }
                     muted
                     disabled={props.readOnly}
-                    aria-label="Expand table"
+                    aria-label={
+                      props.isInPortableText && !props.readOnly && !experimentalPortableTextCell
+                        ? 'Open table to edit'
+                        : 'Expand table'
+                    }
                     aria-haspopup="dialog"
                     aria-expanded={openDialog}
                     aria-controls={tableId}
@@ -134,23 +159,34 @@ const RichTableInput: ComponentType<
                   />
                 </Tooltip>
               </Flex>
-              <Table
+
+              <TableWrapper
                 {...props}
                 isInDialog={false}
+                handleOpen={handleOpen}
                 patch={patch}
-                // remove the key that flips on dialog open/close
-                readOnly={props.readOnly} // don’t force true unless you intend to
+                isInPortableText={props.isInPortableText}
+                // Force remount on dialog open/close only in non-experimental mode
+                key={
+                  !experimentalPortableTextCell && openDialog
+                    ? 'table-in-dialog-open'
+                    : 'table-in-dialog-closed'
+                }
+                // In experimental mode, allow editing directly; in non-experimental, force readOnly when in PortableText
+                readOnly={getTableReadOnly({
+                  experimentalPortableTextCell,
+                  isInPortableText: props.isInPortableText,
+                  readOnly: props.readOnly,
+                })}
                 id={tableId}
               />
             </Box>
-
             {openDialog && (
               <ExpandedTableDialog {...props} isInDialog handleClose={handleClose} patch={patch} />
             )}
           </>
         )}
       </Suspense>
-
       {openConfirmClearDialog && (
         <ConfirmClearTableDialog
           open={openConfirmClearDialog}
@@ -160,24 +196,22 @@ const RichTableInput: ComponentType<
           readOnly={props.readOnly}
         />
       )}
-
-      {/* DEBUG SWITCH */}
-      <Flex justify="space-between" align="center" gap={2} key={`debug-switch-${openDialog}`}>
+      {/* DEBUG SWITCH*/}
+      <Flex justify={'space-between'} align={'center'} gap={2} key={`debug-switch-${openDialog}`}>
         <Inline space={2}>
           <Switch
             checked={debug}
             onChange={handleDebugChange}
-            label="Open field to debug"
-            id="debug-toggle"
+            label={'Open field to debug'}
+            id={'debug-toggle'}
           />
-          <Text as="label" htmlFor="debug-toggle" size={0} muted>
+          <Text as={'label'} htmlFor={'debug-toggle'} size={0} muted>
             Debug mode
           </Text>
         </Inline>
-
-        <Flex gap={3} justify="flex-end" align="center">
+        <Flex gap={3} justify={'flex-end'} align={'center'}>
           <Inline space={2}>
-            <Text as="label" htmlFor="row-title-toggle" size={0} muted>
+            <Text as={'label'} htmlFor={'row-title-toggle'} size={0} muted>
               Show row titles
             </Text>
             <Switch
@@ -187,13 +221,12 @@ const RichTableInput: ComponentType<
                 toggleRowTitles(e.currentTarget.checked)
               }
               disabled={props.readOnly}
-              label="Show row titles"
-              id="row-title-toggle"
+              label={'Show row titles'}
+              id={'row-title-toggle'}
             />
           </Inline>
-
           <Inline space={2}>
-            <Text as="label" htmlFor="column-title-toggle" size={0} muted>
+            <Text as={'label'} htmlFor={'column-title-toggle'} size={0} muted>
               Show column titles
             </Text>
             <Switch
@@ -202,16 +235,16 @@ const RichTableInput: ComponentType<
                 toggleColumnTitles(e.currentTarget.checked)
               }
               disabled={props.readOnly}
-              label="Show column titles"
-              id="column-title-toggle"
+              label={'Show column titles'}
+              id={'column-title-toggle'}
             />
           </Inline>
         </Flex>
       </Flex>
-
-      {debug && props.renderDefault(props)}
+      {debug &&
+        // Default inputs (rows, columnHeaders)
+        props.renderDefault(props)}
     </Stack>
   )
 }
-
 export default RichTableInput

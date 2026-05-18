@@ -1,5 +1,5 @@
 import {Card, Flex, Inline, Switch, Text} from '@sanity/ui'
-import {ChangeEvent, ComponentType, Fragment} from 'react'
+import {ChangeEvent, ComponentType, Fragment, useMemo} from 'react'
 import {
   ArrayOfObjectsFormNode,
   ArrayOfObjectsItemMember,
@@ -12,32 +12,37 @@ import {
   pathToString,
 } from 'sanity'
 
+import {useCellNavigation} from '../hooks/useCellNavigation'
 import {useToggleTitles} from '../hooks/useToggleTitles'
-import ContentPortableTextInput from '../portable-text/ContentPortableTextEditor'
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
+import {getCellBasePath, getCellMember} from '../utils/cellUtils'
 import ColumnContextMenu from './ColumnContextMenu'
 import ColumnHeaderWithInput from './ColumnHeaderWithInput'
+import PortableTextCell from './PortableTextCell'
 import RowContextMenu from './RowContextMenu'
 import RowHeaderWithInput from './RowHeaderWithInput'
 import TableButtons from './TableButtons'
 import TableGridWrapper from './TableGridWrapper'
 import TableScrollWrapper from './TableScrollWrapper'
 
-// TODO: make row title / context menu sticky to the left side when scrolling horizontally?
-const Table: ComponentType<
-  ObjectInputProps<RichTableType> & {
-    handleOpen?: () => void
-    isInDialog?: boolean
-    isInPortableText?: boolean
-    /** Patch function from Sanity document operations for optimistic changes */
-    patch: OperationsAPI['patch']
-    id?: string
-  }
-> = ({isInDialog = false, handleOpen, value, onChange, patch, isInPortableText, id, ...props}) => {
-  // * Prepare the path
+type TableProps = ObjectInputProps<RichTableType> & {
+  isInDialog?: boolean
+  patch: OperationsAPI['patch']
+  id?: string
+}
+
+const Table: ComponentType<TableProps> = ({
+  isInDialog = false,
+  value,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onChange: _onChange,
+  patch,
+  id,
+  ...props
+}) => {
   const path = pathToString(props.path)
   const tableId = id ?? `rich-table-${path}`
   // * Prepare members
@@ -47,20 +52,28 @@ const Table: ComponentType<
     (member) => member.name === 'rows',
   ) as FieldMember<ArrayOfObjectsFormNode<Array<RichTableRowType>>>
 
-  const rowMembersWithCellMembers = rowsFieldMember?.field.members.map((rowI) => {
-    const row = rowI as ArrayOfObjectsItemMember<ObjectArrayFormNode<RichTableRowType>>
-    const rowItem = row.item
-    const rowItemObjectMembers = rowItem.members as FieldMember<
-      ObjectFormNode<Array<RichTableCellType>>
-    >[]
-    const cellsFieldMember = rowItemObjectMembers?.find((member) => member.name === 'cells')?.field
-    return {
-      rowMember: row,
-      cellMembers: cellsFieldMember?.members as
-        | ArrayOfObjectsItemMember<ObjectArrayFormNode<RichTableCellType>>[]
-        | undefined,
-    }
-  })
+  const rowFieldMembers = rowsFieldMember?.field.members
+
+  const rowMembersWithCellMembers = useMemo(
+    () =>
+      rowFieldMembers?.map((rowI) => {
+        const row = rowI as ArrayOfObjectsItemMember<ObjectArrayFormNode<RichTableRowType>>
+        const rowItem = row.item
+        const rowItemObjectMembers = rowItem.members as FieldMember<
+          ObjectFormNode<Array<RichTableCellType>>
+        >[]
+        const cellsFieldMember = rowItemObjectMembers?.find(
+          (member) => member.name === 'cells',
+        )?.field
+        return {
+          rowMember: row,
+          cellMembers: cellsFieldMember?.members as
+            | ArrayOfObjectsItemMember<ObjectArrayFormNode<RichTableCellType>>[]
+            | undefined,
+        }
+      }),
+    [rowFieldMembers],
+  )
 
   const columnHeaderFieldMember = tableObjectMembers?.find(
     (member) => member.name === 'columnHeaders',
@@ -78,15 +91,31 @@ const Table: ComponentType<
     path,
   )
 
+  // Cell selection and keyboard navigation
+  const totalRows = value?.rows?.length ?? 0
+  const totalCols = value?.columnHeaders?.length ?? 0
+  const {
+    selectedCellKey,
+    editingCellKey,
+    setSelectedCellKey,
+    setEditingCellKey,
+    handleKeyDown,
+    getCellLabel,
+    makeCellKey,
+  } = useCellNavigation({totalRows, totalCols, readOnly: props.readOnly})
+
   return (
-    <Card
-      padding={3}
-      border
-      radius={2}
-      onDoubleClick={() => (isInPortableText && handleOpen?.() ? handleOpen() : undefined)}
-      as="section"
-      aria-label="Rich table"
-    >
+    <Card padding={3} border radius={2} as="section" aria-label="Rich table">
+      {/* Info hint for editing */}
+      {!props.readOnly && !editingCellKey && (
+        <Flex paddingBottom={2}>
+          <Text size={0} muted>
+            Click to select, double-click or Enter to edit. Arrow keys to navigate, Escape to
+            deselect.
+          </Text>
+        </Flex>
+      )}
+
       <TableButtons
         path={path}
         value={value!}
@@ -98,7 +127,6 @@ const Table: ComponentType<
           <TableGridWrapper
             id={tableId}
             $rowCount={value?.rows?.length || 0}
-            // we need to add one extra column for the row titles / context menu
             $columnCount={value?.columnHeaders?.length ? value?.columnHeaders?.length + 1 : 0}
             $isInDialog={false}
             $hasRowTitles={hasRowTitles}
@@ -110,7 +138,6 @@ const Table: ComponentType<
             {/* HEADER ROW */}
             {columnHeaderMembers?.map((colHeaderMember, columnIndex) => {
               const colHeaderItem = colHeaderMember.item.value
-              // TODO: force remount when columnHeader value has changed in dialog but not in inline table input -> this is maybe caused by missing blur event in the input👇
               return (
                 <Fragment key={colHeaderItem._key}>
                   {hasColumnTitles && (
@@ -150,12 +177,14 @@ const Table: ComponentType<
             {rowMembersWithCellMembers?.map(({rowMember, cellMembers}, rowIndex) =>
               cellMembers?.map((cellMember, cellIndex) => {
                 const cellItem = cellMember.item
-                const cellPTEPath = cellItem.path.concat('content')
-                const cellValue = value?.rows?.[rowIndex]?.cells?.[cellIndex]?.content
+                const contentMember = getCellMember(rowMembersWithCellMembers, rowIndex, cellIndex)
+                const cellKey = makeCellKey(rowIndex, cellIndex)
+                const cellLabel = getCellLabel(rowIndex, cellIndex)
+                const isEditing = editingCellKey === cellKey
 
                 return (
                   <Fragment key={cellItem.id}>
-                    {/* CONTEXT MENU BUTTON */}
+                    {/* ROW HEADER / CONTEXT MENU (first column) */}
                     {cellIndex === 0 && hasRowTitles && (
                       <RowHeaderWithInput
                         row={rowMember.item.value}
@@ -178,15 +207,37 @@ const Table: ComponentType<
                         role="rowheader"
                       />
                     )}
-                    {/* PTE CELL CONTENT */}
-                    <ContentPortableTextInput
-                      onChange={onChange}
-                      path={cellPTEPath}
-                      value={cellValue}
-                      key={cellItem.id}
-                      readOnly={props.readOnly}
-                      // @ts-expect-error role prop not in type but needed for accessibility
-                      role="cell"
+
+                    {/* CELL CONTENT */}
+                    <PortableTextCell
+                      {...props}
+                      member={contentMember}
+                      isSelected={selectedCellKey === cellKey}
+                      isEditing={isEditing}
+                      tableReadOnly={props.readOnly}
+                      cellBasePath={getCellBasePath(contentMember)}
+                      patch={patch}
+                      onClick={(e) => {
+                        if (!props.readOnly) {
+                          if (editingCellKey && editingCellKey !== cellKey) {
+                            setEditingCellKey(null)
+                          }
+                          if (!isEditing) {
+                            setSelectedCellKey(cellKey)
+                            ;(e.currentTarget as HTMLElement).focus()
+                          }
+                        }
+                      }}
+                      onDoubleClick={() => {
+                        if (!props.readOnly) {
+                          setEditingCellKey(cellKey)
+                        }
+                      }}
+                      onKeyDown={handleKeyDown}
+                      tabIndex={selectedCellKey === cellKey || isEditing ? 0 : -1}
+                      cellKey={cellKey}
+                      cellLabel={cellLabel}
+                      onEditClick={() => setEditingCellKey(cellKey)}
                     />
                   </Fragment>
                 )
@@ -195,6 +246,7 @@ const Table: ComponentType<
           </TableGridWrapper>
         </TableScrollWrapper>
       </TableButtons>
+
       {isInDialog && (
         <Flex gap={3} justify={'flex-end'} align={'center'} paddingTop={3}>
           <Inline space={2}>
@@ -229,4 +281,5 @@ const Table: ComponentType<
     </Card>
   )
 }
+
 export default Table

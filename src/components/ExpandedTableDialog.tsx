@@ -3,7 +3,7 @@ import {ComponentType} from 'react'
 import {ObjectInputProps, OperationsAPI, pathToString} from 'sanity'
 
 import {RichTableType} from '../schemas/richTable.object'
-import Table from './Table'
+import TableWrapper from './TableWrapper'
 
 const ExpandedTableDialog: ComponentType<
   ObjectInputProps<RichTableType> & {
@@ -44,7 +44,7 @@ const ExpandedTableDialog: ComponentType<
         </Text>
       </Box>
       <Flex padding={3} justify={'center'}>
-        <Table {...props} isInDialog patch={patch} value={value} onChange={onChange} />
+        <TableWrapper {...props} isInDialog patch={patch} value={value} onChange={onChange} />
       </Flex>
     </Dialog>
   )

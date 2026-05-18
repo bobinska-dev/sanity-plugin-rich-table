@@ -1,10 +1,12 @@
 import {definePlugin} from 'sanity'
 
+import {setPluginConfig} from './config'
 import {
   CellContentSchema,
   createCellObject,
   createCellObjectWithSchema,
   createCellObjectWithTypeName,
+  createOriginalCellObject,
   RichTableCellType,
 } from './schemas/cell.object'
 import columnHeaderObject, {ColumnHeader} from './schemas/columnHeader.object'
@@ -22,17 +24,31 @@ interface RichTablePluginOptions {
    * - An object with { type: 'array', of: [...] } for inline definition
    */
   cellContentSchema?: string | CellContentSchema
+  /** Enable experimental PortableTextCell component */
+  experimentalPortableTextCell?: boolean
 }
 
 export const richTablePlugin = definePlugin<RichTablePluginOptions>((options) => {
-  // Create the cell object based on the schema option type
+  const experimentalPortableTextCell = options?.experimentalPortableTextCell ?? false
+
+  // Set plugin config for use in components
+  setPluginConfig({experimentalPortableTextCell})
+
+  // Create the cell object based on options
   let cellObject
-  if (!options?.cellContentSchema) {
+  if (options?.cellContentSchema) {
+    // Custom schema provided - use factory functions
+    if (typeof options.cellContentSchema === 'string') {
+      cellObject = createCellObjectWithTypeName(options.cellContentSchema)
+    } else {
+      cellObject = createCellObjectWithSchema(options.cellContentSchema)
+    }
+  } else if (experimentalPortableTextCell) {
+    // Experimental mode - use inline array definition
     cellObject = createCellObject()
-  } else if (typeof options.cellContentSchema === 'string') {
-    cellObject = createCellObjectWithTypeName(options.cellContentSchema)
   } else {
-    cellObject = createCellObjectWithSchema(options.cellContentSchema)
+    // Default - use original 'content' type reference
+    cellObject = createOriginalCellObject()
   }
 
   return {
