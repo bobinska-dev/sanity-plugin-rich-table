@@ -1,5 +1,5 @@
 import {EditIcon} from '@sanity/icons'
-import {Card, Text} from '@sanity/ui'
+import {Box, Card} from '@sanity/ui'
 import type {ComponentType, KeyboardEvent, MouseEvent} from 'react'
 import {
   FieldMember,
@@ -140,6 +140,22 @@ const EditButton = styled.button`
  * Unified cell component that handles both container styling and content rendering.
  * - isEditing=false: Non-interactive preview with hidden toolbar/scrollbars
  * - isEditing=true: Full editing with FormCallbacksProvider for path rewriting
+ *
+ * ## Path Rewriting Architecture
+ *
+ * When editing a cell, Sanity's form components emit patches with paths relative to
+ * the cell's content field (e.g., `[0, 'children', 0, 'text']`). However, these patches
+ * need to target the actual document location (e.g., `rows[0].cells[2].content[0].children[0].text`).
+ *
+ * We solve this by:
+ * 1. Wrapping the editing cell in a `FormCallbacksProvider` with custom `onChange`
+ * 2. Intercepting patch events and prepending `cellBasePath` to each patch's path
+ * 3. Executing the rewritten patches directly via `patch.execute()`
+ *
+ * This approach is performant because:
+ * - Only ONE cell can be in edit mode at a time (controlled by `editingCellKey` in TableV2)
+ * - Non-editing cells return the wrapper directly without any provider
+ * - No unnecessary re-renders of other cells when one cell is edited
  */
 const PortableTextCell: ComponentType<PortableTextCellProps> = ({
   member,
@@ -161,19 +177,38 @@ const PortableTextCell: ComponentType<PortableTextCellProps> = ({
 }) => {
   const parentCallbacks = useFormCallbacks()
 
-  // Patched callbacks for edit mode - rewrites paths for correct document location
+  /**
+   * Patched callbacks for edit mode - rewrites paths for correct document location.
+   *
+   * When Sanity form components emit changes, they use paths relative to their
+   * local context. For a cell's content, a patch might look like:
+   *   { type: 'set', path: [0, 'children', 0, 'text'], value: 'Hello' }
+   *
+   * But the document expects the full path:
+   *   rows[0].cells[2].content[0].children[0].text
+   *
+   * We intercept onChange, prepend cellBasePath to each patch's path, and
+   * execute via patch.execute() to apply at the correct document location.
+   */
   const patchedCallbacks = {
     ...parentCallbacks,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onChange: (event: any) => {
+      // Pass through if not editing or no patches to rewrite
       if (!isEditing || !event?.patches) {
         parentCallbacks.onChange?.(event)
         return
       }
+
+      // Rewrite each patch's path by prepending the cell's base path
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rewrittenPatches = event.patches.map((p: any) => {
+        // Combine cell base path with the patch's relative path
+        // e.g., ['rows', 0, 'cells', 2, 'content'] + [0, 'children', 0, 'text']
         const fullPath = [...cellBasePath, ...(p.path ?? [])]
         const pathStr = pathToString(fullPath)
+
+        // Convert Sanity patch format to operations API format
         if (p.type === 'set') return {set: {[pathStr]: p.value}}
         if (p.type === 'setIfMissing') return {setIfMissing: {[pathStr]: p.value}}
         if (p.type === 'unset') return {unset: [pathStr]}
@@ -181,6 +216,8 @@ const PortableTextCell: ComponentType<PortableTextCellProps> = ({
         if (p.type === 'diffMatchPatch') return {diffMatchPatch: {[pathStr]: p.value}}
         return p
       })
+
+      // Execute patches directly on the document
       patch?.execute(rewrittenPatches)
     },
   }
@@ -234,9 +271,8 @@ const PortableTextCell: ComponentType<PortableTextCellProps> = ({
       </CellContent>
     </>
   ) : (
-    <Text size={1} muted>
-      —
-    </Text>
+    // Empty cell placeholder - show nothing, min-height ensures cell is clickable
+    <Box style={{minHeight: 24}} />
   )
 
   const wrapper = (
@@ -260,7 +296,14 @@ const PortableTextCell: ComponentType<PortableTextCellProps> = ({
     </CellCard>
   )
 
-  // Only wrap with FormCallbacksProvider in edit mode
+  /**
+   * Only wrap with FormCallbacksProvider when in edit mode.
+   *
+   * This is a performance optimization:
+   * - Non-editing cells render just the wrapper (no provider overhead)
+   * - Only the single editing cell gets the FormCallbacksProvider
+   * - Since only one cell can edit at a time, we never have multiple providers
+   */
   if (!isEditing) {
     return wrapper
   }

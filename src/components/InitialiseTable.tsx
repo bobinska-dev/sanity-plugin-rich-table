@@ -82,22 +82,25 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
         ]),
       )
 
-      // Prepare the initial table value
-      // Cells per row
-      const cells: RichTableCellType[] = Array.from({length: cols ?? 1}, () => {
-        return {
-          _type: 'richTableCell',
-          _key: generateKey(),
-          content: [
-            {_type: 'block', markDefs: [], children: [{_type: 'span', text: '', marks: []}]},
-          ] as unknown as PortableTextBlock[],
-        }
+      // Helper to create a new cell with unique keys
+      const createCell = (): RichTableCellType => ({
+        _type: 'richTableCell',
+        _key: generateKey(),
+        content: [
+          {
+            _type: 'block',
+            _key: generateKey(),
+            markDefs: [],
+            children: [{_type: 'span', text: '', marks: []}],
+          },
+        ] as unknown as PortableTextBlock[],
       })
-      // New rows
+
+      // New rows - each row gets its own unique cells array
       const rows: RichTableRowType[] = Array.from({length: rowCount ?? 1}, () => ({
         _type: 'row',
-        cells: cells,
         _key: generateKey(),
+        cells: Array.from({length: cols ?? 1}, createCell),
       }))
 
       // New column header item (title uses current header count when available)

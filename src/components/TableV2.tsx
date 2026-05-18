@@ -45,6 +45,7 @@ const Table: ComponentType<TableProps> = ({
 }) => {
   const path = pathToString(props.path)
   const tableId = id ?? `rich-table-${path}`
+
   // * Prepare members
   const tableObjectMembers = props.members as FieldMember[]
 

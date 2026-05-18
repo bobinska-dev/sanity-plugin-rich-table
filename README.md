@@ -30,10 +30,10 @@ Please be aware, that this plugin is still growing - so while this first version
 
 ## Compatibility
 
-| Plugin version | Sanity | React | Node   |
-| -------------- | ------ | ----- | ------ |
-| **≥ 1.1.0**   | **5.x** (≥ 5.11.0) | 19    | ≥ 18   |
-| 1.0.5          | 3.x / 4.x / 5.x (< 5.13) | 18–19 | ≥ 18   |
+| Plugin version | Sanity                   | React | Node |
+| -------------- | ------------------------ | ----- | ---- |
+| **≥ 1.1.0**    | **5.x** (≥ 5.11.0)       | 19    | ≥ 18 |
+| 1.0.5          | 3.x / 4.x / 5.x (< 5.13) | 18–19 | ≥ 18 |
 
 > **Why the change?** Starting with Sanity **5.13.0**, the internal `@portabletext/sanity-bridge` package was upgraded to v3, which requires `@portabletext/editor` v6 and `@portabletext/toolbar` v7. These packages in turn require **React 19**. Plugin versions **≥ 1.1.0** ship the updated `@portabletext/*` stack so that studio builds (`sanity build`, `sanity deploy`, etc.) work correctly.
 >
@@ -90,6 +90,59 @@ defineArrayMember({
 })
 ```
 
+## Plugin Options
+
+The `richTablePlugin` accepts the following options:
+
+```ts
+richTablePlugin({
+  experimentalPortableTextCell?: boolean,
+  cellContentSchema?: string | CellContentSchema,
+})
+```
+
+### `experimentalPortableTextCell`
+
+Enable the new inline Portable Text cell editing experience. When enabled:
+
+- Cells can be edited directly in the table grid (no dialog required)
+- Uses the updated `@portabletext/editor` v6+ component
+- Provides a more seamless editing experience
+
+```ts
+richTablePlugin({
+  experimentalPortableTextCell: true,
+})
+```
+
+**Default behavior:** When `false` (default), the original behavior is used where clicking a cell opens an expanded dialog for editing. This maintains backwards compatibility with existing installations.
+
+### `cellContentSchema`
+
+Customize the cell content schema. Can be:
+
+- A **string** referencing an existing schema type name
+- An **object** with inline schema definition
+
+```ts
+// Using an existing schema type
+richTablePlugin({
+  experimentalPortableTextCell: true,
+  cellContentSchema: 'myBlockContent',
+})
+
+// Using inline schema definition
+richTablePlugin({
+  experimentalPortableTextCell: true,
+  cellContentSchema: {
+    type: 'array',
+    of: [{type: 'block'}, {type: 'image'}],
+  },
+})
+```
+
+> **Important:** When using `cellContentSchema`, you must also set `experimentalPortableTextCell: true`. The plugin will log a warning if `cellContentSchema` is provided without the experimental flag.
+
 ## Render tables
 
 Read more about rendering rich tables in your frontend application in the [Render tables](./docs/README.md#render-tables) guide.
@@ -125,7 +178,6 @@ with default configuration for build & watch scripts.
 
 See [Testing a plugin in Sanity Studio](https://github.com/sanity-io/plugin-kit#testing-a-plugin-in-sanity-studio)
 on how to run this plugin with hotreload in the studio.
-
 
 ### Running tests
 

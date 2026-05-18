@@ -31,6 +31,13 @@ interface RichTablePluginOptions {
 export const richTablePlugin = definePlugin<RichTablePluginOptions>((options) => {
   const experimentalPortableTextCell = options?.experimentalPortableTextCell ?? false
 
+  // Warn if cellContentSchema is provided without experimentalPortableTextCell
+  if (options?.cellContentSchema && !experimentalPortableTextCell) {
+    console.warn(
+      '[sanity-plugin-rich-table] cellContentSchema requires experimentalPortableTextCell: true to work correctly.',
+    )
+  }
+
   // Set plugin config for use in components
   setPluginConfig({experimentalPortableTextCell})
 
