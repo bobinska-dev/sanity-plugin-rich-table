@@ -94,13 +94,13 @@ const Table: ComponentType<
         readOnly={props.readOnly}
         tableId={tableId}
       >
-        <TableScrollWrapper>
+        <TableScrollWrapper $isInDialog={isInDialog}>
           <TableGridWrapper
             id={tableId}
             $rowCount={value?.rows?.length || 0}
             // we need to add one extra column for the row titles / context menu
             $columnCount={value?.columnHeaders?.length ? value?.columnHeaders?.length + 1 : 0}
-            $isInDialog={false}
+            $isInDialog={isInDialog}
             $hasRowTitles={hasRowTitles}
             role="table"
           >

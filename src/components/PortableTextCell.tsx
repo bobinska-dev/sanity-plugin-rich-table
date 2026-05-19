@@ -1,6 +1,6 @@
 import {EditIcon} from '@sanity/icons'
 import {Box, Card} from '@sanity/ui'
-import type {ComponentType, KeyboardEvent, MouseEvent} from 'react'
+import {ComponentType, KeyboardEvent, MouseEvent, useEffect} from 'react'
 import {
   FieldMember,
   FormCallbacksProvider,
@@ -25,7 +25,7 @@ interface CellCardProps {
 const CellCard = styled(Card)<CellCardProps>`
   min-width: 0;
   min-height: 32px;
-  align-self: start;
+  align-self: stretch; /* Let cells grow to match row height */
   cursor: ${({$readOnly}) => ($readOnly ? 'default' : 'pointer')};
   outline: 2px solid
     ${({$isSelected, $isEditing}) => ($isSelected || $isEditing ? '#2276fc' : 'transparent')};
@@ -56,8 +56,8 @@ const CellCard = styled(Card)<CellCardProps>`
 
 // Wrapper for cell content - handles pointer-events and constrains height
 const CellContent = styled.div<{$isEditing: boolean}>`
-  max-height: 120px;
-  overflow: hidden;
+  max-height: ${({$isEditing}) => ($isEditing ? 'none' : '120px')};
+  overflow: ${({$isEditing}) => ($isEditing ? 'visible' : 'hidden')};
   ${({$isEditing}) =>
     !$isEditing &&
     `
@@ -105,6 +105,8 @@ export interface PortableTextCellProps extends RenderProps {
   cellLabel: string
   /** Handler to trigger edit mode when edit button is clicked */
   onEditClick?: () => void
+  /** Handler to exit edit mode (called on Escape key) */
+  onExitEdit?: () => void
 }
 
 // Edit button shown when cell is selected
@@ -171,11 +173,31 @@ const PortableTextCell: ComponentType<PortableTextCellProps> = ({
   cellKey,
   cellLabel,
   onEditClick,
+  onExitEdit,
   renderInput,
   renderField,
   ...otherRenderProps
 }) => {
   const parentCallbacks = useFormCallbacks()
+
+  // Global Escape key handler for exiting edit mode
+  // This catches Escape even when focus is inside the PTE
+  useEffect(() => {
+    if (!isEditing || !onExitEdit) return undefined
+
+    // eslint-disable-next-line no-undef
+    const handleEscape = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        onExitEdit()
+      }
+    }
+
+    // Use capture phase to intercept before PTE handles it
+    document.addEventListener('keydown', handleEscape, true)
+    return () => document.removeEventListener('keydown', handleEscape, true)
+  }, [isEditing, onExitEdit])
 
   /**
    * Patched callbacks for edit mode - rewrites paths for correct document location.

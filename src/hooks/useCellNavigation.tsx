@@ -94,10 +94,14 @@ export function useCellNavigation({
       // Don't intercept keyboard when editing - let inputs handle their own events
       if (editingCellKey) return
 
-      // Only handle navigation when the cell Card itself is focused, not child elements
-      const target = e.target as HTMLElement
+      // Only handle navigation when the cell is selected
+      // e.currentTarget is the cell card (where onKeyDown is attached)
+      // e.target may be a child element but we still want navigation to work
       const cellCard = e.currentTarget as HTMLElement
-      if (target !== cellCard) return
+
+      // If event comes from inside the cell (currentTarget contains target), allow navigation
+      // This supports cells within dialogs where focus may be on inner elements
+      if (!cellCard.contains(e.target as HTMLElement)) return
 
       const current = parseCellKey(selectedCellKey)
       if (!current) return
@@ -108,9 +112,11 @@ export function useCellNavigation({
       // Arrow key navigation
       if (e.key === 'ArrowLeft') {
         e.preventDefault()
+        e.stopPropagation() // Prevent Dialog from intercepting
         newCol = Math.max(0, current.col - 1)
       } else if (e.key === 'ArrowRight' || e.key === 'Tab') {
         e.preventDefault()
+        e.stopPropagation() // Prevent Dialog from intercepting
         if (current.col < totalCols - 1) {
           newCol = current.col + 1
         } else if (e.key === 'Tab' && current.row < totalRows - 1) {
@@ -120,9 +126,11 @@ export function useCellNavigation({
         }
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
+        e.stopPropagation() // Prevent Dialog from intercepting
         newRow = Math.max(0, current.row - 1)
       } else if (e.key === 'ArrowDown') {
         e.preventDefault()
+        e.stopPropagation() // Prevent Dialog from intercepting
         newRow = Math.min(totalRows - 1, current.row + 1)
       } else if (e.key === 'Enter') {
         // Enter to start editing

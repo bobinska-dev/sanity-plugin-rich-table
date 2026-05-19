@@ -124,12 +124,12 @@ const Table: ComponentType<TableProps> = ({
         readOnly={props.readOnly}
         tableId={tableId}
       >
-        <TableScrollWrapper>
+        <TableScrollWrapper $isInDialog={isInDialog}>
           <TableGridWrapper
             id={tableId}
             $rowCount={value?.rows?.length || 0}
             $columnCount={value?.columnHeaders?.length ? value?.columnHeaders?.length + 1 : 0}
-            $isInDialog={false}
+            $isInDialog={isInDialog}
             $hasRowTitles={hasRowTitles}
             role="table"
           >
@@ -239,6 +239,7 @@ const Table: ComponentType<TableProps> = ({
                       cellKey={cellKey}
                       cellLabel={cellLabel}
                       onEditClick={() => setEditingCellKey(cellKey)}
+                      onExitEdit={() => setEditingCellKey(null)}
                     />
                   </Fragment>
                 )

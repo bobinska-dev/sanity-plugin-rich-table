@@ -9,6 +9,7 @@ import {
   useFormValue,
   useSchema,
 } from 'sanity'
+import {createGlobalStyle} from 'styled-components'
 
 import {getPluginConfig} from '../config'
 import {useToggleTitles} from '../hooks/useToggleTitles'
@@ -19,6 +20,18 @@ import ExpandedTableDialog from './ExpandedTableDialog'
 import InitialiseTable from './InitialiseTable'
 import LoadingIndicator from './LoadingIndicator'
 import TableWrapper from './TableWrapper'
+
+/**
+ * Global styles to fix CollapseMenu popover being hidden in dialogs.
+ * Sanity's expanded editor dialog incorrectly sets hidden attribute on the menu popover.
+ * We only show the popover when it has inline styles indicating it should be visible.
+ */
+const GlobalMenuFix = createGlobalStyle`
+  /* Only show the popover when it has positioning styles (meaning it was calculated to show) */
+  [data-ui='MenuButton__popover'][hidden][style*='left:'] {
+    display: block !important;
+  }
+`
 
 // Helper to determine table readOnly state without nested ternary
 function getTableReadOnly({
@@ -89,6 +102,7 @@ const RichTableInput: ComponentType<
 
   return (
     <Stack space={4} as={'section'} aria-label={'Rich table input'}>
+      <GlobalMenuFix />
       <Suspense fallback={<LoadingIndicator />} name={'RichTableInput Suspense'}>
         {!props.value?.rows && (
           <InitialiseTable
@@ -104,7 +118,7 @@ const RichTableInput: ComponentType<
         {props.value && props.value.rows && (
           <>
             <Box>
-              {/* EXPAND TABLE BUTTON */}
+              {/* EXPAND TABLE BUTTON - only show for non-experimental mode */}
               <Flex justify={'flex-end'} gap={4}>
                 <Tooltip
                   content={
@@ -127,37 +141,39 @@ const RichTableInput: ComponentType<
                     type="button"
                   />
                 </Tooltip>
-                <Tooltip
-                  content={
-                    <Box>
-                      <Text size={1}>Expand table</Text>
-                    </Box>
-                  }
-                  portal
-                >
-                  <Button
-                    iconRight={ExpandIcon}
-                    onClick={handleOpen}
-                    mode={'bleed'}
-                    fontSize={0}
-                    text={
-                      props.isInPortableText && !props.readOnly && !experimentalPortableTextCell
-                        ? 'Open table to edit'
-                        : 'Expand table'
+                {!experimentalPortableTextCell && (
+                  <Tooltip
+                    content={
+                      <Box>
+                        <Text size={1}>Expand table</Text>
+                      </Box>
                     }
-                    muted
-                    disabled={props.readOnly}
-                    aria-label={
-                      props.isInPortableText && !props.readOnly && !experimentalPortableTextCell
-                        ? 'Open table to edit'
-                        : 'Expand table'
-                    }
-                    aria-haspopup="dialog"
-                    aria-expanded={openDialog}
-                    aria-controls={tableId}
-                    type="button"
-                  />
-                </Tooltip>
+                    portal
+                  >
+                    <Button
+                      iconRight={ExpandIcon}
+                      onClick={handleOpen}
+                      mode={'bleed'}
+                      fontSize={0}
+                      text={
+                        props.isInPortableText && !props.readOnly
+                          ? 'Open table to edit'
+                          : 'Expand table'
+                      }
+                      muted
+                      disabled={props.readOnly}
+                      aria-label={
+                        props.isInPortableText && !props.readOnly
+                          ? 'Open table to edit'
+                          : 'Expand table'
+                      }
+                      aria-haspopup="dialog"
+                      aria-expanded={openDialog}
+                      aria-controls={tableId}
+                      type="button"
+                    />
+                  </Tooltip>
+                )}
               </Flex>
 
               <TableWrapper
@@ -181,7 +197,7 @@ const RichTableInput: ComponentType<
                 id={tableId}
               />
             </Box>
-            {openDialog && (
+            {openDialog && !experimentalPortableTextCell && (
               <ExpandedTableDialog {...props} isInDialog handleClose={handleClose} patch={patch} />
             )}
           </>
