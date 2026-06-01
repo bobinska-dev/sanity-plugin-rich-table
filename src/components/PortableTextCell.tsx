@@ -23,7 +23,7 @@ interface CellCardProps {
 }
 
 const CellCard = styled(Card)<CellCardProps>`
-  min-width: 0;
+  min-width: 200px;
   min-height: 32px;
   align-self: stretch; /* Let cells grow to match row height */
   cursor: ${({$readOnly}) => ($readOnly ? 'default' : 'pointer')};
@@ -54,10 +54,12 @@ const CellCard = styled(Card)<CellCardProps>`
   `}
 `
 
-// Wrapper for cell content - handles pointer-events and constrains height
-const CellContent = styled.div<{$isEditing: boolean}>`
-  max-height: ${({$isEditing}) => ($isEditing ? 'none' : '120px')};
-  overflow: ${({$isEditing}) => ($isEditing ? 'visible' : 'hidden')};
+// Wrapper for cell content - handles pointer-events, stretches when row has editing cell
+const CellContent = styled.div<{$isEditing: boolean; $rowHasEditingCell: boolean}>`
+  height: 100%;
+  max-height: ${({$isEditing, $rowHasEditingCell}) =>
+    $isEditing || $rowHasEditingCell ? 'none' : '120px'};
+  overflow: hidden;
   ${({$isEditing}) =>
     !$isEditing &&
     `
@@ -85,6 +87,8 @@ export interface PortableTextCellProps extends RenderProps {
   isSelected: boolean
   /** Whether this cell is in edit mode */
   isEditing: boolean
+  /** Whether any cell in this row is being edited */
+  rowHasEditingCell?: boolean
   /** Table-level read-only flag */
   tableReadOnly?: boolean
   /** Base path for the cell, used for path rewriting in patches */
@@ -163,6 +167,7 @@ const PortableTextCell: ComponentType<PortableTextCellProps> = ({
   member,
   isSelected,
   isEditing,
+  rowHasEditingCell = false,
   tableReadOnly = false,
   cellBasePath = [],
   patch,
@@ -261,7 +266,7 @@ const PortableTextCell: ComponentType<PortableTextCellProps> = ({
           <EditIcon style={{width: 14, height: 14}} />
         </EditButton>
       )}
-      <CellContent $isEditing={isEditing}>
+      <CellContent $isEditing={isEditing} $rowHasEditingCell={rowHasEditingCell}>
         <MemberField
           member={member}
           renderInput={(inputProps) => {

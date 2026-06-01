@@ -1,5 +1,5 @@
 {
-  "name": "sanity-plugin-rich-table",
+  "name": "@f5-com/sanity-plugin-rich-table",
   "version": "1.1.1",
   "description": "Rich table solution for Sanity",
   "keywords": [
@@ -51,7 +51,9 @@
     "watch": "pkg-utils watch --strict",
     "prepare": "husky",
     "yalc:push": "yalc push",
-    "yalc:refresh": "npm run build && npm run yalc:push && cd ../f5-com-frontend/studio && rm -rf node_modules/sanity-plugin-rich-table && cp -R .yalc/sanity-plugin-rich-table node_modules/sanity-plugin-rich-table && rm -rf node_modules/.sanity/vite"
+    "yalc:refresh": "npm run build && npm run yalc:push && cd ../f5-com-frontend/studio && rm -rf node_modules/@f5-com/sanity-plugin-rich-table && mkdir -p node_modules/@f5-com && cp -R .yalc/@f5-com/sanity-plugin-rich-table node_modules/@f5-com/sanity-plugin-rich-table && rm -rf node_modules/.sanity/vite",
+    "publish:artifactory": "npm run build && npm publish",
+    "publish:artifactory:dry": "npm run build && npm publish --dry-run"
   },
   "dependencies": {
     "@floating-ui/react-dom": "^2.1.7",
@@ -108,6 +110,8 @@
     "node": ">=18"
   },
   "publishConfig": {
+    "registry": "https://azr.artifactory.f5net.com/artifactory/api/npm/npm-f5/",
+    "access": "restricted",
     "exports": {
       ".": "./dist/index.js",
       "./package.json": "./package.json"

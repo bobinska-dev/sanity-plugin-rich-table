@@ -175,8 +175,12 @@ const Table: ComponentType<TableProps> = ({
             })}
 
             {/* CONTENT ROWS AND CELLS */}
-            {rowMembersWithCellMembers?.map(({rowMember, cellMembers}, rowIndex) =>
-              cellMembers?.map((cellMember, cellIndex) => {
+            {rowMembersWithCellMembers?.map(({rowMember, cellMembers}, rowIndex) => {
+              // Check if any cell in this row is being edited
+              const editingRow = editingCellKey ? parseInt(editingCellKey.split('-')[0], 10) : null
+              const rowHasEditingCell = editingRow === rowIndex
+
+              return cellMembers?.map((cellMember, cellIndex) => {
                 const cellItem = cellMember.item
                 const contentMember = getCellMember(rowMembersWithCellMembers, rowIndex, cellIndex)
                 const cellKey = makeCellKey(rowIndex, cellIndex)
@@ -215,6 +219,7 @@ const Table: ComponentType<TableProps> = ({
                       member={contentMember}
                       isSelected={selectedCellKey === cellKey}
                       isEditing={isEditing}
+                      rowHasEditingCell={rowHasEditingCell}
                       tableReadOnly={props.readOnly}
                       cellBasePath={getCellBasePath(contentMember)}
                       patch={patch}
@@ -243,8 +248,8 @@ const Table: ComponentType<TableProps> = ({
                     />
                   </Fragment>
                 )
-              }),
-            )}
+              })
+            })}
           </TableGridWrapper>
         </TableScrollWrapper>
       </TableButtons>
