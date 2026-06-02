@@ -1,6 +1,6 @@
 {
   "name": "@f5-com/sanity-plugin-rich-table",
-  "version": "1.1.1",
+  "version": "1.0.0",
   "description": "Rich table solution for Sanity",
   "keywords": [
     "sanity",
@@ -11,16 +11,19 @@
     "cms",
     "content-management"
   ],
-  "homepage": "https://github.com/bobinska-dev/sanity-plugin-rich-table#readme",
+  "homepage": "https://github.com/https-www-f5-com/f5-sanity-plugin-rich-table#readme",
   "bugs": {
-    "url": "https://github.com/bobinska-dev/sanity-plugin-rich-table/issues"
+    "url": "https://github.com/https-www-f5-com/f5-sanity-plugin-rich-table/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bobinska-dev/sanity-plugin-rich-table.git"
+    "url": "git+https://github.com/https-www-f5-com/f5-sanity-plugin-rich-table.git"
   },
   "license": "MIT",
   "author": "Saskia Bobinska <bobinska.dev@gmail.com>",
+  "contributors": [
+    "Matthew Bouchard <m.bouchard@f5.com>"
+  ],
   "sideEffects": false,
   "type": "module",
   "exports": {
