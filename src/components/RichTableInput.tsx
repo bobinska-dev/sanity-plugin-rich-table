@@ -141,39 +141,31 @@ const RichTableInput: ComponentType<
                     type="button"
                   />
                 </Tooltip>
-                {!experimentalPortableTextCell && (
-                  <Tooltip
-                    content={
-                      <Box>
-                        <Text size={1}>Expand table</Text>
-                      </Box>
+                <Tooltip
+                  content={
+                    <Box>
+                      <Text size={1}>Expand table</Text>
+                    </Box>
+                  }
+                  portal
+                >
+                  <Button
+                    iconRight={ExpandIcon}
+                    onClick={handleOpen}
+                    mode={'bleed'}
+                    fontSize={0}
+                    text={experimentalPortableTextCell ? 'Expand table' : 'Open table to edit'}
+                    muted
+                    disabled={props.readOnly}
+                    aria-label={
+                      experimentalPortableTextCell ? 'Expand table' : 'Open table to edit'
                     }
-                    portal
-                  >
-                    <Button
-                      iconRight={ExpandIcon}
-                      onClick={handleOpen}
-                      mode={'bleed'}
-                      fontSize={0}
-                      text={
-                        props.isInPortableText && !props.readOnly
-                          ? 'Open table to edit'
-                          : 'Expand table'
-                      }
-                      muted
-                      disabled={props.readOnly}
-                      aria-label={
-                        props.isInPortableText && !props.readOnly
-                          ? 'Open table to edit'
-                          : 'Expand table'
-                      }
-                      aria-haspopup="dialog"
-                      aria-expanded={openDialog}
-                      aria-controls={tableId}
-                      type="button"
-                    />
-                  </Tooltip>
-                )}
+                    aria-haspopup="dialog"
+                    aria-expanded={openDialog}
+                    aria-controls={tableId}
+                    type="button"
+                  />
+                </Tooltip>
               </Flex>
 
               <TableWrapper
@@ -182,13 +174,7 @@ const RichTableInput: ComponentType<
                 handleOpen={handleOpen}
                 patch={patch}
                 isInPortableText={props.isInPortableText}
-                // Force remount on dialog open/close only in non-experimental mode
-                key={
-                  !experimentalPortableTextCell && openDialog
-                    ? 'table-in-dialog-open'
-                    : 'table-in-dialog-closed'
-                }
-                // In experimental mode, allow editing directly; in non-experimental, force readOnly when in PortableText
+                key={openDialog ? 'table-in-dialog-open' : 'table-in-dialog-closed'}
                 readOnly={getTableReadOnly({
                   experimentalPortableTextCell,
                   isInPortableText: props.isInPortableText,
@@ -197,7 +183,7 @@ const RichTableInput: ComponentType<
                 id={tableId}
               />
             </Box>
-            {openDialog && !experimentalPortableTextCell && (
+            {openDialog && (
               <ExpandedTableDialog {...props} isInDialog handleClose={handleClose} patch={patch} />
             )}
           </>

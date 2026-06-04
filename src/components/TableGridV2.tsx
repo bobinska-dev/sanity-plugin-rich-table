@@ -39,6 +39,6 @@ export default styled(Card)<{
     }
     return `minmax(0, ${MINMAX_HEADER_ROW_HEIGHT}px) repeat(${props.$rowCount - 1}, auto)`
   }};
-  min-width: 60vw;
+  width: 100%;
   min-height: ${(props) => (props.$isInDialog ? '50vh' : 'auto')};
 `

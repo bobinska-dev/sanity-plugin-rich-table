@@ -33,6 +33,7 @@ const CellCard = styled(Card)<CellCardProps>`
   transition: outline-color 0.15s ease;
   position: relative;
   font-size: 0.875rem;
+  overflow: hidden;
 
   /* Preview mode: hide toolbar */
   ${({$isEditing}) =>
@@ -65,6 +66,26 @@ const CellContent = styled.div<{$isEditing: boolean; $rowHasEditingCell: boolean
     `
     pointer-events: none;
     user-select: none;
+
+    /* Suppress all hover/focus effects on editor elements when not editing */
+    * {
+      pointer-events: none !important;
+      cursor: default !important;
+    }
+
+    /* Hide any interactive UI elements from the PTE */
+    [data-testid*='block-extras'],
+    [data-testid*='change-bar'],
+    [contenteditable] {
+      cursor: default !important;
+    }
+
+    /* Suppress hover effects on blocks */
+    [data-testid*='block'] {
+      &:hover {
+        background: transparent !important;
+      }
+    }
   `}
 `
 
