@@ -1,0 +1,128 @@
+name: Claude PR Review
+
+# Auto-reviews PRs into `main`. Posts inline review comments only — no
+# auto-push, no auto-fix. The agent loads `.github/review-rubric.md` for the
+# repo-specific rules (Studio plugin, schemas, Portable Text, custom inputs).
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+
+# A second push to the same PR cancels the in-flight review.
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  # Required by anthropics/claude-code-action@beta to mint a short-lived
+  # GitHub OIDC token. Without this the action fails before any review runs:
+  #   "Could not fetch an OIDC token. Did you remember to add `id-token: write`?"
+  id-token: write
+
+jobs:
+  review:
+    name: Claude review
+    runs-on: ubuntu-latest
+    # Skip drafts — reviewing half-finished work wastes tokens.
+    if: github.event.pull_request.draft == false
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Claude code review
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_REVIEW_API_KEY }}
+          # Pin a current model — the action's built-in default
+          # (claude-sonnet-4-20250514) is retired and 404s.
+          model: claude-sonnet-5
+          # Use the workflow's built-in token so the action doesn't require the
+          # Claude Code GitHub App to be installed on the repo. The `permissions`
+          # block above grants it pull-requests/issues write for posting review
+          # comments. (Alternative: install https://github.com/apps/claude and
+          # drop this line to get app-identity comments, like os-apps.)
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # The agent loads the repo's rubric for context, then enforces it.
+          # Findings are posted as inline review comments.
+          direct_prompt: |
+            You are reviewing PR #${{ github.event.pull_request.number }} against
+            the `main` branch of **sanity-plugin-rich-table** — a Sanity **Studio
+            plugin** published to npm. It provides a `richTable` schema type, a
+            `richTableBlock` Portable Text block, custom Studio input components
+            (`src/components/**`), a Portable Text editor with toolbar, slash
+            commands, emoji picker, and link/annotation plugins
+            (`src/portable-text/**`), schema definitions (`src/schemas/**`), and
+            hooks/utils. Review with that lens — a reusable Studio plugin, not a
+            generic web app and not an SDK app.
+
+            ## Load this before reading the diff
+
+            `.github/review-rubric.md` — the rubric you enforce. Section 1 is
+            hard rules (non-negotiable); sections 2–4 are judgment-based; 5 is
+            soft; 6 is out of scope.
+
+            ## How to review
+
+            - **Apply every section-1 hard rule as non-negotiable.** Each
+              violation = one inline comment. Pay special attention to the
+              `useDocumentOperation` third-argument rule — omitting it crashes
+              the Studio inside content releases.
+            - **Custom input components:** verify changes are patched through the
+              form (`onChange` + `PatchEvent`/`set`/`unset`/`insert` or the
+              `useDocumentOperation` patch handle), never by mutating `value` or
+              shadowing it in local state. Flag un-memoized editor config / patch
+              handlers that remount the editor or drop focus.
+            - **Theming:** flag any hardcoded color literal — dark/light mode is
+              a shipped feature; colors must come from the `@sanity/ui` /
+              styled-components theme.
+            - **Check reuse before approving (rubric §4).** Scan for local
+              re-implementations of existing hooks (`useAddRow`, `useAddColumn`,
+              `useToggleTitles`), utils (`generateKey`, `getLetterBasedOnIndex`,
+              `looksLikeUrl`, `matchEmojis`), or PTE config/render patterns. Name
+              the existing export path in the comment.
+            - **Judgment checks** (lifecycle/cleanup, a11y, tests) only when they
+              materially affect correctness, safety, or maintainability.
+
+            ## Comment format
+
+            For each finding:
+            1. Cite the rule: section + bullet from `review-rubric.md`.
+            2. Quote the offending code (short).
+            3. Propose a concrete fix as a code block.
+
+            ## Do not
+
+            - Comment on formatting (prettier) or lint (`pnpm lint`).
+            - Comment on type errors or build failures (CI build covers these).
+            - Restate what the code does.
+            - Open more than ~10 inline comments. If there are more issues,
+              prioritise hard-rule violations; roll up the rest in the summary.
+
+            ## End with a top-level summary
+
+            Counts by category (hard rules, theming/UI, lifecycle, a11y, tests,
+            reuse, soft), a short list of the most important fixes to make first,
+            and a single-sentence verdict: `approve`, `request changes`, or
+            `comment`.
