@@ -1,3 +1,9 @@
 packages:
   - '.'
   - 'studio'
+
+# esbuild's postinstall fetches its platform-specific binary; approve its build
+# script so pnpm 11 doesn't fail with ERR_PNPM_IGNORED_BUILDS. pnpm 11 replaced
+# the old `onlyBuiltDependencies` list with this `allowBuilds` map.
+allowBuilds:
+  esbuild: true
