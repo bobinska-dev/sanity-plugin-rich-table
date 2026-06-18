@@ -12,7 +12,7 @@
     "react-dom": "^19.2.4",
     "react-is": "^19.2.4",
     "sanity": "^5.20.0",
-    "sanity-plugin-rich-table": "workspace:*",
+    "@f5-com/sanity-plugin-rich-table": "workspace:*",
     "styled-components": "^6.3.11"
   },
   "devDependencies": {

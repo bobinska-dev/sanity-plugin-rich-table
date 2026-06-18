@@ -1,3 +1,56 @@
 packages:
   - '.'
   - 'studio'
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - js-yaml@3.14.2
+  - basic-ftp@5.2.0
+  - minimatch@5.1.8
+  - minimatch@9.0.7
+  - minimatch@10.2.3
+  - minimatch@3.1.4
+  - serialize-javascript@7.0.3
+  - ajv@8.18.0
+  - flatted@3.4.0
+  - undici@7.24.0
+  - undici@6.24.0
+  - flatted@3.4.2
+  - brace-expansion@1.1.13
+  - brace-expansion@2.0.3
+  - brace-expansion@5.0.5
+  - picomatch@2.3.2
+  - picomatch@4.0.4
+  - yaml@2.8.3
+  - dompurify@3.3.2
+  - lodash-es@4.17.24
+  - lodash@4.17.24
+  - vite@7.3.2
+  - basic-ftp@5.2.2
+  - follow-redirects@1.15.12
+  - dompurify@3.3.4
+  - postcss@8.5.10
+  - basic-ftp@5.2.3
+  - dompurify@3.4.0
+  - fast-uri@3.1.1
+  - fast-uri@3.1.2
+  - basic-ftp@5.3.1
+  - ws@8.20.1
+  - serialize-javascript@7.0.5
+  - uuid@11.1.1
+  - uuid@13.0.1
+  - vitest@4.1.0
+  - '@babel/plugin-transform-modules-systemjs@7.29.4'
+  - brace-expansion@5.0.6
+  - esbuild@0.28.1
+  - ws@8.21.0
+  - form-data@4.0.6
+  - tar@7.5.16
+  - vite@7.3.5
+  - js-yaml@4.1.2
+  - '@babel/core@7.29.1'
+  - dompurify@3.4.7
+  - dompurify@3.4.6
+  - dompurify@3.4.9
+  - dompurify@3.4.8
+  - markdown-it@14.1.2
