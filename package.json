@@ -1,6 +1,6 @@
 {
   "name": "@f5-com/sanity-plugin-rich-table",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Rich table solution for Sanity",
   "keywords": [
     "sanity",
