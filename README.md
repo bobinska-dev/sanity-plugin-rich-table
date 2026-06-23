@@ -1,3 +1,5 @@
+# This is an F5 maintained fork for the sanity rich table plugin. It adds functionality needed for f5.com. Please do not delete from artifactory.
+
 # Rich table plugin for Sanity
 
 The last rich table plugin for Sanity you will need!
