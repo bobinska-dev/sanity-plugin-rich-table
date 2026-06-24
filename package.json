@@ -113,7 +113,7 @@
     "node": ">=18"
   },
   "publishConfig": {
-    "registry": "https://azr.artifactory.f5net.com/artifactory/api/npm/npm-f5/",
+    "registry": "https://sea.artifactory.f5net.com/artifactory/api/npm/npm-f5/",
     "access": "restricted",
     "exports": {
       ".": "./dist/index.js",
