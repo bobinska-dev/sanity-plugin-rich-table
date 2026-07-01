@@ -7,12 +7,12 @@
     "dev": "sanity dev"
   },
   "dependencies": {
+    "@f5-com/sanity-plugin-rich-table": "workspace:*",
     "@sanity/vision": "^5.20.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-is": "^19.2.4",
-    "sanity": "^5.20.0",
-    "@f5-com/sanity-plugin-rich-table": "workspace:*",
+    "sanity": "^6.3.0",
     "styled-components": "^6.3.11"
   },
   "devDependencies": {
