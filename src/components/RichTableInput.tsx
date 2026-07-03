@@ -10,8 +10,8 @@ import {
   useFormValue,
   useSchema,
 } from 'sanity'
-
 import styled from 'styled-components'
+
 import {useToggleTitles} from '../hooks/useToggleTitles'
 import {RichTableType} from '../schemas/richTable.object'
 import {isRichTableArrayMemberContext} from '../utils/isRichTableArrayMemberContext'
@@ -20,6 +20,25 @@ import ExpandedTableDialog from './ExpandedTableDialog'
 import InitialiseTable from './InitialiseTable'
 import LoadingIndicator from './LoadingIndicator'
 import Table from './Table'
+
+const HiddenInputBox = styled(Box)<{$debug?: boolean}>`
+  // only hide visually but keep it in the DOM unless in debug mode
+  ${(props) =>
+    props.$debug
+      ? ''
+      : `
+  border: 0 !important;
+  clip: rect(1px, 1px, 1px, 1px) !important;
+  -webkit-clip-path: inset(50%) !important;
+          clip-path: inset(50%) !important;
+  height: 1px !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  position: absolute !important;
+  width: 1px !important;
+`}
+`
 
 const RichTableInput: ComponentType<
   ObjectInputProps<RichTableType> & {
@@ -83,7 +102,6 @@ const RichTableInput: ComponentType<
             isInArray={isInArray}
             readOnly={props.readOnly}
             onChange={props.onChange}
-            schemaTypeName={props.schemaType.name}
           />
         )}
         {props.value && props.value.rows && (
@@ -226,23 +244,5 @@ const RichTableInput: ComponentType<
     </Stack>
   )
 }
-const HiddenInputBox = styled(Box)<{$debug?: boolean}>`
-  // only hide visually but keep it in the DOM unless in debug mode
-  ${(props) =>
-    props.$debug
-      ? ''
-      : `
-  border: 0 !important;
-  clip: rect(1px, 1px, 1px, 1px) !important;
-  -webkit-clip-path: inset(50%) !important;
-          clip-path: inset(50%) !important;
-  height: 1px !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  padding: 0 !important;
-  position: absolute !important;
-  width: 1px !important;
-`}
-`
 
 export default RichTableInput

@@ -1,6 +1,6 @@
 import {Box, Button, Card, Flex, Text} from '@sanity/ui'
 import {ComponentType, useCallback, useEffect, useState} from 'react'
-import {FormPatch, OperationsAPI, PatchEvent, SANITY_PATCH_TYPE} from 'sanity'
+import {FormPatch, FormPatchJSONValue, OperationsAPI, PatchEvent, SANITY_PATCH_TYPE} from 'sanity'
 
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
@@ -24,7 +24,6 @@ interface InitialiseTableProps {
   isInArray?: boolean
   readOnly: boolean | undefined
   onChange: (patch: FormPatch | FormPatch[] | PatchEvent) => void
-  schemaTypeName: string
 }
 
 const CELL_SIZE = 28
@@ -39,7 +38,6 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
   isInArray,
   readOnly,
   onChange,
-  schemaTypeName,
 }) => {
   // * STATES
   // Selected states for selection to commit
@@ -63,23 +61,6 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
   const handleCommit = useCallback(
     (rowCount: number, cols: number) => {
       setSelected({rows: rowCount, cols: cols})
-
-      // Initialise the field by setting its value to an empty object via the
-      // form's `onChange`. `onChange` is the *relative-path* API, so the path
-      // must be relative to this input's own value — an empty path targets the
-      // field itself. Passing the absolute document path here previously threw
-      // "Cannot apply deep operations on primitive values" whenever the field
-      // was nested inside an array item (SAPP-3812).
-      onChange(
-        PatchEvent.from([
-          {
-            type: 'set',
-            path: [],
-            value: {},
-            patchType: SANITY_PATCH_TYPE,
-          },
-        ]),
-      )
 
       // Prepare the initial table value
       // Cells per row
@@ -106,22 +87,43 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
         hasColumnTitles: true,
         hasRowTitles: true,
       }
-      const portableBlockInitialValue = {
-        ...initialTableValue,
-        _type: schemaTypeName,
-        _key: generateKey(),
-      }
 
       // ** Prepare patches
       if (isInPortableText || isInArray) {
-        return patch.execute([
-          {
-            set: {
-              [path]: portableBlockInitialValue,
+        // As a Portable Text block or object-array member, the rich table object
+        // already exists with its own `_type` and `_key` (assigned when it was
+        // inserted). Patch only the table's *fields* through the relative form
+        // `onChange` API. Clearing the value to `{}` or replacing it wholesale
+        // would strip `_type`/`_key` and leave an invalid array item — or, in
+        // Portable Text, the "Block … is missing a type name" error.
+        return onChange(
+          PatchEvent.from([
+            {type: 'setIfMissing', path: [], value: {}, patchType: SANITY_PATCH_TYPE},
+            {
+              type: 'set',
+              path: ['columnHeaders'],
+              value: columnHeaders as unknown as FormPatchJSONValue,
+              patchType: SANITY_PATCH_TYPE,
             },
-          },
-        ])
+            {
+              type: 'set',
+              path: ['rows'],
+              value: rows as unknown as FormPatchJSONValue,
+              patchType: SANITY_PATCH_TYPE,
+            },
+            {type: 'set', path: ['hasColumnTitles'], value: true, patchType: SANITY_PATCH_TYPE},
+            {type: 'set', path: ['hasRowTitles'], value: true, patchType: SANITY_PATCH_TYPE},
+          ]),
+        )
       }
+
+      // Plain object field (top-level, or nested inside an array item's object).
+      // Materialise the field with an empty object first via the relative
+      // `onChange` — passing the absolute document path here throws "Cannot apply
+      // deep operations on primitive values" when the field is nested inside an
+      // array item (SAPP-3812) — then set the full value via the
+      // document-operations patch.
+      onChange(PatchEvent.from([{type: 'set', path: [], value: {}, patchType: SANITY_PATCH_TYPE}]))
       return patch.execute([
         {
           set: {
@@ -130,7 +132,7 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
         },
       ])
     },
-    [path, patch, isInPortableText, isInArray, onChange, schemaTypeName],
+    [path, patch, isInPortableText, isInArray, onChange],
   )
   // * COMMIT SELECTION
   const effectiveRows = selected.rows || hover.rows
