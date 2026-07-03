@@ -18,9 +18,8 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
-  # Required by anthropics/claude-code-action@beta to mint a short-lived
-  # GitHub OIDC token. Without this the action fails before any review runs:
-  #   "Could not fetch an OIDC token. Did you remember to add `id-token: write`?"
+  # Lets claude-code-action mint a short-lived GitHub OIDC token. Harmless to
+  # keep even though github_token is provided below; some auth paths need it.
   id-token: write
 
 jobs:
@@ -49,15 +48,20 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        # Exclude the studio/ workspace package, matching main.yml — the review
+        # job never builds the studio.
+        run: pnpm install --frozen-lockfile --filter=!studio
 
       - name: Claude code review
-        uses: anthropics/claude-code-action@beta
+        # Pinned to an immutable release SHA (not the mutable @beta tag) since
+        # this job holds write permissions. Dependabot (github-actions) keeps
+        # the pin current.
+        uses: anthropics/claude-code-action@769e3bdff9bb7ecfb51bad4c9cba23d6f5fc5ea5 # v1.0.163
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_REVIEW_API_KEY }}
-          # Pin a current model — the action's built-in default
-          # (claude-sonnet-4-20250514) is retired and 404s.
-          model: claude-sonnet-5
+          # Pin a current model — the action's built-in default is retired and
+          # 404s. In v1 the model is passed via claude_args, not a `model` input.
+          claude_args: "--model claude-sonnet-5"
           # Use the workflow's built-in token so the action doesn't require the
           # Claude Code GitHub App to be installed on the repo. The `permissions`
           # block above grants it pull-requests/issues write for posting review
@@ -66,7 +70,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # The agent loads the repo's rubric for context, then enforces it.
           # Findings are posted as inline review comments.
-          direct_prompt: |
+          prompt: |
             You are reviewing PR #${{ github.event.pull_request.number }} against
             the `main` branch of **sanity-plugin-rich-table** — a Sanity **Studio
             plugin** published to npm. It provides a `richTable` schema type, a
