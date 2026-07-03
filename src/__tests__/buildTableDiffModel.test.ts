@@ -93,6 +93,16 @@ describe('buildTableDiffModel', () => {
     expect(changedRow.cells[1].toText).toBe('CHANGED')
   })
 
+  it('carries raw cell content for the detail inspector', () => {
+    const from = table([row('r1', 'A', ['x'])])
+    const to = table([row('r1', 'A', ['CHANGED'])])
+    const model = buildTableDiffModel(from, to)
+
+    const cellModel = model.rows[0].cells[0]
+    expect(cellModel.fromContent).toEqual(from.rows[0].cells[0].content)
+    expect(cellModel.toContent).toEqual(to.rows[0].cells[0].content)
+  })
+
   it('ignores _key-only differences when comparing cell content', () => {
     const from = table([row('r1', 'A', ['same'])])
     const to = table([row('r1', 'A', ['same'])])
