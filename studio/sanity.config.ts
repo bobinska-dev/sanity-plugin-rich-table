@@ -96,16 +96,6 @@ export default defineConfig({
               }),
             ],
           }),
-          defineField({
-            name: 'richTableArray',
-            title: 'Rich Table Array',
-            type: 'array',
-            of: [
-              defineArrayMember({
-                type: 'richTable',
-              }),
-            ],
-          }),
         ],
       }),
     ],
