@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.3](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.2...v1.1.3) (2026-07-03)
+
+### Bug Fixes
+
+- initialise nested rich table fields without absolute-path patch ([f83f7e5](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/f83f7e52bdeb14649d76cbf742de47dbaa6d22b2))
+
 ## [1.1.2](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.1...v1.1.2) (2026-07-03)
 
 ### Bug Fixes
