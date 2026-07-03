@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.2](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.1...v1.1.2) (2026-07-03)
+
+### Bug Fixes
+
+- target edited release version in useDocumentOperation (SYS-138) ([85e400c](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/85e400c97717ec2a766b39d2d6744f417cecc893))
+
 ## [1.1.1](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.0...v1.1.1) (2026-04-09)
 
 ### Bug Fixes
