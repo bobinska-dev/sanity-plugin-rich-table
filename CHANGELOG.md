@@ -5,6 +5,20 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.0](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.5...v1.2.0) (2026-07-03)
+
+### Features
+
+- render rich table diffs in the review changes pane ([3f631c0](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/3f631c05589042e62242e48efc10a5c71b533deb))
+
+### Bug Fixes
+
+- convey cell status in diff inspect aria-label; cover preview guard ([b51a3de](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/b51a3dee3b3d31b7371e2ed38b00d2701815e3cc))
+
+### Performance Improvements
+
+- memoize rich table diff model computation ([5b43d74](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/5b43d7499404278b84b6253eba18d23ac749a387))
+
 ## [1.1.5](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.4...v1.1.5) (2026-07-03)
 
 ### Bug Fixes
