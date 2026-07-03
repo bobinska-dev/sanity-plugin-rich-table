@@ -8,13 +8,13 @@ export type RichTableRowType = ObjectItem & {
 }
 
 export default defineType({
-  // NOTE: keep this named `row` (not `richTableRow`). Rows are written to content
-  // with `_type: 'row'` (see InitialiseTable/RowContextMenu/useAddRow), and the
-  // `rows` array member in richTable.object references `type: 'row'`. The GraphQL
-  // API requires every array-member type to be a registered top-level type, so
-  // the registered name MUST match the stored `_type`. Renaming this to a
-  // namespaced value would break `sanity graphql deploy` (anonymous inline type)
-  // and orphan existing content. See SYS-141.
+  // NOTE: keep this named `row` (not a namespaced name like `richTableRow`).
+  // Rows are written to content with `_type: 'row'` (see InitialiseTable/
+  // RowContextMenu/useAddRow), and `sanity graphql deploy` requires every
+  // array-member `_type` to match a registered top-level type. Registering under
+  // the already-stored `_type` keeps deploy working with no content migration.
+  // A namespaced rename would still deploy fine ONLY if the stored `_type` is
+  // changed to match it too — which requires migrating existing content. SYS-141.
   name: 'row',
   title: 'Rich Table Row',
   type: 'object',

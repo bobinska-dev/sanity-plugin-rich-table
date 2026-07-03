@@ -83,10 +83,17 @@ describe('GraphQL deploy compatibility (SYS-141)', () => {
       ],
     })
 
+    // `_validation` is Sanity's compiled-schema problem list (an array; empty when
+    // clean). Assert its shape first so this guard fails loudly if the internal
+    // API changes, rather than silently passing on a missing/renamed property.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const problems = ((schema as any)._validation ?? []).flatMap((g: any) => g.problems ?? [])
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const errors = problems.filter((p: any) => p?.severity === 'error')
+    const validation = (schema as any)._validation
+    expect(Array.isArray(validation)).toBe(true)
+    const errors = validation
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .flatMap((group: any) => group.problems ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((problem: any) => problem?.severity === 'error')
 
     expect(errors).toEqual([])
     // Existing rows are stored as `_type: 'row'`, so the type must resolve under that name.
