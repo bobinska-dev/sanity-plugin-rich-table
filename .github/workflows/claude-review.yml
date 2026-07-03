@@ -52,7 +52,23 @@ jobs:
         # job never builds the studio.
         run: pnpm install --frozen-lockfile --filter=!studio
 
+      # Snapshot how many comments the bot has already posted, so the guard step
+      # after the review can tell whether THIS run posted anything new. A
+      # before/after delta is race-safe (concurrency cancels overlapping runs)
+      # and needs no timestamp parsing.
+      - name: Snapshot existing review comments
+        id: precount
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          before=$(gh api \
+            "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments?per_page=100" \
+            --jq '[.[] | select(.user.login == "github-actions[bot]")] | length')
+          echo "before=$before" >> "$GITHUB_OUTPUT"
+          echo "Bot comments before review: $before"
+
       - name: Claude code review
+        id: claude_review
         # Pinned to an immutable release SHA (not the mutable @beta tag) since
         # this job holds write permissions. Dependabot (github-actions) keeps
         # the pin current.
@@ -61,7 +77,16 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_REVIEW_API_KEY }}
           # Pin a current model — the action's built-in default is retired and
           # 404s. In v1 the model is passed via claude_args, not a `model` input.
-          claude_args: "--model claude-sonnet-5"
+          #
+          # --allowedTools is REQUIRED: the action grants no Bash access by
+          # default, so without this the agent's attempts to read the diff and
+          # post its review are all denied (silent empty review). These four
+          # tools are the action's documented recipe for automated PR review —
+          # the inline-comment MCP tool for line findings, `gh pr comment` for
+          # the summary, and `gh pr diff`/`gh pr view` to read the PR.
+          claude_args: |
+            --model claude-sonnet-5
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
           # Use the workflow's built-in token so the action doesn't require the
           # Claude Code GitHub App to be installed on the repo. The `permissions`
           # block above grants it pull-requests/issues write for posting review
@@ -69,7 +94,9 @@ jobs:
           # drop this line to get app-identity comments, like os-apps.)
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # The agent loads the repo's rubric for context, then enforces it.
-          # Findings are posted as inline review comments.
+          # Findings are posted as inline review comments; the summary via
+          # `gh pr comment`. The prompt names the exact tools to use — the
+          # action posts nothing on its own here (no sticky/tracking comment).
           prompt: |
             You are reviewing PR #${{ github.event.pull_request.number }} against
             the `main` branch of **sanity-plugin-rich-table** — a Sanity **Studio
@@ -109,9 +136,20 @@ jobs:
             - **Judgment checks** (lifecycle/cleanup, a11y, tests) only when they
               materially affect correctness, safety, or maintainability.
 
-            ## Comment format
+            ## How to post your review
 
-            For each finding:
+            You have no default Bash access — use only these tools:
+            - Read the PR diff with `gh pr diff` (the head branch is also
+              checked out in the working directory, so you can Read files too).
+            - Post each inline finding with
+              `mcp__github_inline_comment__create_inline_comment` (pass
+              `confirmed: true`) anchored to the offending line.
+            - Post the top-level summary with `gh pr comment`.
+            - **Only post GitHub comments — do not return the review as a chat
+              message.** Text you emit as a message is discarded, not shown on
+              the PR.
+
+            For each inline finding:
             1. Cite the rule: section + bullet from `review-rubric.md`.
             2. Quote the offending code (short).
             3. Propose a concrete fix as a code block.
@@ -126,7 +164,59 @@ jobs:
 
             ## End with a top-level summary
 
-            Counts by category (hard rules, theming/UI, lifecycle, a11y, tests,
-            reuse, soft), a short list of the most important fixes to make first,
-            and a single-sentence verdict: `approve`, `request changes`, or
-            `comment`.
+            Post this as a single `gh pr comment`: counts by category (hard
+            rules, theming/UI, lifecycle, a11y, tests, reuse, soft), a short
+            list of the most important fixes to make first, and a
+            single-sentence verdict: `approve`, `request changes`, or
+            `comment`. Always post this comment even when you find nothing, so
+            the PR shows the review ran.
+
+      # A green "Claude code review" step means only that the agent's process
+      # exited 0 — NOT that a review reached the PR. Blocked tool calls are
+      # silent (a denial isn't an error), and the agent's chat text is discarded
+      # (no sticky/tracking comment). So a misconfigured run looks identical to a
+      # clean approval. This guard turns that silent no-op red on two signals:
+      #   1. permission_denials_count > 0 — the agent was blocked from a tool
+      #      call, so the review is likely incomplete. Usually means a needed
+      #      tool is missing from --allowedTools. If a healthy review ever trips
+      #      this on a harmless probe, downgrade the `denials` branch below from
+      #      `fail=1` to a `::warning::`.
+      #   2. No new bot comment — the prompt requires a summary comment on every
+      #      run, so zero new comments means nothing was posted.
+      - name: Fail if the review posted nothing
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # How many tool calls were denied? Read the action's execution log; if
+          # the output path is missing, fall back to the known temp filename.
+          exec_file="${{ steps.claude_review.outputs.execution_file }}"
+          [ -n "$exec_file" ] && [ -f "$exec_file" ] || exec_file="${RUNNER_TEMP}/claude-execution-output.json"
+          denials=0
+          if [ -f "$exec_file" ]; then
+            denials=$(jq -r '[.. | objects | select(.type? == "result")] | last | .permission_denials_count // 0' "$exec_file" 2>/dev/null || echo 0)
+          else
+            echo "::warning::No execution log found at '$exec_file' — skipping the permission-denial check."
+          fi
+
+          # Did this run add any bot comment (inline or summary)?
+          before='${{ steps.precount.outputs.before }}'
+          after=$(gh api \
+            "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments?per_page=100" \
+            --jq '[.[] | select(.user.login == "github-actions[bot]")] | length')
+
+          echo "permission_denials_count=$denials"
+          echo "bot comments: before=${before:-0} after=${after:-0}"
+
+          fail=0
+          if [ "${denials:-0}" -gt 0 ]; then
+            echo "::error::Claude review was blocked from ${denials} tool call(s) — likely a missing entry in --allowedTools. The review is probably incomplete or empty."
+            fail=1
+          fi
+          if [ "${after:-0}" -le "${before:-0}" ]; then
+            echo "::error::Claude review posted no new comment to the PR (before=${before:-0}, after=${after:-0}). Failing so this silent no-op is visible instead of a misleading green check."
+            fail=1
+          fi
+          exit "$fail"
