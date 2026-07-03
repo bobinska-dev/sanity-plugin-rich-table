@@ -143,4 +143,11 @@ describe('Row preview', () => {
     const result = prepare({title: undefined, cells: [{}]})
     expect(result.subtitle).toBe('1 cell')
   })
+
+  it('handles missing cells without throwing (SYS-168 regression)', () => {
+    if (!prepare) return
+    const result = prepare({title: undefined, cells: undefined})
+    expect(result.title).toBe('Row')
+    expect(result.subtitle).toBe('0 cells')
+  })
 })

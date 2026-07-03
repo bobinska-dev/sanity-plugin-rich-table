@@ -280,7 +280,9 @@ function InspectableCell({
       border
       role="button"
       tabIndex={0}
-      aria-label={`Inspect cell column ${columnLabel}, row ${rowLabel}`}
+      aria-label={`Inspect cell column ${columnLabel}, row ${rowLabel}, ${CELL_STATUS_LABEL[
+        cell.status
+      ].toLowerCase()}`}
       style={CLICKABLE}
       onClick={handleSelect}
       onKeyDown={handleKeyDown}
