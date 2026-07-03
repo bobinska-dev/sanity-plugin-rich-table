@@ -196,6 +196,49 @@ export const RichTableGrid: React.FC<RichTableProps> = ({tableData}) => {
 
 Easy peasy!
 
+### Using Astro
+
+The same data works in an Astro component. The one difference from React is that cell content renders through [`astro-portabletext`](https://github.com/theisel/astro-portabletext) instead of `@portabletext/react`:
+
+```tsx
+---
+import type {RichTableType} from 'sanity-plugin-rich-table'
+import {PortableText} from 'astro-portabletext'
+
+interface Props {
+  tableData: RichTableType
+}
+
+const {rows, columnHeaders, hasColumnTitles, hasRowTitles} = Astro.props.tableData
+---
+
+<table>
+  {hasColumnTitles && (
+    <thead>
+      <tr>
+        {hasRowTitles && <th />}
+        {columnHeaders?.map((header) => <th>{header.title}</th>)}
+      </tr>
+    </thead>
+  )}
+  <tbody>
+    {rows.map((row) => (
+      <tr>
+        {hasRowTitles && <th scope="row">{row.title}</th>}
+        {row.cells?.map((cell) => (
+          <td><PortableText value={cell.content} /></td>
+        ))}
+      </tr>
+    ))}
+  </tbody>
+</table>
+```
+
+When you wire this up as a `richTableBlock` component for a Portable Text field, the table object arrives on `Astro.props.node` rather than a prop.
+
+> [!TIP]
+> If your Studio and Astro site live in the same repo, import only the **type** (`import type`) from `sanity-plugin-rich-table` and render cells with `astro-portabletext`. Pulling the plugin's runtime or `@portabletext/react` into the front end drags a second copy of React into the bundle, which breaks Sanity Visual Editing.
+
 ## Merging cells
 
 If you leave some cells empty, you can achieve a simple cell merging effect in your table renderings by using CSS. For example, you can use the `grid-column` property in a CSS grid layout or the `colspan` attribute in an HTML table to span multiple columns.
