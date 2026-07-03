@@ -7,6 +7,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
   useCallback,
+  useMemo,
   useState,
 } from 'react'
 import {type DiffProps} from 'sanity'
@@ -458,9 +459,15 @@ function RichTableDiffContent({diff}: DiffProps) {
   const [selected, setSelected] = useState<SelectedCell | null>(null)
   const closeDetail = useCallback(() => setSelected(null), [])
 
-  const model = buildTableDiffModel(
-    diff.fromValue as RichTableType | undefined,
-    diff.toValue as RichTableType | undefined,
+  // Memoize the (O(n·m) LCS) diff computation so it doesn't re-run when only the
+  // cell-inspector `selected` state toggles — the diff values are stable references.
+  const model = useMemo(
+    () =>
+      buildTableDiffModel(
+        diff.fromValue as RichTableType | undefined,
+        diff.toValue as RichTableType | undefined,
+      ),
+    [diff.fromValue, diff.toValue],
   )
 
   if (!model.hasChanges) {
