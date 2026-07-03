@@ -54,12 +54,19 @@ const CELL_BADGE_TONE: Record<CellDiffStatus, 'default' | 'positive' | 'caution'
   unchanged: 'default',
 }
 
+/**
+ * Grid track list for the diff table: a fixed row-label column plus one track per
+ * data column. Guards against `repeat(0, …)`, which is invalid CSS and would cause
+ * the browser to drop the whole `grid-template-columns` declaration.
+ */
+export function columnsTrackList(columns: number): string {
+  const rowLabelTrack = 'minmax(64px, auto)'
+  return columns > 0 ? `${rowLabelTrack} repeat(${columns}, minmax(96px, 1fr))` : rowLabelTrack
+}
+
 const Grid = styled.div<{$columns: number}>`
   display: grid;
-  /* Guard $columns > 0: repeat(0, …) is invalid CSS and drops the whole declaration. */
-  grid-template-columns:
-    minmax(64px, auto)
-    ${(props) => (props.$columns > 0 ? `repeat(${props.$columns}, minmax(96px, 1fr))` : '')};
+  grid-template-columns: ${(props) => columnsTrackList(props.$columns)};
   gap: 1px;
   overflow-x: auto;
 `
