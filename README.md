@@ -114,6 +114,23 @@ import type {RichTableType, RichTableRowType, RichTableCellType} from 'sanity-pl
 
 See the [data structure documentation](./docs/data-structure.md) for detailed type information.
 
+## Upgrade notes
+
+### Row schema type renamed `richTableRow` → `row` (SYS-141)
+
+The patch release that fixes `sanity graphql deploy` renames the **registered schema type** for table rows from `richTableRow` to `row`. Previously the type was registered as `richTableRow` but its array member wrote rows to content as `_type: 'row'` — that mismatch made `sanity graphql deploy` fail with an _"anonymous inline object"_ error. Registering the type under the name that content already uses fixes deploy.
+
+**For virtually all projects this is a no-op — nothing breaks:**
+
+- ✅ **Existing content is unaffected.** Rows have always been stored as `_type: 'row'`, which is exactly what the renamed type now registers. No content migration is required.
+- ✅ The exported TypeScript type **`RichTableRowType` is unchanged**.
+- ✅ The public schema types you reference — **`richTable`** and **`richTableBlock`** — are unchanged.
+
+**Take action only if:**
+
+- You referenced the internal `richTableRow` **schema type name** directly in your own schema (e.g. `type: 'richTableRow'`). Change it to `type: 'row'`.
+- You have hand-authored or imported content that stored rows as `_type: 'richTableRow'` (not produced by this plugin). Use the migration template at [`docs/migrations/rename-richtablerow-to-row.ts`](./docs/migrations/rename-richtablerow-to-row.ts) to rewrite those items to `_type: 'row'`.
+
 ## License
 
 [MIT](LICENSE) © Saskia Bobinska
