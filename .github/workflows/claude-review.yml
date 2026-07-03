@@ -82,15 +82,17 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_REVIEW_API_KEY }}
           # Pin a current model — the action's built-in default is retired and
           # 404s. In v1 the model is passed via claude_args, not a `model` input.
+          # Reviews run on Opus 4.8 (the most capable tier) for the strongest
+          # bug-finding; `claude-opus-4-8` is the exact model id (no date suffix).
           #
           # --allowedTools is REQUIRED: the action grants no Bash access by
           # default, so without this the agent's attempts to read the diff and
           # post its review are all denied (silent empty review). These four
           # tools are the action's documented recipe for automated PR review —
           # the inline-comment MCP tool for line findings, `gh pr comment` for
-          # the summary, and `gh pr diff`/`gh pr view` to read the PR.
+          # the review message, and `gh pr diff`/`gh pr view` to read the PR.
           claude_args: |
-            --model claude-sonnet-5
+            --model claude-opus-4-8
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
           # Use the workflow's built-in token so the action doesn't require the
           # Claude Code GitHub App to be installed on the repo. The `permissions`
@@ -146,15 +148,21 @@ jobs:
             You have no default Bash access — use only these tools:
             - Read the PR diff with `gh pr diff` (the head branch is also
               checked out in the working directory, so you can Read files too).
-            - Post each inline finding with
-              `mcp__github_inline_comment__create_inline_comment` (pass
-              `confirmed: true`) anchored to the offending line.
-            - Post the top-level summary with `gh pr comment`.
-            - **Only post GitHub comments — do not return the review as a chat
-              message.** Text you emit as a message is discarded, not shown on
-              the PR.
+            - **Post the review itself as a single PR message with
+              `gh pr comment`.** This is the required deliverable — the review
+              must land as a comment on the PR conversation, not as inline
+              comments alone and not as a chat message (text you emit as a
+              message is discarded, never shown on the PR). Always post this
+              message, even when you find nothing, so the PR shows the review
+              ran.
+            - Optionally, *also* anchor individual findings to their exact line
+              with `mcp__github_inline_comment__create_inline_comment` (pass
+              `confirmed: true`). Inline comments supplement the message — they
+              do not replace it.
 
-            For each inline finding:
+            The review message must contain every finding (each with a
+            `path:line` reference so it's traceable without inline comments),
+            followed by the top-level summary described below. For each finding:
             1. Cite the rule: section + bullet from `review-rubric.md`.
             2. Quote the offending code (short).
             3. Propose a concrete fix as a code block.
@@ -167,14 +175,13 @@ jobs:
             - Open more than ~10 inline comments. If there are more issues,
               prioritise hard-rule violations; roll up the rest in the summary.
 
-            ## End with a top-level summary
+            ## End the review message with a summary
 
-            Post this as a single `gh pr comment`: counts by category (hard
-            rules, theming/UI, lifecycle, a11y, tests, reuse, soft), a short
-            list of the most important fixes to make first, and a
+            Close the same `gh pr comment` message with: counts by category
+            (hard rules, theming/UI, lifecycle, a11y, tests, reuse, soft), a
+            short list of the most important fixes to make first, and a
             single-sentence verdict: `approve`, `request changes`, or
-            `comment`. Always post this comment even when you find nothing, so
-            the PR shows the review ran.
+            `comment`.
 
       # A green "Claude code review" step means only that the agent's process
       # exited 0 — NOT that a review reached the PR. A blocked tool call is not an
