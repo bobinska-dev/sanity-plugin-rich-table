@@ -3,6 +3,7 @@ import {Box, Button, Flex, Inline, Stack, Switch, Text, Tooltip} from '@sanity/u
 import {ChangeEvent, ComponentType, Suspense, useCallback, useMemo, useState} from 'react'
 import {
   getPublishedId,
+  getVersionFromId,
   ObjectInputProps,
   pathToString,
   useDocumentOperation,
@@ -27,7 +28,9 @@ const RichTableInput: ComponentType<
   const schema = useSchema()
 
   // Document operations -> with optimistic changes
-  const {patch} = useDocumentOperation(getPublishedId(_id), _type)
+  // Pass the version/release id so patches target the edited perspective
+  // (release version) instead of always writing to drafts. See SYS-138.
+  const {patch} = useDocumentOperation(getPublishedId(_id), _type, getVersionFromId(_id))
 
   const pathString = pathToString(props.path)
 
