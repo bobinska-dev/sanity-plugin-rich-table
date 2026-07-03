@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.4](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.3...v1.1.4) (2026-07-03)
+
+### Bug Fixes
+
+- register row schema type as row so graphql deploy works (SYS-141) ([4029dbf](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/4029dbfea5165d6c508ea79da1bf4665edae50ea))
+
 ## [1.1.3](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.2...v1.1.3) (2026-07-03)
 
 ### Bug Fixes
