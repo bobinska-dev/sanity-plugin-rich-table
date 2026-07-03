@@ -7,3 +7,13 @@ packages:
 # the old `onlyBuiltDependencies` list with this `allowBuilds` map.
 allowBuilds:
   esbuild: true
+
+# Force the release-asset-upload fix. @semantic-release/github <=12.0.6 sets the
+# content-length header as a number, which Node 24's undici rejects
+# ("invalid content-length header"), so the GitHub release publish step fails and
+# the release is left as a draft. Fixed in 12.0.9 (semantic-release/github#1224).
+# It's otherwise pinned transitively (12.0.6) via @sanity/semantic-release-preset,
+# and semantic-release loads it from node_modules, so this override is what takes
+# effect at release time.
+overrides:
+  '@semantic-release/github': '^12.0.9'
