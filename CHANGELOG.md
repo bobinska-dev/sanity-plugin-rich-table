@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.5](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.4...v1.1.5) (2026-07-03)
+
+### Bug Fixes
+
+- **table:** keep \_type/\_key when initialising a table + key all cell content ([7e10414](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/7e10414ff2bae78a4279920d273436c3aad4d3c6))
+
 ## [1.1.4](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.3...v1.1.4) (2026-07-03)
 
 ### Bug Fixes
