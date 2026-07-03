@@ -39,9 +39,11 @@ export default defineType({
       type: 'array',
       validation: (Rule) => Rule.min(1).error('A table must have at least one row.').required(),
       of: [
+        // Reference the top-level `row` type by name only. Giving the member a
+        // `name` that differs from a registered top-level type makes it an
+        // anonymous inline object, which `sanity graphql deploy` rejects (SYS-141).
         defineArrayMember({
-          name: 'row',
-          type: 'richTableRow',
+          type: 'row',
         }),
       ],
     }),

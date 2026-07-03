@@ -8,7 +8,14 @@ export type RichTableRowType = ObjectItem & {
 }
 
 export default defineType({
-  name: 'richTableRow',
+  // NOTE: keep this named `row` (not `richTableRow`). Rows are written to content
+  // with `_type: 'row'` (see InitialiseTable/RowContextMenu/useAddRow), and the
+  // `rows` array member in richTable.object references `type: 'row'`. The GraphQL
+  // API requires every array-member type to be a registered top-level type, so
+  // the registered name MUST match the stored `_type`. Renaming this to a
+  // namespaced value would break `sanity graphql deploy` (anonymous inline type)
+  // and orphan existing content. See SYS-141.
+  name: 'row',
   title: 'Rich Table Row',
   type: 'object',
   fields: [

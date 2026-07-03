@@ -53,7 +53,9 @@ describe('richTableObject schema', () => {
 
 describe('rowObject schema', () => {
   it('has correct name', () => {
-    expect(rowObject.name).toBe('richTableRow')
+    // Registered as `row` to match the `_type: 'row'` written to content and to
+    // keep GraphQL deploy working (array members must be top-level types). SYS-141.
+    expect(rowObject.name).toBe('row')
   })
 
   it('has correct type', () => {
