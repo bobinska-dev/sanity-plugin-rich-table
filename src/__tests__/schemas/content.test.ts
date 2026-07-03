@@ -26,11 +26,11 @@ describe('content schema', () => {
     expect(blockMember).toBeDefined()
   })
 
-  it('block type has options configured', () => {
+  it('block type allows multi-line content (no oneLine restriction)', () => {
     const blockMember = content.of.find((member) => member.type === 'block')
-    expect(blockMember?.options).toBeDefined()
-    // Cast to access the oneLine property
+    // The default `content` block member intentionally does not set `oneLine`,
+    // since `oneLine: false` is already the default — table cells allow multi-line content.
     const options = blockMember?.options as {oneLine?: boolean} | undefined
-    expect(options?.oneLine).toBe(false)
+    expect(options?.oneLine).not.toBe(true)
   })
 })

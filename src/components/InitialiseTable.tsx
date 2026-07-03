@@ -1,13 +1,6 @@
 import {Box, Button, Card, Flex, Text} from '@sanity/ui'
 import {ComponentType, useCallback, useEffect, useState} from 'react'
-import {
-  FormPatch,
-  OperationsAPI,
-  PatchEvent,
-  PortableTextBlock,
-  SANITY_PATCH_TYPE,
-  stringToPath,
-} from 'sanity'
+import {FormPatch, OperationsAPI, PatchEvent, PortableTextBlock, SANITY_PATCH_TYPE} from 'sanity'
 
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
@@ -68,12 +61,17 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
     (rowCount: number, cols: number) => {
       setSelected({rows: rowCount, cols: cols})
 
-      // use onChange to create new document by setting the object value to an empty object
+      // Initialise the field by setting its value to an empty object via the
+      // form's `onChange`. `onChange` is the *relative-path* API, so the path
+      // must be relative to this input's own value — an empty path targets the
+      // field itself. Passing the absolute document path here previously threw
+      // "Cannot apply deep operations on primitive values" whenever the field
+      // was nested inside an array item (SAPP-3812).
       onChange(
         PatchEvent.from([
           {
             type: 'set',
-            path: stringToPath(path),
+            path: [],
             value: {},
             patchType: SANITY_PATCH_TYPE,
           },
@@ -136,17 +134,6 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
           },
         },
       ])
-      // TODO: find out why this does not work from Bjørge
-      /* return onChange(
-        PatchEvent.from([
-          {
-            type: 'set',
-            path: stringToPath(path),
-            value: initialTableValue as any,
-            patchType: SANITY_PATCH_TYPE,
-          },
-        ]),
-      )*/
     },
     [path, patch, isInPortableText, onChange, schemaTypeName],
   )

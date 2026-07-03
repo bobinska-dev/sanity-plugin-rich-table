@@ -1,6 +1,6 @@
 import {EventListenerPlugin} from '@portabletext/editor/plugins'
 import {ComponentType} from 'react'
-import {getPublishedId, Path, pathToString, useDocumentOperation} from 'sanity'
+import {getPublishedId, getVersionFromId, Path, pathToString, useDocumentOperation} from 'sanity'
 
 const CustomListenerPlugin: ComponentType<{
   path: Path
@@ -10,7 +10,9 @@ const CustomListenerPlugin: ComponentType<{
   // on: (event: EditorEmittedEvent) => void
 }> = (props) => {
   const {_id, _type, handleFocus} = props
-  const {patch} = useDocumentOperation(getPublishedId(_id), _type)
+  // Pass the version/release id so patches target the edited perspective
+  // (release version) instead of always writing to drafts. See SYS-138.
+  const {patch} = useDocumentOperation(getPublishedId(_id), _type, getVersionFromId(_id))
   return (
     <EventListenerPlugin
       on={(event) => {

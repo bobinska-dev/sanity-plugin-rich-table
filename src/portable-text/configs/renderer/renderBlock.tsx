@@ -17,7 +17,16 @@ export const renderBlock = (options?: RenderBlockOptions): RenderBlockFunction =
     const currentSchema = customPTschema?.of?.find(
       (schema) => schema.name === props.schemaType.name,
     )
-    const CustomBlock = currentSchema?.components?.block
+    // Prefer the table-specific `tableBlock` component (the convention this plugin
+    // augments onto Object/Image/ReferenceComponents), falling back to the standard
+    // `block` component. The *compiled* schema type exposes a fixed `components` shape
+    // that omits `tableBlock`, so read it through a shape that adds it (reusing the same
+    // component type as the standard `block` slot).
+    type SchemaComponents = NonNullable<NonNullable<typeof currentSchema>['components']>
+    const components = currentSchema?.components as
+      | (SchemaComponents & {tableBlock?: SchemaComponents['block']})
+      | undefined
+    const CustomBlock = components?.tableBlock ?? components?.block
     if (CustomBlock) return <CustomBlock {...props} />
 
     if (props.listItem) return props.children

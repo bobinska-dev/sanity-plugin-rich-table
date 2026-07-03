@@ -41,7 +41,9 @@ const BlockPopover: ComponentType<{schemaTypes: readonly ToolbarBlockObjectSchem
       placement={'top'}
       preventOverflow={false}
       content={
-        <Box padding={3}>
+        // Keep the editor focused when interacting with the popover, otherwise the
+        // focused-gate in ButtonToolbar would unmount it before the buttons fire.
+        <Box padding={3} onMouseDown={(e) => e.preventDefault()}>
           <Stack>
             <Flex justify={'space-between'} align={'center'} gap={3}>
               <Text size={1}>{blockObject?.schemaType.title}</Text>

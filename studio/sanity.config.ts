@@ -1,7 +1,7 @@
 import {visionTool} from '@sanity/vision'
 import {defineArrayMember, defineConfig, defineField, defineType} from 'sanity'
 
-import {AsteriskIcon, IceCreamIcon, ImageIcon} from '@sanity/icons'
+import {AsteriskIcon, ImageIcon} from '@sanity/icons'
 import {richTablePlugin} from 'sanity-plugin-rich-table'
 import {structureTool} from 'sanity/structure'
 import CustomBock from './components/CustomBock'
@@ -17,64 +17,8 @@ export default defineConfig({
   plugins: [
     structureTool(),
     visionTool(),
-    // @ts-ignore
     richTablePlugin({
       portableTextSchemaTypeName: 'customPT',
-      customBlockTypes: [
-        {
-          icon: ImageIcon,
-          type: {
-            name: 'image',
-            type: 'image',
-            title: 'Image test',
-            options: {hotspot: true},
-            icon: ImageIcon,
-            // TODO: check status https://linear.app/sanity/issue/CRX-1914/standalone-pte-blockrenderprops-strips-down-schematype-and-removes
-            /*      components: {
-              //@ts-ignore
-              block: TestBlock
-            }*/
-          },
-        },
-        {
-          icon: IceCreamIcon,
-          type: {
-            name: 'reference',
-            type: 'reference',
-            title: 'Reference',
-            to: [{type: 'myRichTableDocument'}],
-            icon: IceCreamIcon,
-          },
-          defaultValues: {},
-        },
-        {
-          icon: AsteriskIcon,
-          defaultValues: {
-            testField: 'Default value for test field',
-          },
-          type: {
-            name: 'testBlock',
-            type: 'object',
-            title: 'Test block',
-            icon: AsteriskIcon,
-            fields: [
-              {
-                name: 'testField',
-                type: 'string',
-                title: 'Test field',
-              },
-              {
-                name: 'testField2',
-                type: 'string',
-                title: 'Test field 2',
-              },
-            ],
-            preview: {
-              select: {title: 'testField', subtitle: 'testField2'},
-            },
-          },
-        },
-      ],
     }),
   ],
 

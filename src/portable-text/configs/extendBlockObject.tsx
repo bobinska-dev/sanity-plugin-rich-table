@@ -28,7 +28,6 @@ export function createExtendBlockObject(
   return (blockObject: BlockObjectSchemaType): ToolbarBlockObjectSchemaType => {
     const schema = blockSchemas?.find((s) => s.name === blockObject.name)
     if (!schema) return blockObject as ToolbarBlockObjectSchemaType
-    console.log('SCHEMA createExtendBlockObject', schema)
     return {
       ...blockObject,
       ...(schema.icon !== undefined && {icon: schema.icon}),

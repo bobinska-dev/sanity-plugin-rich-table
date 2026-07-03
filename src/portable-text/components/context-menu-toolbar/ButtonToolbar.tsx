@@ -15,9 +15,9 @@ import {
   useRef,
   useState,
 } from 'react'
+import {ArraySchemaType, Path, PortableTextBlock} from 'sanity'
 import styled from 'styled-components'
 
-import {ArraySchemaType, Path, PortableTextBlock} from 'sanity'
 import {extendAnnotation} from '../../configs/extendAnnotation'
 import type {SanityBlockSchemaLike} from '../../configs/extendBlockObject'
 import {createExtendBlockObject} from '../../configs/extendBlockObject'
@@ -32,8 +32,6 @@ import BlockButton from './BlockButton'
 import DecoratorButton from './DecoratorButton'
 import FloatingButton from './FloatingButton'
 import ListButton from './ListButton'
-
-// TODO: check status of icon bug: https://linear.app/sanity/issue/CRX-1894/usetoolbarschema-or-toolbarschema-icons-stripped-from-schema
 
 const StyledFloatingButton = styled(FloatingButton)<{
   $isFocused: boolean
@@ -50,7 +48,10 @@ const ButtonToolbar: ComponentType<{
 }> = ({focused, editorRef, schemaType, path}) => {
   const blockSchemas = useMemo((): ReadonlyArray<SanityBlockSchemaLike> | undefined => {
     const schema = schemaType as {type?: {of?: unknown[]}; of?: unknown[]} | undefined
-    const of = schema?.type?.of ?? schema?.of
+    // Prefer the array's own (populated) members; only fall back to the parent
+    // type's `of` when the schema itself carries none. The intrinsic `array`
+    // type's `of` is empty, so a plain `??` would shadow the real members.
+    const of = schema?.of?.length ? schema.of : schema?.type?.of
     return of as ReadonlyArray<SanityBlockSchemaLike> | undefined
   }, [schemaType])
 
@@ -63,7 +64,6 @@ const ButtonToolbar: ComponentType<{
     extendList,
     extendBlockObject,
   })
-  console.log('TOOLBAR SCHEMA', toolbarSchema)
 
   // STATES
   const [open, setOpen] = useState(false)
@@ -315,19 +315,9 @@ const ButtonToolbar: ComponentType<{
               {toolbarSchema.lists?.map((list) => (
                 <ListButton key={list.name} list={list} />
               ))}
-              {toolbarSchema.blockObjects?.map((blockObject) => {
-                const customBlockSchemaType = schemaType?.of?.find(
-                  (schema) => schema.name === blockObject.name,
-                ) as any
-                console.log('CUSTOM BLOCK SCHEMA TYPE', customBlockSchemaType)
-                return (
-                  <BlockButton
-                    key={blockObject.name}
-                    blockObject={blockObject}
-                    customBlockSchemaType={customBlockSchemaType}
-                  />
-                )
-              })}
+              {toolbarSchema.blockObjects?.map((blockObject) => (
+                <BlockButton key={blockObject.name} blockObject={blockObject} />
+              ))}
             </Flex>
           </Box>
         }
@@ -351,7 +341,9 @@ const ButtonToolbar: ComponentType<{
         />
       </Popover>
       {toolbarSchema.annotations && <AnnotationPopover schemaTypes={toolbarSchema.annotations} />}
-      {toolbarSchema.blockObjects && (
+      {/* Only render the block popover while this editor is focused, so a selected
+          block's popover doesn't persist when focus moves to another PT editor. */}
+      {focused && toolbarSchema.blockObjects && (
         <BlockPopover schemaTypes={toolbarSchema.blockObjects} path={path} />
       )}
     </>
