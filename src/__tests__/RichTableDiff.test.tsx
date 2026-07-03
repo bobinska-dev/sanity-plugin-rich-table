@@ -58,6 +58,16 @@ describe('RichTableDiff', () => {
     expect(screen.getByText(/no visible changes/i)).toBeInTheDocument()
   })
 
+  it('renders rows that have no columns without breaking', () => {
+    // A row present with an empty cells array and no column headers → 0 columns.
+    // The grid must still render (repeat(0, …) would be invalid CSS).
+    const from = {rows: [{_key: 'r1', title: 'A', cells: []}]}
+    const to = {rows: [{_key: 'r1', title: 'B', cells: []}]}
+
+    expect(() => renderDiff(from, to)).not.toThrow()
+    expect(screen.getByText('B')).toBeInTheDocument()
+  })
+
   it('renders each cell as an inspectable button', () => {
     // The detail dialog itself is verified manually — mounting @sanity/ui's Dialog
     // under jsdom is prohibitively slow. Here we assert the inspect wiring: each

@@ -56,7 +56,10 @@ const CELL_BADGE_TONE: Record<CellDiffStatus, 'default' | 'positive' | 'caution'
 
 const Grid = styled.div<{$columns: number}>`
   display: grid;
-  grid-template-columns: minmax(64px, auto) repeat(${(props) => props.$columns}, minmax(96px, 1fr));
+  /* Guard $columns > 0: repeat(0, …) is invalid CSS and drops the whole declaration. */
+  grid-template-columns:
+    minmax(64px, auto)
+    ${(props) => (props.$columns > 0 ? `repeat(${props.$columns}, minmax(96px, 1fr))` : '')};
   gap: 1px;
   overflow-x: auto;
 `
