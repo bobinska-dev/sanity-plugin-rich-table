@@ -1,23 +1,22 @@
 import {PatchOperations} from '@sanity/types'
-import {Card, Flex, TextInput} from '@sanity/ui'
+import {Box, Card, Flex, TextInput} from '@sanity/ui'
 import {ChangeEvent, ComponentType, useCallback, useState} from 'react'
 import {OperationsAPI} from 'sanity'
-import styled from 'styled-components'
+import {styled} from 'styled-components'
 
 import {RichTableRowType} from '../schemas/row.object'
 import RowContextMenu from './RowContextMenu'
 
 const StyledCard = styled(Card)<{$isFocused?: boolean}>`
-  max-height: 50px;
+  flex: 1;
+  min-width: 0;
   border: unset;
 
   [data-border] {
     box-shadow: unset;
   }
 
-  overflow-y: scroll;
-  text-overflow: 'ellipsis';
-  white-space: nowrap;
+  overflow: hidden;
 `
 
 interface RowHeaderWithInputProps {
@@ -61,7 +60,14 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
 
   const newRowTitle = `${rowIndex ? rowIndex + 1 : 1}`
   return (
-    <Flex direction={'row'} gap={1} justify={'center'} align={'center'} marginLeft={1}>
+    <Flex
+      direction="row"
+      gap={1}
+      justify="flex-start"
+      align="center"
+      marginLeft={1}
+      style={{width: '100%', minWidth: 0}}
+    >
       <StyledCard
         shadow={isFocused ? 1 : undefined}
         tone={isFocused ? 'primary' : undefined}
@@ -81,6 +87,7 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
           weight={'semibold'}
           onFocus={() => setIsFocused(true)}
           style={{
+            width: '100%',
             textAlign: 'center',
             textOverflow: 'ellipsis',
             color: 'var(--card-muted-fg-color)',
@@ -92,14 +99,16 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
         />
       </StyledCard>
 
-      <RowContextMenu
-        row={row}
-        patch={patch}
-        path={path}
-        rowIndex={rowIndex}
-        rowCount={rowCount}
-        readOnly={readOnly}
-      />
+      <Box flex="none" style={{flexShrink: 0}}>
+        <RowContextMenu
+          row={row}
+          patch={patch}
+          path={path}
+          rowIndex={rowIndex}
+          rowCount={rowCount}
+          readOnly={readOnly}
+        />
+      </Box>
     </Flex>
   )
 }

@@ -23,6 +23,7 @@ export default [
       '**/dist/**',
       '**/lint-staged.config.js',
       '**/package.config.ts',
+      '**/scripts/**',
       '**/studio/**',
     ],
   },

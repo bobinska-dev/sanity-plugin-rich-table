@@ -28,6 +28,21 @@ Please be aware, that this plugin is still growing - so while this first version
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Column context menu                                                                                                                                            | Row context menu                                                                                                                                               |
 
+## Compatibility
+
+| Plugin version | Sanity | React | Node   |
+| -------------- | ------ | ----- | ------ |
+| **≥ 1.1.0**   | **5.x** (≥ 5.11.0) | 19    | ≥ 18   |
+| 1.0.5          | 3.x / 4.x / 5.x (< 5.13) | 18–19 | ≥ 18   |
+
+> **Why the change?** Starting with Sanity **5.13.0**, the internal `@portabletext/sanity-bridge` package was upgraded to v3, which requires `@portabletext/editor` v6 and `@portabletext/toolbar` v7. These packages in turn require **React 19**. Plugin versions **≥ 1.1.0** ship the updated `@portabletext/*` stack so that studio builds (`sanity build`, `sanity deploy`, etc.) work correctly.
+>
+> If you are on **Sanity 3 or 4** (React 18), pin the plugin to the last compatible release:
+>
+> ```sh
+> npm install sanity-plugin-rich-table@1.0.5
+> ```
+
 ## Installation
 
 ```sh

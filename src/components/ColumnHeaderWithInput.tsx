@@ -2,7 +2,7 @@ import {PatchOperations} from '@sanity/types'
 import {Box, Card, Flex, TextInput} from '@sanity/ui'
 import {ChangeEvent, ComponentType, useCallback, useState} from 'react'
 import {ObjectItem, OperationsAPI} from 'sanity'
-import styled from 'styled-components'
+import {styled} from 'styled-components'
 
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'

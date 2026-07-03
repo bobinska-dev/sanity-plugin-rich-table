@@ -7,16 +7,16 @@
     "dev": "sanity dev"
   },
   "dependencies": {
-    "@sanity/vision": "^5.31.1",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-is": "^19.2.4",
-    "sanity": "^5.31.1",
+    "@sanity/vision": "^6.3.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-is": "^19.2.7",
+    "sanity": "^6.3.0",
     "sanity-plugin-rich-table": "workspace:*",
-    "styled-components": "^6.3.8"
+    "styled-components": "^6.4.3"
   },
   "devDependencies": {
-    "@types/react": "^19.2.13",
-    "vite-tsconfig-paths": "^6.0.5"
+    "@types/react": "^19.2.14",
+    "vite-tsconfig-paths": "^6.1.1"
   }
 }

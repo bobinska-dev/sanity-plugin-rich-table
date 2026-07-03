@@ -10,6 +10,12 @@ _**DO NOT REMOVE CELLS WITH EMPTY `CONTENT` FROM THE ARRAYS MANUALLY!**_
 
 This means that an "empty" cell will still have a `content` field with an empty array. Consumers should check for the presence of content inside the `text` nodes to determine if a cell is truly empty.
 
+## Where `richTable` lives in the document
+
+- **Direct object field:** the stored value is the table object only (rows, column headers, flags). The Studio does not add a root `_type` or `_key` on that object by default.
+- **Array of `richTable`:** each item is a keyed array member. When you initialise a table from the size picker in that context, the plugin stores the same fields as above **plus** root `_type` (the schema type name) and `_key`, matching how Portable Text blocks are shaped.
+- **Portable Text (`richTableBlock`):** the block wrapper supplies the root `_type` / `_key` behaviour for the table object in the block array.
+
 ## Top-level object: `richTable`
 
 - Type: `object`

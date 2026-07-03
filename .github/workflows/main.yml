@@ -45,15 +45,15 @@ jobs:
     runs-on: ubuntu-latest
     name: Lint & Build
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
         with:
-          version: latest
-      - uses: actions/setup-node@v4
+          version: 11
+      - uses: actions/setup-node@v6
         with:
           cache: pnpm
           node-version: lts/*
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --filter=!studio
         # Linting can be skipped
       - run: pnpm run lint
         if: github.event.inputs.test != 'false'
@@ -88,15 +88,15 @@ jobs:
         run: |
           git config --global core.autocrlf false
           git config --global core.eol lf
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
         with:
-          version: latest
-      - uses: actions/setup-node@v4
+          version: 11
+      - uses: actions/setup-node@v6
         with:
           cache: pnpm
           node-version: ${{ matrix.node }}
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --filter=!studio
       - run: pnpm test
 
   release:
@@ -111,20 +111,22 @@ jobs:
     runs-on: ubuntu-latest
     name: Semantic release
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # Need to fetch entire commit history to
           # analyze every commit since last release
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
-          version: latest
-      - uses: actions/setup-node@v4
+          version: 11
+      - uses: actions/setup-node@v6
         with:
           cache: pnpm
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-      - run: pnpm install --frozen-lockfile
+        # Ensure npm >= 11.5.1 so OIDC trusted publishing is available
+      - run: npm install -g npm@latest
+      - run: pnpm install --frozen-lockfile --filter=!studio
         # Branches that will release new versions are defined in .releaserc.json
       - run: pnpm dlx semantic-release
         # Don't allow interrupting the release step if the job is cancelled, as it can lead to an inconsistent state
@@ -132,4 +134,4 @@ jobs:
         if: always()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Auth comes from OIDC trusted publishing (see id-token: write above); no NPM_TOKEN needed

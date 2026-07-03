@@ -18,7 +18,6 @@ const StyleSelector: ComponentType<{toolbarSchema: ToolbarSchema}> = ({toolbarSc
         button={
           <Button
             text={styleDropdownTitle}
-            size={1}
             fontSize={1}
             padding={2}
             mode={'bleed'}

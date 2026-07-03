@@ -16,7 +16,7 @@ import {
   useState,
 } from 'react'
 import {ArraySchemaType, Path, PortableTextBlock} from 'sanity'
-import styled from 'styled-components'
+import {styled} from 'styled-components'
 
 import {extendAnnotation} from '../../configs/extendAnnotation'
 import type {SanityBlockSchemaLike} from '../../configs/extendBlockObject'

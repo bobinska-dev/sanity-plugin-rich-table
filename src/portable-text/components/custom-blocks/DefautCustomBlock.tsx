@@ -1,19 +1,21 @@
 import {ComponentType, ReactNode, useCallback, useMemo} from 'react'
 import {BlockRenderProps} from '@portabletext/editor'
 import {Box, Card, Flex, Stack, Text} from '@sanity/ui'
-import {PreviewValue} from '@sanity/types'
+import {ObjectSchemaType, PreviewValue} from '@sanity/types'
 import styled from 'styled-components'
 import {PREVIEW_SIZE} from '../../configs/renderer/renderBlock'
 
 // TODO: file bug for props.value not updating (Christian)
 const DefaultCustomBlock:ComponentType<BlockRenderProps> = (props) => {
-
+  // The editor's BlockRenderProps.schemaType is a stripped BlockObjectSchemaType;
+  // read Sanity's `preview`/`icon`/`title` through the object schema shape.
+  const schemaType = props.schemaType as unknown as ObjectSchemaType
 
   const getPreviewSelection =() => {
-    // we use the props.schemaType.preview select to get the field values from props.value, and then use the preview prepare function to format the title for the block preview
-    const previewSelect = props.schemaType.preview?.select || {}
+    // we use the schemaType.preview select to get the field values from props.value, and then use the preview prepare function to format the title for the block preview
+    const previewSelect = schemaType.preview?.select || {}
     const previewPrepare =
-      props.schemaType.preview?.prepare
+      schemaType.preview?.prepare
     const selection = Object.keys(previewSelect).reduce(
       (acc, key) => {
         acc[key] = (props.value as Record<string, any>)[previewSelect[key]]
@@ -24,15 +26,15 @@ const DefaultCustomBlock:ComponentType<BlockRenderProps> = (props) => {
 
     if (previewPrepare) return previewPrepare(selection) as PreviewValue
     if(selection) return selection
-    return {title: props.schemaType.title}
+    return {title: schemaType.title}
   }
 
   const preview = getPreviewSelection()
 
   const renderMedia = (): ReactNode => {
-    if (!preview.media && !props.schemaType.icon) return null
-    if (!preview.media && props.schemaType.icon) return (
-      <props.schemaType.icon
+    if (!preview.media && !schemaType.icon) return null
+    if (!preview.media && schemaType.icon) return (
+      <schemaType.icon
       // @ts-ignore - the icon property on the schema type can be a React component but the type definitions don't reflect that, so we need to ignore the type check here
         style={{
           width: `${PREVIEW_SIZE}px`,

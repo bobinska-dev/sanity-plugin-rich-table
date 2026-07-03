@@ -1,9 +1,17 @@
 import {ComponentType} from 'react'
 import {TbTable} from 'react-icons/tb'
-import {defineArrayMember, defineField, defineType, ObjectInputProps, ObjectItem} from 'sanity'
+import {
+  defineArrayMember,
+  defineField,
+  defineType,
+  ObjectInputProps,
+  ObjectItem,
+  type ObjectItemProps,
+} from 'sanity'
 
 import RichTableBock from '../components/RichTableBock'
 import RichTableInput from '../components/RichTableInput'
+import RichTableItem from '../components/RichTableItem'
 import {ColumnHeader} from './columnHeader.object'
 import {RichTableRowType} from './row.object'
 
@@ -22,6 +30,7 @@ export default defineType({
   components: {
     input: RichTableInput as ComponentType<ObjectInputProps>,
     block: RichTableBock,
+    item: RichTableItem as ComponentType<ObjectItemProps<ObjectItem>>,
   },
   fields: [
     defineField({

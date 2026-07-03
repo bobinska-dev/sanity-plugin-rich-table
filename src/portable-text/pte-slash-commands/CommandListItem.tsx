@@ -11,7 +11,8 @@ export interface CommandListItemProps {
 }
 
 const CommandListItem: ComponentType<CommandListItemProps> = (props) => {
-  const ref = useRef<HTMLButtonElement>(null)
+  // Button renders as an <li> here, so the ref element type must match (styled-components/@sanity/ui v6 types this strictly).
+  const ref = useRef<HTMLLIElement>(null)
 
   useEffect(() => {
     if (props.selected && ref.current) {

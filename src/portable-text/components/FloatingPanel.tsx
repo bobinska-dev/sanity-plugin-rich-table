@@ -9,7 +9,7 @@ import {
 import {Card} from '@sanity/ui'
 import type {ReactNode} from 'react'
 import {createPortal} from 'react-dom'
-import styled from 'styled-components'
+import {styled} from 'styled-components'
 
 interface FloatingPanelProps {
   getAnchorRect: () => DOMRect | null

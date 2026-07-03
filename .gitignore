@@ -59,5 +59,8 @@ yalc.lock
 # npm package zips
 *.tgz
 
+# Install test temp dir
+tmp-studio-install-test
+
 # Compiled plugin
 dist

@@ -1,4 +1,5 @@
 import {EditorConfig, EditorProvider} from '@portabletext/editor'
+import {MarkdownShortcutsPlugin} from '@portabletext/plugin-markdown-shortcuts'
 import {Card} from '@sanity/ui'
 import {ComponentType, Suspense, useCallback, useRef, useState} from 'react'
 import {
@@ -22,10 +23,9 @@ import {renderBlock} from './configs/renderer/renderBlock'
 import renderDecorator from './configs/renderer/renderDecorators'
 import {renderListItem} from './configs/renderer/renderListItem'
 import renderStyle from './configs/renderer/renderStyle'
-
-import {MarkdownShortcutsPlugin} from '@portabletext/plugin-markdown-shortcuts'
 import {EmojiPickerPlugin} from './emoji-picker/EmojiPicker'
 import {SlashCommandPickerPlugin} from './pte-slash-commands/SlashCommandPicker'
+import {resolveSchemaDefinition} from './resolveSchemaDefinition'
 
 // import { useFullscreenPTE } from './hooks/useFullScreenPTE'
 
@@ -38,8 +38,8 @@ interface ContentPortableTextInputProps {
   readOnly?: InputProps['readOnly']
   /** onChange handler */
   onChange: InputProps['onChange']
-  /** pass down the richText definition of your choice
-   * Defaults to {@link content} schema
+  /** pass down the resolved richText ArraySchemaType of your choice.
+   * When omitted, standard PTE defaults are used (bold, italic, headings, lists, etc.)
    */
   schemaType?: ArraySchemaType<PortableTextBlock> | ArrayDefinition
   portableTextSchemaTypeName?: string
@@ -73,8 +73,9 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
   const initialConfig = useRef<EditorConfig>({
     initialValue: props.value,
     readOnly: props.readOnly ?? false,
-
-    schema: pteSchemaType,
+    // editor v7 takes a SchemaDefinition (not a compiled schema). Convert the
+    // schema resolved from `portableTextSchemaTypeName` (or fall back to defaults).
+    schemaDefinition: resolveSchemaDefinition(configSchema),
   })
 
   // TODO: fullscreen handling
@@ -100,19 +101,31 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
           <LinkPlugin />
           <EmojiPickerPlugin />
           <MarkdownShortcutsPlugin
-            boldDecorator={({schema}) => schema.decorators.find((d) => d.name === 'strong')?.name}
-            codeDecorator={({schema}) => schema.decorators.find((d) => d.name === 'code')?.name}
-            italicDecorator={({schema}) => schema.decorators.find((d) => d.name === 'em')?.name}
-            strikeThroughDecorator={({schema}) =>
-              schema.decorators.find((d) => d.name === 'strike-through')?.name
+            boldDecorator={({context}) =>
+              context.schema.decorators.find((d) => d.name === 'strong')?.name
             }
-            defaultStyle={({schema}) => schema.styles.find((s) => s.name === 'normal')?.name}
-            headingStyle={({schema, level}) =>
-              schema.styles.find((s) => s.name === `h${level}`)?.name
+            codeDecorator={({context}) =>
+              context.schema.decorators.find((d) => d.name === 'code')?.name
             }
-            blockquoteStyle={({schema}) => schema.styles.find((s) => s.name === 'blockquote')?.name}
-            orderedList={({schema}) => schema.lists.find((s) => s.name === 'number')?.name}
-            unorderedList={({schema}) => schema.lists.find((s) => s.name === 'bullet')?.name}
+            italicDecorator={({context}) =>
+              context.schema.decorators.find((d) => d.name === 'em')?.name
+            }
+            strikeThroughDecorator={({context}) =>
+              context.schema.decorators.find((d) => d.name === 'strike-through')?.name
+            }
+            defaultStyle={({context}) =>
+              context.schema.styles.find((s) => s.name === 'normal')?.name
+            }
+            headingStyle={({context, props: {level}}) =>
+              context.schema.styles.find((s) => s.name === `h${level}`)?.name
+            }
+            blockquoteStyle={({context}) =>
+              context.schema.styles.find((s) => s.name === 'blockquote')?.name
+            }
+            orderedList={({context}) => context.schema.lists.find((s) => s.name === 'number')?.name}
+            unorderedList={({context}) =>
+              context.schema.lists.find((s) => s.name === 'bullet')?.name
+            }
             horizontalRuleObject={({context}) => {
               const schemaType = context.schema.blockObjects.find(
                 (object) => object.name === 'break',

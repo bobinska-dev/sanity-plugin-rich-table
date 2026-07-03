@@ -4,6 +4,17 @@ import {CloseIcon} from '@sanity/icons'
 import {Button, Flex, Stack} from '@sanity/ui'
 import {useDocumentPane} from 'sanity/structure'
 
+/**
+ * Sanity schema type for table cell content.
+ *
+ * This registers the `content` array type in Sanity's schema system. Sanity
+ * fills in default decorators, styles, and lists during its own compilation
+ * pipeline, but the raw object exported here does NOT contain them.
+ *
+ * The standalone PTE in {@link ../portable-text/ContentPortableTextEditor.tsx}
+ * reads the compiled schema type via `useSchema()`, so it receives those same
+ * Sanity-provided defaults in the format expected by `@portabletext/editor`.
+ */
 export default defineType({
   name: 'content',
   title: 'Rich table content',

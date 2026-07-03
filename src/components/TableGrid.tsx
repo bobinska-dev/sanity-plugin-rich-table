@@ -1,9 +1,11 @@
 import {Card} from '@sanity/ui'
-import styled from 'styled-components'
+import {styled} from 'styled-components'
 
 const MINMAX_HEADER_ROW_HEIGHT = 30 // in px
-const ROW_TITLE_COLUMN_WIDTH = 4 // in rem
 const ROW_COLUMN_WIDTH = 2 // in rem
+
+const rowTitleColumnTrack = '1fr'
+const rowContextColumnTrack = `${ROW_COLUMN_WIDTH}rem`
 /** A styled Card component that uses CSS Grid to layout its children in a grid format.
  */
 export default styled(Card)<{
@@ -15,13 +17,14 @@ export default styled(Card)<{
   display: grid !important;
 
   grid-template-columns: ${(props) => {
+    const firstColumn = props.$hasRowTitles ? rowTitleColumnTrack : rowContextColumnTrack
     if (!props.$columnCount) {
-      return `${props.$hasRowTitles ? ROW_TITLE_COLUMN_WIDTH : ROW_COLUMN_WIDTH}rem repeat(4, 1fr)`
+      return `${firstColumn} repeat(4, 1fr)`
     }
     if (props.$columnCount <= 1) {
-      return `${ROW_TITLE_COLUMN_WIDTH}rem`
+      return firstColumn
     }
-    return `${props.$hasRowTitles ? ROW_TITLE_COLUMN_WIDTH : ROW_COLUMN_WIDTH}rem repeat(${props.$columnCount - 1}, 1fr)`
+    return `${firstColumn} repeat(${props.$columnCount - 1}, 1fr)`
   }};
 
   grid-template-rows: ${(props) => {

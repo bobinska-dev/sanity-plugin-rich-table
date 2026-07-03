@@ -1,5 +1,5 @@
 import {RenderListItemFunction} from '@portabletext/editor'
-import styled from 'styled-components'
+import {styled} from 'styled-components'
 
 const StyledLi = styled.li<{$level: number; $listType: 'bullet' | 'number'}>`
   display: flex;
@@ -22,14 +22,15 @@ const StyledLi = styled.li<{$level: number; $listType: 'bullet' | 'number'}>`
     margin-right: 0.3em;
   }
 
-  /* Reset margin on the p element (Sanity Box) */
-  > p {
+  /* Reset padding/margin on child content so the marker stays aligned */
+  > * {
     margin: 0;
-    padding: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
   }
 
   /* Remove any transforms that might affect alignment */
-  > p > div {
+  > * > div {
     transform: none !important;
   }
 `

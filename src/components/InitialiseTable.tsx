@@ -20,6 +20,7 @@ interface InitialiseTableProps {
   /** Patch function from Sanity document operations for optimistic changes */
   patch: OperationsAPI['patch']
   isInPortableText?: boolean
+  isInArray?: boolean
   readOnly: boolean | undefined
   onChange: (patch: FormPatch | FormPatch[] | PatchEvent) => void
   schemaTypeName: string
@@ -34,6 +35,7 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
   path,
   patch,
   isInPortableText,
+  isInArray,
   readOnly,
   onChange,
   schemaTypeName,
@@ -118,7 +120,7 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
       }
 
       // ** Prepare patches
-      if (isInPortableText) {
+      if (isInPortableText || isInArray) {
         return patch.execute([
           {
             set: {
@@ -135,7 +137,7 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
         },
       ])
     },
-    [path, patch, isInPortableText, onChange, schemaTypeName],
+    [path, patch, isInPortableText, isInArray, onChange, schemaTypeName],
   )
   // * COMMIT SELECTION
   const effectiveRows = selected.rows || hover.rows
