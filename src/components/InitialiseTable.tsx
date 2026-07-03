@@ -1,10 +1,11 @@
 import {Box, Button, Card, Flex, Text} from '@sanity/ui'
 import {ComponentType, useCallback, useEffect, useState} from 'react'
-import {FormPatch, OperationsAPI, PatchEvent, PortableTextBlock, SANITY_PATCH_TYPE} from 'sanity'
+import {FormPatch, OperationsAPI, PatchEvent, SANITY_PATCH_TYPE} from 'sanity'
 
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableRowType} from '../schemas/row.object'
+import {createEmptyCell} from '../utils/createEmptyCell'
 import {generateKey} from '../utils/generateKey'
 import {onKeyDownSelectCells} from '../utils/onKeyDownSelect'
 import InitialiseGrid from './InitialiseGrid'
@@ -82,15 +83,7 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
 
       // Prepare the initial table value
       // Cells per row
-      const cells: RichTableCellType[] = Array.from({length: cols ?? 1}, () => {
-        return {
-          _type: 'richTableCell',
-          _key: generateKey(),
-          content: [
-            {_type: 'block', markDefs: [], children: [{_type: 'span', text: '', marks: []}]},
-          ] as unknown as PortableTextBlock[],
-        }
-      })
+      const cells: RichTableCellType[] = Array.from({length: cols ?? 1}, () => createEmptyCell())
       // New rows
       const rows: RichTableRowType[] = Array.from({length: rowCount ?? 1}, () => ({
         _type: 'row',
