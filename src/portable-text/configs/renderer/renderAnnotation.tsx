@@ -13,5 +13,12 @@ export const renderAnnotation: RenderAnnotationFunction = (props) => {
     )
   }
 
-  return props.children
+  // Custom annotation: render a styleable span tagged with its name so consumers
+  // can target it via CSS (e.g. [data-annotation="footnote"]) instead of it
+  // rendering with no affordance.
+  return (
+    <span data-annotation={props.schemaType.name} id={`annotation-${props.value._key}`}>
+      {props.children}
+    </span>
+  )
 }

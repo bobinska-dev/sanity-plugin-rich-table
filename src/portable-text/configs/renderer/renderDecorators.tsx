@@ -31,7 +31,10 @@ const renderDecorator: RenderDecoratorFunction = (props) => {
   if (props.value === 'strike-through') {
     return <s>{props.children}</s>
   }
-  return <>{props.children}</>
+  // Custom decorator: render a styleable span tagged with its name so consumers
+  // can target it via CSS (e.g. [data-decorator="highlight"]) instead of it
+  // rendering as indistinct plain text.
+  return <span data-decorator={props.value}>{props.children}</span>
 }
 
 export default renderDecorator

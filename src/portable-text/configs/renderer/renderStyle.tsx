@@ -64,7 +64,14 @@ const renderStyle: RenderStyleFunction = (props) => {
       </blockquote>
     )
   }
-  return <>{props.children}</>
+  // Custom style: render a paragraph-like block tagged with its name so consumers
+  // can target it via CSS (e.g. [data-style="lead"]) instead of it rendering as
+  // indistinct inline text with no block spacing.
+  return (
+    <Box paddingBottom={3} data-style={props.schemaType.value}>
+      <Text size={1}>{props.children}</Text>
+    </Box>
+  )
 }
 
 export default renderStyle

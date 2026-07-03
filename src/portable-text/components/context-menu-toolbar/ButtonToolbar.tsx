@@ -18,12 +18,13 @@ import {
 import {ArraySchemaType, Path, PortableTextBlock} from 'sanity'
 import {styled} from 'styled-components'
 
-import {extendAnnotation} from '../../configs/extendAnnotation'
+import {createExtendAnnotation} from '../../configs/extendAnnotation'
 import type {SanityBlockSchemaLike} from '../../configs/extendBlockObject'
 import {createExtendBlockObject} from '../../configs/extendBlockObject'
-import extendDecorator from '../../configs/extendDecorators'
-import {extendList} from '../../configs/extendList'
-import extendStyle from '../../configs/extendStyles'
+import {createExtendDecorators} from '../../configs/extendDecorators'
+import {createExtendList} from '../../configs/extendList'
+import {createExtendStyles} from '../../configs/extendStyles'
+import type {SchemaMarkLike} from '../../configs/schemaToolbarTypes'
 import AnnotationPopover from '../annotation/AnnotationPopover'
 import BlockPopover from '../custom-blocks/BlockPopover'
 import StyleSelector from '../StyleSelector'
@@ -56,6 +57,36 @@ const ButtonToolbar: ComponentType<{
   }, [schemaType])
 
   const extendBlockObject = useMemo(() => createExtendBlockObject(blockSchemas), [blockSchemas])
+
+  // Pull the consumer's decorators/styles/lists/annotations off the text block
+  // member so the toolbar shows their schema-defined icons/titles. Built-ins
+  // remain the fallback for the standard names.
+  const blockConfig = useMemo(() => {
+    const block = blockSchemas?.find((m) => m.name === 'block' || 'styles' in m || 'marks' in m) as
+      | {
+          styles?: SchemaMarkLike[]
+          lists?: SchemaMarkLike[]
+          marks?: {decorators?: SchemaMarkLike[]; annotations?: SchemaMarkLike[]}
+        }
+      | undefined
+    return {
+      decorators: block?.marks?.decorators,
+      styles: block?.styles,
+      lists: block?.lists,
+      annotations: block?.marks?.annotations,
+    }
+  }, [blockSchemas])
+
+  const extendDecorator = useMemo(
+    () => createExtendDecorators(blockConfig.decorators),
+    [blockConfig.decorators],
+  )
+  const extendStyle = useMemo(() => createExtendStyles(blockConfig.styles), [blockConfig.styles])
+  const extendList = useMemo(() => createExtendList(blockConfig.lists), [blockConfig.lists])
+  const extendAnnotation = useMemo(
+    () => createExtendAnnotation(blockConfig.annotations),
+    [blockConfig.annotations],
+  )
 
   const toolbarSchema = useToolbarSchema({
     extendDecorator,
