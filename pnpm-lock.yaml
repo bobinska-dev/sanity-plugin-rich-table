@@ -20,9 +20,15 @@ importers:
       '@portabletext/plugin-emoji-picker':
         specifier: ^7.0.26
         version: 7.0.26(@portabletext/editor@7.9.0(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react@19.2.7)
+      '@portabletext/plugin-list-index':
+        specifier: ^1.0.11
+        version: 1.0.11(@portabletext/editor@7.9.0(@types/react@19.2.17)(react@19.2.7))(react@19.2.7)
       '@portabletext/plugin-markdown-shortcuts':
         specifier: ^8.0.26
         version: 8.0.26(@portabletext/editor@7.9.0(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react@19.2.7)
+      '@portabletext/plugin-paste-link':
+        specifier: ^4.0.26
+        version: 4.0.26(@portabletext/editor@7.9.0(@types/react@19.2.17)(react@19.2.7))(react@19.2.7)
       '@portabletext/plugin-typeahead-picker':
         specifier: ^6.0.26
         version: 6.0.26(@portabletext/editor@7.9.0(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react@19.2.7)

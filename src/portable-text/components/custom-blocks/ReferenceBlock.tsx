@@ -3,7 +3,7 @@ import {ComponentType, useEffect, useState} from 'react'
 import {Box, Card, Flex, Stack, Text} from '@sanity/ui'
 import {Image, ReferenceSchemaType, ReferenceValue} from '@sanity/types'
 import groq, {defineQuery} from 'groq'
-import {PortableTextBlock, useClient} from 'sanity'
+import {PortableTextBlock, useClient, usePerspective} from 'sanity'
 import {Subscription} from 'rxjs'
 import {createImageUrlBuilder} from '@sanity/image-url'
 import {DocumentIcon} from '@sanity/icons'
@@ -11,7 +11,13 @@ import {PREVIEW_SIZE} from '../../configs/renderer/renderBlock'
 
 const ReferenceBlock:ComponentType<BlockRenderProps> = (props) => {
   // * CLIENT & IMAGE
-  const client = useClient({apiVersion:'2026-02-01'}).withConfig({requestTagPrefix: `ReferenceBlock-${props.value._key}`, perspective:'drafts'})
+  // Fetch the referenced document in the editor's active perspective (release/drafts stack)
+  // so the preview reflects the version being edited, not always drafts.
+  const {perspectiveStack} = usePerspective()
+  const client = useClient({apiVersion: '2026-02-01'}).withConfig({
+    requestTagPrefix: `ReferenceBlock-${props.value._key}`,
+    perspective: perspectiveStack,
+  })
   const imageBuilder = createImageUrlBuilder(client)
 
   // * PREP

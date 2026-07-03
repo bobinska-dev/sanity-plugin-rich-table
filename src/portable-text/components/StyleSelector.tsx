@@ -18,6 +18,7 @@ const StyleSelector: ComponentType<{toolbarSchema: ToolbarSchema}> = ({toolbarSc
         button={
           <Button
             text={styleDropdownTitle}
+            disabled={styleSelector.snapshot.matches('disabled')}
             fontSize={1}
             padding={2}
             mode={'bleed'}
@@ -33,25 +34,21 @@ const StyleSelector: ComponentType<{toolbarSchema: ToolbarSchema}> = ({toolbarSc
         popover={{portal: true}}
         menu={
           <Menu>
-            {toolbarSchema.styles?.map((style) => {
-              // eslint-disable-next-line react-hooks/rules-of-hooks
-              const styleButton = useStyleSelector({schemaTypes: [style]})
-              return (
-                <MenuItem
-                  key={style.name}
-                  onClick={() => styleButton.send({type: 'toggle', style: style.name})}
-                  selected={currentStyle == style.name}
-                  icon={style.icon}
-                  as={'button'}
-                  padding={2}
-                  tone={'default'}
-                  title={style.title}
-                  role="menuitemradio"
-                  aria-checked={currentStyle == style.name}
-                  aria-label={style.title}
-                />
-              )
-            })}
+            {toolbarSchema.styles?.map((style) => (
+              <MenuItem
+                key={style.name}
+                onClick={() => styleSelector.send({type: 'toggle', style: style.name})}
+                selected={currentStyle == style.name}
+                icon={style.icon}
+                as={'button'}
+                padding={2}
+                tone={'default'}
+                title={style.title}
+                role="menuitemradio"
+                aria-checked={currentStyle == style.name}
+                aria-label={style.title}
+              />
+            ))}
           </Menu>
         }
       />

@@ -34,6 +34,7 @@ const AnnotationButton: ComponentType<{annotation: ToolbarAnnotationSchemaType}>
       selected={annotationButton.snapshot.matches({enabled: 'active'})}
       aria-pressed={annotationButton.snapshot.matches({enabled: 'active'})}
       aria-label={annotation.title}
+      disabled={annotationButton.snapshot.matches('disabled')}
       aria-keyshortcuts={annotation.shortcut?.keys.join('+')}
       icon={annotation.icon}
       padding={2}

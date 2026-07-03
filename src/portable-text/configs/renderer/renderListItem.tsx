@@ -1,20 +1,19 @@
-import {RenderListItemFunction} from '@portabletext/editor'
+import {BlockListItemRenderProps, RenderListItemFunction} from '@portabletext/editor'
+import {useListIndex} from '@portabletext/plugin-list-index'
+import {ComponentType, CSSProperties} from 'react'
 import {styled} from 'styled-components'
 
-const StyledLi = styled.li<{$level: number; $listType: 'bullet' | 'number'}>`
+const StyledLi = styled.li<{$level: number}>`
   display: flex;
   align-items: baseline;
   margin-left: ${(props) => (props.$level ? `${props.$level * 0.35}rem` : '0rem')};
   padding: 0;
   list-style: none;
 
-  /* Use CSS counters for numbered lists */
-  counter-increment: ${(props) =>
-    props.$listType === 'number' ? `list-counter-${props.$level}` : 'none'};
-
+  /* Marker content comes from the --rt-list-marker custom property, set per item
+     from the computed list index (numbers) or a bullet glyph. */
   &::before {
-    content: ${(props) =>
-      props.$listType === 'number' ? `counter(list-counter-${props.$level}) "."` : '"\\2022"'};
+    content: var(--rt-list-marker);
     flex-shrink: 0;
     min-width: 1.2em;
     font-size: 0.8125rem;
@@ -35,19 +34,31 @@ const StyledLi = styled.li<{$level: number; $listType: 'bullet' | 'number'}>`
   }
 `
 
-export const renderListItem: RenderListItemFunction = (props) => {
-  const listType = props.schemaType.value
-  const isNumber = listType === 'number'
+/**
+ * List item render component.
+ *
+ * Portable Text stores list items as flat sibling blocks with a `level`, so an
+ * ordered item's number is a derived value. We use `useListIndex` from
+ * `@portabletext/plugin-list-index` to get the correct 1-based index (it stays
+ * correct under nesting, remote edits, and normalization), replacing the old
+ * hand-tuned CSS `counter-reset` scheme that had to be coordinated per level.
+ */
+const ListItem: ComponentType<BlockListItemRenderProps> = (props) => {
+  const isNumber = props.schemaType.value === 'number'
+  const index = useListIndex(props.path)
+  const marker = isNumber ? `"${index ?? 1}."` : '"\\2022"'
 
   return (
     <StyledLi
       $level={props.level}
-      $listType={isNumber ? 'number' : 'bullet'}
       role="listitem"
       data-list-item={isNumber ? 'number' : 'bullet'}
       data-list-level={props.level}
+      style={{'--rt-list-marker': marker} as CSSProperties}
     >
       {props.children}
     </StyledLi>
   )
 }
+
+export const renderListItem: RenderListItemFunction = (props) => <ListItem {...props} />

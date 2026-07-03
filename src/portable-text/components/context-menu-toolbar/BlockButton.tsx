@@ -5,7 +5,7 @@ import {ComponentType} from 'react'
 const BlockButton: ComponentType<{
   blockObject: ToolbarBlockObjectSchemaType
 }> = ({blockObject}) => {
-  const {send} = useBlockObjectButton({schemaType: blockObject})
+  const {send, snapshot} = useBlockObjectButton({schemaType: blockObject})
 
   // Icon is restored onto the toolbar block object by `extendBlockObject`
   // (PTE strips icons from its own toolbar schema — see createExtendBlockObject).
@@ -33,6 +33,7 @@ const BlockButton: ComponentType<{
             })
           }}
           icon={icon}
+          disabled={snapshot.matches('disabled')}
           as={'button'}
           padding={2}
           tone={'default'}

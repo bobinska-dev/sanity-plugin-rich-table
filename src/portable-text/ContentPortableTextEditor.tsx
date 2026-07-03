@@ -1,5 +1,7 @@
 import {EditorConfig, EditorProvider} from '@portabletext/editor'
+import {ListIndexProvider} from '@portabletext/plugin-list-index'
 import {MarkdownShortcutsPlugin} from '@portabletext/plugin-markdown-shortcuts'
+import {PasteLinkPlugin} from '@portabletext/plugin-paste-link'
 import {Card} from '@sanity/ui'
 import {ComponentType, Suspense, useCallback, useRef, useState} from 'react'
 import {
@@ -16,7 +18,6 @@ import LoadingIndicator from '../components/LoadingIndicator'
 import content from '../schemas/content'
 import ButtonToolbar from './components/context-menu-toolbar/ButtonToolbar'
 import CustomListenerPlugin from './components/EventListenerPlugin'
-import {LinkPlugin} from './components/LinkPlugin'
 import {StyledPortableTextEditable} from './components/StyledPortableTextEditable'
 import {renderAnnotation} from './configs/renderer/renderAnnotation'
 import {renderBlock} from './configs/renderer/renderBlock'
@@ -98,7 +99,7 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
             handleFocus={handleFocus}
           />
           <SlashCommandPickerPlugin />
-          <LinkPlugin />
+          <PasteLinkPlugin />
           <EmojiPickerPlugin />
           <MarkdownShortcutsPlugin
             boldDecorator={({context}) =>
@@ -156,15 +157,17 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
             }}
           />
 
-          <StyledPortableTextEditable
-            renderStyle={renderStyle}
-            renderDecorator={renderDecorator}
-            renderBlock={renderBlock({
-              configSchema,
-            })}
-            renderListItem={renderListItem}
-            renderAnnotation={renderAnnotation}
-          />
+          <ListIndexProvider>
+            <StyledPortableTextEditable
+              renderStyle={renderStyle}
+              renderDecorator={renderDecorator}
+              renderBlock={renderBlock({
+                configSchema,
+              })}
+              renderListItem={renderListItem}
+              renderAnnotation={renderAnnotation}
+            />
+          </ListIndexProvider>
           {!props.readOnly && (
             <ButtonToolbar
               focused={focused}
