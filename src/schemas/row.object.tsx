@@ -45,15 +45,13 @@ export default defineType({
     },
     prepare(selection) {
       const {title, cells} = selection
-      if (!title) {
-        return {
-          title: 'Row',
-          subtitle: `${cells.length} cell${cells && cells.length === 1 ? '' : 's'}`,
-        }
-      }
+      // `cells` can be undefined (empty/legacy rows, or partial values in the
+      // "Review changes" diff view), so guard before reading `.length` — an
+      // exception here would blank the preview and the diff.
+      const cellCount = Array.isArray(cells) ? cells.length : 0
       return {
-        title: title,
-        subtitle: `${cells.length} cell${cells && cells.length === 1 ? '' : 's'}`,
+        title: title || 'Row',
+        subtitle: `${cellCount} cell${cellCount === 1 ? '' : 's'}`,
       }
     },
   },
