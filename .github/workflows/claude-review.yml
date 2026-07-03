@@ -55,20 +55,25 @@ jobs:
       # Snapshot how many comments the bot has already posted, so the guard step
       # after the review can tell whether THIS run posted anything new. A
       # before/after delta is race-safe (concurrency cancels overlapping runs)
-      # and needs no timestamp parsing.
+      # and needs no timestamp parsing. Count both conversation comments (the
+      # summary, via `gh pr comment`) and inline review comments, so the guard
+      # can't false-fail when a review posts only inline findings.
       - name: Snapshot existing review comments
         id: precount
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
         run: |
-          before=$(gh api \
-            "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments?per_page=100" \
+          issue=$(gh api "repos/$REPO/issues/$PR/comments?per_page=100" \
             --jq '[.[] | select(.user.login == "github-actions[bot]")] | length')
+          inline=$(gh api "repos/$REPO/pulls/$PR/comments?per_page=100" \
+            --jq '[.[] | select(.user.login == "github-actions[bot]")] | length')
+          before=$(( ${issue:-0} + ${inline:-0} ))
           echo "before=$before" >> "$GITHUB_OUTPUT"
-          echo "Bot comments before review: $before"
+          echo "Bot comments before review: $before (conversation=$issue inline=$inline)"
 
       - name: Claude code review
-        id: claude_review
         # Pinned to an immutable release SHA (not the mutable @beta tag) since
         # this job holds write permissions. Dependabot (github-actions) keeps
         # the pin current.
@@ -172,51 +177,37 @@ jobs:
             the PR shows the review ran.
 
       # A green "Claude code review" step means only that the agent's process
-      # exited 0 — NOT that a review reached the PR. Blocked tool calls are
-      # silent (a denial isn't an error), and the agent's chat text is discarded
-      # (no sticky/tracking comment). So a misconfigured run looks identical to a
-      # clean approval. This guard turns that silent no-op red on two signals:
-      #   1. permission_denials_count > 0 — the agent was blocked from a tool
-      #      call, so the review is likely incomplete. Usually means a needed
-      #      tool is missing from --allowedTools. If a healthy review ever trips
-      #      this on a harmless probe, downgrade the `denials` branch below from
-      #      `fail=1` to a `::warning::`.
-      #   2. No new bot comment — the prompt requires a summary comment on every
-      #      run, so zero new comments means nothing was posted.
+      # exited 0 — NOT that a review reached the PR. A blocked tool call is not an
+      # error, and the agent's chat text is discarded (no sticky/tracking comment
+      # is configured), so a misconfigured run that posts nothing looks identical
+      # to a clean approval. This guard turns that silent no-op red: if no new bot
+      # comment appeared, the review produced nothing — whatever the cause (denied
+      # post, auth failure, crash) — so fail the job.
+      #
+      # NOTE: we deliberately do NOT gate on `permission_denials_count` from the
+      # action's execution log. That log is written to
+      # ${RUNNER_TEMP}/claude-execution-output.json, but the action removes it
+      # before this downstream step runs (confirmed on the first live run: the
+      # path was already gone), so it can't be read reliably. The comment-delta
+      # below already covers the case we care about — denied posts leave no
+      # comment.
       - name: Fail if the review posted nothing
         if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-
-          # How many tool calls were denied? Read the action's execution log; if
-          # the output path is missing, fall back to the known temp filename.
-          exec_file="${{ steps.claude_review.outputs.execution_file }}"
-          [ -n "$exec_file" ] && [ -f "$exec_file" ] || exec_file="${RUNNER_TEMP}/claude-execution-output.json"
-          denials=0
-          if [ -f "$exec_file" ]; then
-            denials=$(jq -r '[.. | objects | select(.type? == "result")] | last | .permission_denials_count // 0' "$exec_file" 2>/dev/null || echo 0)
-          else
-            echo "::warning::No execution log found at '$exec_file' — skipping the permission-denial check."
-          fi
-
-          # Did this run add any bot comment (inline or summary)?
-          before='${{ steps.precount.outputs.before }}'
-          after=$(gh api \
-            "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments?per_page=100" \
+          issue=$(gh api "repos/$REPO/issues/$PR/comments?per_page=100" \
             --jq '[.[] | select(.user.login == "github-actions[bot]")] | length')
-
-          echo "permission_denials_count=$denials"
-          echo "bot comments: before=${before:-0} after=${after:-0}"
-
-          fail=0
-          if [ "${denials:-0}" -gt 0 ]; then
-            echo "::error::Claude review was blocked from ${denials} tool call(s) — likely a missing entry in --allowedTools. The review is probably incomplete or empty."
-            fail=1
+          inline=$(gh api "repos/$REPO/pulls/$PR/comments?per_page=100" \
+            --jq '[.[] | select(.user.login == "github-actions[bot]")] | length')
+          after=$(( ${issue:-0} + ${inline:-0} ))
+          before='${{ steps.precount.outputs.before }}'
+          echo "bot comments: before=${before:-0} after=$after (conversation=$issue inline=$inline)"
+          if [ "$after" -le "${before:-0}" ]; then
+            echo "::error::Claude review posted no new comment to the PR (before=${before:-0}, after=$after). The review ran but surfaced nothing — usually a missing --allowedTools entry (post attempts get silently denied) or an auth/config problem. Failing so this silent no-op is visible instead of a misleading green check."
+            exit 1
           fi
-          if [ "${after:-0}" -le "${before:-0}" ]; then
-            echo "::error::Claude review posted no new comment to the PR (before=${before:-0}, after=${after:-0}). Failing so this silent no-op is visible instead of a misleading green check."
-            fail=1
-          fi
-          exit "$fail"
+          echo "Review posted $(( after - ${before:-0} )) new comment(s)."
