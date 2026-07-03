@@ -1,10 +1,11 @@
 import {PatchOperations} from '@sanity/types'
 import {useCallback} from 'react'
-import {OperationsAPI, PortableTextBlock} from 'sanity'
+import {OperationsAPI} from 'sanity'
 
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'
+import {createEmptyCell} from '../utils/createEmptyCell'
 import {generateKey} from '../utils/generateKey'
 
 interface UseAddColumnParams {
@@ -20,14 +21,8 @@ export function useAddColumn({path, value, patch}: UseAddColumnParams) {
   return useCallback(() => {
     const colCount = value?.columnHeaders?.length || 0
 
-    // Template for a new empty cell (no _key; Sanity will generate it)
-    const newCellItem: RichTableCellType = {
-      _type: 'richTableCell',
-      _key: generateKey(),
-      content: [
-        {_type: 'block', markDefs: [], children: [{_type: 'span', text: '', marks: []}]},
-      ] as unknown as PortableTextBlock[],
-    }
+    // Template for a new empty cell with a fully-keyed Portable Text value.
+    const newCellItem: RichTableCellType = createEmptyCell()
 
     // Letter in the alphabet based on column count (A, B, C, ...)
     // const newColumnTitle = getLetterBasedOnIndex(colCount)

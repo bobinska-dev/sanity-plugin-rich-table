@@ -9,10 +9,10 @@ import {
   TbRowInsertTop,
   TbRowRemove,
 } from 'react-icons/tb'
-import {OperationsAPI, PortableTextBlock} from 'sanity'
+import {OperationsAPI} from 'sanity'
 
-import {RichTableCellType} from '../schemas/cell.object'
 import {RichTableRowType} from '../schemas/row.object'
+import {createEmptyCell} from '../utils/createEmptyCell'
 import {generateKey} from '../utils/generateKey'
 
 interface RowContextMenuProps {
@@ -58,21 +58,7 @@ const RowContextMenu: ComponentType<RowContextMenuProps> = ({
   const handleAddRow = useCallback(
     (side: 'above' | 'below') => {
       const currentRowPathString = `${path}.rows[${rowIndex}]`
-      const newCells: RichTableRowType['cells'] = row.cells?.map(() => {
-        const newCell: RichTableCellType = {
-          _type: 'richTableCell',
-          _key: generateKey(),
-          content: [
-            {
-              _type: 'block',
-              _key: generateKey(),
-              markDefs: [],
-              children: [{_type: 'span', text: '', marks: []}],
-            },
-          ] as unknown as PortableTextBlock[],
-        }
-        return newCell
-      })
+      const newCells: RichTableRowType['cells'] = row.cells?.map(() => createEmptyCell())
 
       const newRow: RichTableRowType = {
         _type: 'row',

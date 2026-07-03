@@ -1,9 +1,10 @@
 import {useCallback} from 'react'
-import {OperationsAPI, PortableTextBlock} from 'sanity'
+import {OperationsAPI} from 'sanity'
 
 import {RichTableCellType} from '../schemas/cell.object'
 import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
+import {createEmptyCell} from '../utils/createEmptyCell'
 import {generateKey} from '../utils/generateKey'
 
 interface UseAddRowProps {
@@ -19,20 +20,7 @@ export default function useAddRow({path, value, patch}: UseAddRowProps) {
   return useCallback(() => {
     const colCount = value?.columnHeaders?.length || 0
     // Create an array of empty cells for the new row.
-    const cells: RichTableCellType[] = Array.from({length: colCount ?? 1}, () => {
-      return {
-        _type: 'richTableCell',
-        _key: generateKey(),
-        content: [
-          {
-            _type: 'block',
-            _key: generateKey(),
-            markDefs: [],
-            children: [{_type: 'span', text: '', marks: []}],
-          },
-        ] as unknown as PortableTextBlock[],
-      }
-    })
+    const cells: RichTableCellType[] = Array.from({length: colCount ?? 1}, () => createEmptyCell())
 
     // const newRowTitle = `${value?.rows ? value.rows.length + 1 : 1}`
     // Define the new row with the generated cells.

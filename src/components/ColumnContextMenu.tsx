@@ -9,11 +9,12 @@ import {
   TbColumnInsertRight,
   TbColumnRemove,
 } from 'react-icons/tb'
-import {ObjectItem, OperationsAPI, PortableTextBlock} from 'sanity'
+import {ObjectItem, OperationsAPI} from 'sanity'
 
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'
+import {createEmptyCell} from '../utils/createEmptyCell'
 import {generateKey} from '../utils/generateKey'
 
 interface ColumnMenuButtonProps {
@@ -108,19 +109,8 @@ const ColumnContextMenu: ComponentType<ColumnMenuButtonProps> = (props) => {
       // * Patches to add new cells in each row
       const addCellPatches = newCellsPaths.map((cellPath) => {
         const direction = side === 'right' ? 'after' : 'before'
-        // Template cell item
-        const newCellItemWithKey: RichTableCellType = {
-          _type: 'richTableCell',
-          _key: generateKey(),
-          content: [
-            {
-              _type: 'block',
-              _key: generateKey(),
-              markDefs: [],
-              children: [{_type: 'span', text: '', marks: []}],
-            },
-          ] as unknown as PortableTextBlock[],
-        }
+        // Template cell item with a fully-keyed Portable Text value.
+        const newCellItemWithKey: RichTableCellType = createEmptyCell()
         return {
           insert: {
             [direction]: cellPath,
