@@ -11,6 +11,7 @@ import {
 
 import RichTableBock from '../components/RichTableBock'
 import RichTableDiff from '../components/RichTableDiff'
+import RichTableField from '../components/RichTableField'
 import RichTableInput from '../components/RichTableInput'
 import RichTableItem from '../components/RichTableItem'
 import {ColumnHeader} from './columnHeader.object'
@@ -99,6 +100,9 @@ export const defineRichTableObject = ({
         />
       ),
       block: RichTableBock,
+      // Mirrors the table's aggregated validation onto the native field header,
+      // so the field-title marker matches every other field.
+      field: RichTableField,
       // Renders a readable table diff in the "Review changes" pane.
       diff: RichTableDiff,
     },

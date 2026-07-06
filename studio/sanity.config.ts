@@ -48,6 +48,7 @@ export default defineConfig({
             name: 'title',
             title: 'Title',
             type: 'string',
+            validation: (Rule) => Rule.required(),
           }),
           defineField({
             name: 'myRichTable',
@@ -108,10 +109,12 @@ export default defineConfig({
                     type: 'string',
                   }),
                 ],
-                // Inline objects render via Sanity's single native
-                // `components.inlineBlock` slot (no table-specific sibling —
-                // only block objects need `tableBlock`).
-                components: {inlineBlock: MentionInline},
+                // Custom cell visual goes on the table-specific `tableInlineBlock`
+                // slot (sibling of `tableBlock` for block objects), NOT the
+                // standard `inlineBlock`: that leaves the native PT input's default
+                // inline-object rendering intact so the edit form still opens on
+                // the object (onPathOpen), while the cell editor renders MentionInline.
+                components: {tableInlineBlock: MentionInline},
               }),
             ],
             // Demo of a fully customisable cell PTE: the standard marks plus a
@@ -152,11 +155,14 @@ export default defineConfig({
                       type: 'url',
                       title: 'URL',
                       // Allow email and telephone links in addition to web URLs.
-                      validation: (Rule) => Rule.uri({scheme: ['http', 'https', 'mailto', 'tel']}),
+                      validation: (Rule) =>
+                        Rule.uri({scheme: ['http', 'https', 'mailto', 'tel']}).required(),
                     }),
                   ],
-                  // Annotations use Sanity's native `components.annotation` slot.
-                  components: {annotation: LinkAnnotation},
+                  // Cell visual on the table-specific `tableAnnotation` slot
+                  // (sibling of `tableBlock`); leaves the native `annotation` slot
+                  // for Sanity's default rendering in the debug/document view.
+                  components: {tableAnnotation: LinkAnnotation},
                 },
                 {
                   name: 'footnote',
@@ -164,7 +170,7 @@ export default defineConfig({
                   title: 'Footnote',
                   icon: AsteriskIcon,
                   fields: [{name: 'text', type: 'string', title: 'Note'}],
-                  components: {annotation: FootnoteAnnotation},
+                  components: {tableAnnotation: FootnoteAnnotation},
                 },
               ],
             },

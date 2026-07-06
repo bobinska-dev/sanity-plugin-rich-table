@@ -11,7 +11,7 @@ import type {BlockProps} from 'sanity'
  */
 const MentionInline: ComponentType<BlockProps> = (props) => {
   const value = props.value as {label?: string; test?: string; title?: string}
-  const label = value.label ?? value.test ?? value.title
+  const label = value.test ?? value.title
   return (
     <span
       data-inline-object="mention"

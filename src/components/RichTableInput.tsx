@@ -1,5 +1,11 @@
-import {ExpandIcon, ResetIcon, UploadIcon} from '@sanity/icons'
-import {Box, Button, Flex, Inline, Stack, Switch, Text, Tooltip, useToast} from '@sanity/ui'
+import {
+  ErrorOutlineIcon,
+  ExpandIcon,
+  ResetIcon,
+  UploadIcon,
+  WarningOutlineIcon,
+} from '@sanity/icons'
+import {Box, Button, Card, Flex, Inline, Stack, Switch, Text, Tooltip, useToast} from '@sanity/ui'
 import {ChangeEvent, ComponentType, Suspense, useCallback, useMemo, useState} from 'react'
 import {
   getPublishedId,
@@ -12,9 +18,11 @@ import {
   useFormValue,
   useSchema,
 } from 'sanity'
+import {useDocumentPane} from 'sanity/structure'
 import styled, {createGlobalStyle} from 'styled-components'
 
 import {useDialogRouteState} from '../hooks/useDialogRouteState'
+import {useTableCellValidation} from '../hooks/useTableCellValidation'
 import {useToggleTitles} from '../hooks/useToggleTitles'
 import {useRegisterTableImport} from '../import/TableImportContext'
 import {TableImportDialog} from '../import/TableImportDialog'
@@ -117,6 +125,18 @@ const RichTableInput: ComponentType<
   // (deep-linkable, refresh-persistent, back-button closes), keyed by field path so
   // only the matching table opens. Falls back to local state outside Structure.
   const {open: openDialog, handleOpen, handleClose} = useDialogRouteState(pathString)
+  // * Native member editing (blocks / annotations / inline objects)
+  // The hidden `renderDefault` below is Sanity's full compiled FormBuilder for
+  // this table; the cell popovers call `useDocumentPane().onPathOpen` to open a
+  // member's native edit dialog from it. Mounting that whole FormBuilder on every
+  // render (once per table) is wasteful and churns the React-Compiler memo cache,
+  // so mount it ONLY while a member of THIS field is actually open. `onPathOpen`
+  // sets `openPath` into this field, which re-renders here and mounts the
+  // FormBuilder on demand — it then opens the dialog for the already-set path.
+  const {openPath} = useDocumentPane()
+  const isEditingMember =
+    openPath.length > props.path.length &&
+    pathToString(openPath.slice(0, props.path.length)) === pathString
   // * Confirm clear table dialog
   const [openConfirmClearDialog, setOpenConfirmClearDialog] = useState(false)
   const handleOpenConfirmClearDialog = useCallback(() => setOpenConfirmClearDialog(true), [])
@@ -166,6 +186,11 @@ const RichTableInput: ComponentType<
   // (being a menu descriptor) cannot render the dialog itself.
   useRegisterTableImport(pathString, handleOpenImportDialog)
 
+  // Table-level markers (e.g. the "min 1 row" rule) — surfaced as a banner in the
+  // empty state, where there are no cells/headers to carry a tone.
+  const {markers: tableMarkers, tone: tableTone} = useTableCellValidation()(props.path)
+  const TableValidationIcon = tableTone === 'caution' ? WarningOutlineIcon : ErrorOutlineIcon
+
   const {hasColumnTitles, hasRowTitles} = props.value || {}
   const {toggleColumnTitles, toggleRowTitles} = useToggleTitles(
     hasColumnTitles,
@@ -179,6 +204,22 @@ const RichTableInput: ComponentType<
       <Suspense fallback={<LoadingIndicator />} name={'RichTableInput Suspense'}>
         {!props.value?.rows && (
           <Stack space={3}>
+            {tableMarkers.length > 0 && (
+              <Card tone={tableTone ?? 'critical'} padding={3} radius={2} border>
+                <Flex align={'flex-start'} gap={2}>
+                  <Text size={1}>
+                    <TableValidationIcon />
+                  </Text>
+                  <Stack space={2} flex={1}>
+                    {tableMarkers.map((marker, index) => (
+                      <Box key={`${pathToString(marker.path)}-${index}`}>
+                        <Text size={1}>{marker.message}</Text>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Flex>
+              </Card>
+            )}
             <InitialiseTable
               patch={patch}
               path={pathString}
@@ -370,11 +411,13 @@ const RichTableInput: ComponentType<
       </Flex>
       {/* Collapse the native nested-edit dialog stack to just the innermost member. */}
       <CollapseStackedDialogs />
-      {/* TEST WITH HIDDEN BUT RENDERED INPUT */}
-      <HiddenInputBox $debug={debug}>{props.renderDefault(props)}</HiddenInputBox>
-      {/*      {debug &&
-        // Default inputs (rows, columnHeaders)
-        props.renderDefault(props)}*/}
+      {/* Sanity's native FormBuilder — kept out of the DOM unless a member is being
+          edited (or debug is on), so it isn't mounted per-render for every table.
+          `onPathOpen` from the cell popovers sets `openPath` into this field, which
+          mounts it here and opens the member's edit dialog. */}
+      {(debug || isEditingMember) && (
+        <HiddenInputBox $debug={debug}>{props.renderDefault(props)}</HiddenInputBox>
+      )}
     </Stack>
   )
 }

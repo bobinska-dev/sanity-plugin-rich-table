@@ -14,6 +14,7 @@ import {
   PortableTextBlock,
 } from 'sanity'
 
+import {useTableCellValidation} from '../hooks/useTableCellValidation'
 import {useToggleTitles} from '../hooks/useToggleTitles'
 import ContentPortableTextInput from '../portable-text/ContentPortableTextEditor'
 import {RichTableCellType} from '../schemas/cell.object'
@@ -91,6 +92,10 @@ const Table: ComponentType<
     path,
   )
 
+  // Look up validation markers per cell so the custom renderer can surface them
+  // inline (native field chrome, which normally draws them, is bypassed here).
+  const getCellValidation = useTableCellValidation()
+
   return (
     <Card
       padding={3}
@@ -123,6 +128,7 @@ const Table: ComponentType<
             {/* HEADER ROW */}
             {columnHeaderMembers?.map((colHeaderMember, columnIndex) => {
               const colHeaderItem = colHeaderMember.item.value
+              const colValidation = getCellValidation(colHeaderMember.item.path)
               // TODO: force remount when columnHeader value has changed in dialog but not in inline table input -> this is maybe caused by missing blur event in the input👇
               return (
                 <Fragment key={colHeaderItem._key}>
@@ -138,6 +144,7 @@ const Table: ComponentType<
                       columnCount={value?.columnHeaders?.length || 0}
                       readOnly={props.readOnly}
                       role="columnheader"
+                      validationTone={colValidation.tone}
                     />
                   )}
                   {!hasColumnTitles && (
@@ -168,6 +175,7 @@ const Table: ComponentType<
                 const cellContentSchemaType = cellItem.schemaType.fields.find(
                   (field) => field.name === 'content',
                 ) as ArraySchemaType<PortableTextBlock>
+                const cellValidation = getCellValidation(cellItem.path)
                 return (
                   <Fragment key={cellItem.id}>
                     {/* CONTEXT MENU BUTTON */}
@@ -205,6 +213,8 @@ const Table: ComponentType<
                       role="cell"
                       portableTextSchemaTypeName={portableTextSchemaTypeName}
                       displayInlineChanges={props.displayInlineChanges}
+                      validation={cellValidation.markers}
+                      validationTone={cellValidation.tone}
                     />
                   </Fragment>
                 )
