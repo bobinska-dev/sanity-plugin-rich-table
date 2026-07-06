@@ -67,6 +67,7 @@ const ConfirmClearTableDialog: ComponentType<ConfirmClearTableDialogProps> = ({
             tone={'default'}
             aria-label={'Cancel clear table'}
             disabled={isProcessing || readOnly}
+            autoFocus
           />
           <Button
             text={'Confirm'}

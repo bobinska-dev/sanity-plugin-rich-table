@@ -1,4 +1,4 @@
-import {keyGenerator} from '@portabletext/editor'
+import {generateKey} from '../utils/generateKey'
 import {markdownToPortableText} from '@portabletext/markdown'
 import type {PortableTextBlock} from 'sanity'
 
@@ -56,7 +56,7 @@ export function parseMarkdownTable(text: string): ParseResult {
   const headers = rawHeaders
     ? rawHeaders.map((h) => {
         if (!MD_INLINE_RE.test(h)) return h
-        const blocks = markdownToPortableText(h, {keyGenerator})
+        const blocks = markdownToPortableText(h, {keyGenerator: generateKey})
         return cellToText(blocks as unknown as PortableTextBlock[])
       })
     : null
@@ -99,7 +99,7 @@ function parseMarkdownCell(
   if (!cell || !MD_INLINE_RE.test(cell)) return cell
 
   const blocks = markdownToPortableText(cell, {
-    keyGenerator,
+    keyGenerator: generateKey,
   }) as unknown as PortableTextBlock[]
 
   return blocks.flatMap((block) => {

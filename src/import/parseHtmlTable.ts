@@ -1,4 +1,4 @@
-import {keyGenerator as generateKey} from '@portabletext/editor'
+import {generateKey} from '../utils/generateKey'
 import type {PortableTextBlock} from 'sanity'
 
 import {createPlaceholderBlock} from './placeholders'

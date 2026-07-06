@@ -1,4 +1,4 @@
-import {keyGenerator} from '@portabletext/editor'
+import {generateKey} from '../utils/generateKey'
 import {markdownToPortableText} from '@portabletext/markdown'
 import type {PortableTextBlock} from 'sanity'
 
@@ -60,7 +60,7 @@ export function markdownPasteToBlocks(plain: string): PortableTextBlock[] {
   if (!plain) return []
 
   const blocks = markdownToPortableText(plain, {
-    keyGenerator,
+    keyGenerator: generateKey,
     types: {
       table: ({value}) => {
         // `@portabletext/markdown`'s matcher `value` omits the wrapper's

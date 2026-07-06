@@ -1,5 +1,6 @@
-import {keyGenerator as generateKey} from '@portabletext/editor'
 import type {PortableTextBlock} from 'sanity'
+
+import {generateKey} from '../utils/generateKey'
 
 import {cellToText} from './cellToText'
 import {createEmptyBlockContent, createTextBlock} from './placeholders'
