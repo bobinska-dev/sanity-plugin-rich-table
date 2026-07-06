@@ -9,7 +9,7 @@ import {markdownPasteToBlocks} from './markdownPasteToBlocks'
 import {parseHtmlTable} from './parseHtmlTable'
 import {parseTsvTable} from './parseTsvTable'
 import {getToastForResult} from './toastMessages'
-import {toRichTableValue} from './toRichTableValue'
+import {RICH_TABLE_BLOCK_TYPE, toRichTableBlock} from './toRichTableValue'
 import type {ParseResult, TableFormat} from './types'
 
 /**
@@ -57,7 +57,7 @@ function hasMarkdownBlockSignal(text: string): boolean {
 }
 
 const isRichTableBlock = (block: unknown): boolean =>
-  (block as {_type?: string})._type === 'richTable'
+  (block as {_type?: string})._type === RICH_TABLE_BLOCK_TYPE
 
 /**
  * `clipboard.paste` interceptor for HTML/TSV pastes that are *only* a table.
@@ -90,7 +90,7 @@ function createPureTablePasteBehavior(showToastRef: MutableRefObject<ShowToastFn
       (_, {result, isRichFormat}: {result: ParseResult; isRichFormat: boolean}) => [
         execute({
           type: 'insert.block',
-          block: toRichTableValue(result.table) as unknown as PortableTextBlock,
+          block: toRichTableBlock(result.table) as unknown as PortableTextBlock,
           placement: 'after',
           select: 'none',
         }),

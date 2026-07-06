@@ -3,7 +3,7 @@ import {markdownToPortableText} from '@portabletext/markdown'
 import type {PortableTextBlock} from 'sanity'
 
 import {cellToText} from './cellToText'
-import {toRichTableValue} from './toRichTableValue'
+import {toRichTableBlock} from './toRichTableValue'
 import type {CellValue, ParsedTable} from './types'
 
 /**
@@ -68,10 +68,10 @@ export function markdownPasteToBlocks(plain: string): PortableTextBlock[] {
         // structurally overlaps our documented subset — cast through `unknown`.
         const parsed = mdTableBlockToParsedTable(value as unknown as MdTableBlock)
         if (parsed.rows.length === 0 && parsed.headers === null) return undefined
-        // toRichTableValue returns the rich-table block shape, which is
-        // structurally a `PortableTextObject`. The matcher's typing requires
-        // a `PortableTextObject`-compatible return; cast through unknown.
-        return toRichTableValue(parsed) as unknown as ReturnType<
+        // toRichTableBlock returns the rich-table block shape (`richTableBlock`),
+        // which is structurally a `PortableTextObject`. The matcher's typing
+        // requires a `PortableTextObject`-compatible return; cast through unknown.
+        return toRichTableBlock(parsed) as unknown as ReturnType<
           NonNullable<
             NonNullable<NonNullable<Parameters<typeof markdownToPortableText>[1]>['types']>['table']
           >

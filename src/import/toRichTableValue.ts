@@ -137,3 +137,23 @@ function cellValueToContent(value: CellValue | undefined): PortableTextBlock[] {
 
   return createEmptyBlockContent()
 }
+
+/**
+ * The Portable Text block type registered by the plugin — an alias of the
+ * `richTable` object type, used when a table lives *inside* a Portable Text
+ * field (`defineArrayMember({type: 'richTableBlock'})`).
+ */
+export const RICH_TABLE_BLOCK_TYPE = 'richTableBlock'
+
+/**
+ * Like {@link toRichTableValue}, but stamps `_type: 'richTableBlock'` so the
+ * result can be inserted as a Portable Text block (paste-to-import, etc.). The
+ * base object type `richTable` is only correct for a standalone object field; a
+ * Portable Text member must carry the block type name.
+ */
+export function toRichTableBlock(
+  parsed: ParsedTable,
+  options?: ToRichTableOptions,
+): RichTableValue {
+  return {...toRichTableValue(parsed, options), _type: RICH_TABLE_BLOCK_TYPE}
+}

@@ -27,6 +27,11 @@ export type {ColumnHeader, RichTableCellType, RichTableRowType, RichTableType}
 // enables "paste a table into a document-body Portable Text field → richTable
 // block"; `TableImportDialog` is the paste/upload dialog used by the built-in
 // field action and inline block button.
+//
+// NOTE: `parseXlsxTable` is intentionally NOT re-exported here — it statically
+// imports the optional `xlsx` package, so re-exporting it would eagerly load
+// `xlsx` for every consumer (breaking graceful degradation when it's absent).
+// Use `parseFile` (which lazy-imports the XLSX parser) for Excel input instead.
 // ---------------------------------------------------------------------------
 export {detectFormat} from './import/detectFormat'
 export {markdownPasteToBlocks} from './import/markdownPasteToBlocks'
@@ -35,11 +40,15 @@ export {ACCEPTED_FILE_EXTENSIONS, parseFile} from './import/parseFile'
 export {parseHtmlTable} from './import/parseHtmlTable'
 export {parseMarkdownTable} from './import/parseMarkdownTable'
 export {parseTsvTable} from './import/parseTsvTable'
-export {parseXlsxTable} from './import/parseXlsxTable'
 export {TableImportDialog} from './import/TableImportDialog'
 export {createTablePasteBehaviors, type ShowToastFn} from './import/tablePasteBehavior'
 export {RichTablePastePlugin} from './import/TablePastePlugin'
-export {type RichTableValue, toRichTableValue} from './import/toRichTableValue'
+export {
+  RICH_TABLE_BLOCK_TYPE,
+  type RichTableValue,
+  toRichTableBlock,
+  toRichTableValue,
+} from './import/toRichTableValue'
 export {
   type CellValue,
   MAX_IMPORT_ROWS,

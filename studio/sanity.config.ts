@@ -66,7 +66,7 @@ export default defineConfig({
             of: [
               defineArrayMember({type: 'block'}),
               defineArrayMember({
-                name: 'richTable',
+                name: 'richTableBlock',
                 title: 'Rich Table Block',
                 type: 'richTableBlock',
               }),

@@ -1,7 +1,7 @@
 import type {PortableTextBlock} from 'sanity'
 
 import {extractBlocks, parseHtmlTable} from './parseHtmlTable'
-import {toRichTableValue} from './toRichTableValue'
+import {toRichTableBlock} from './toRichTableValue'
 import type {ParseWarning} from './types'
 
 /**
@@ -58,7 +58,7 @@ function processNodes(
       flushProse()
       const parsed = parseHtmlTable(el.outerHTML)
       if (parsed.table.rows.length > 0) {
-        out.push(toRichTableValue(parsed.table) as unknown as PortableTextBlock)
+        out.push(toRichTableBlock(parsed.table) as unknown as PortableTextBlock)
       }
     } else if (el && el.querySelector('table')) {
       // A wrapper element that contains a table somewhere inside — recurse so

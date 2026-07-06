@@ -19,7 +19,7 @@ describe('htmlPasteToBlocks', () => {
 
     const blocks = htmlPasteToBlocks(html)
 
-    expect(blocks.map(typeOf)).toEqual(['block', 'richTable', 'block'])
+    expect(blocks.map(typeOf)).toEqual(['block', 'richTableBlock', 'block'])
     expect(textOf(blocks[0])).toBe('Before the table.')
     expect(textOf(blocks[2])).toBe('After the table.')
 
@@ -37,7 +37,7 @@ describe('htmlPasteToBlocks', () => {
   it('lifts a table out of a wrapping element instead of flattening it', () => {
     const html = '<div><p>Intro</p><table><tr><td>x</td></tr></table></div>'
     const blocks = htmlPasteToBlocks(html)
-    expect(blocks.map(typeOf)).toEqual(['block', 'richTable'])
+    expect(blocks.map(typeOf)).toEqual(['block', 'richTableBlock'])
   })
 
   it('handles multiple tables interleaved with prose', () => {
@@ -45,7 +45,7 @@ describe('htmlPasteToBlocks', () => {
       '<p>one</p><table><tr><td>a</td></tr></table>' +
       '<p>two</p><table><tr><td>b</td></tr></table>'
     const blocks = htmlPasteToBlocks(html)
-    expect(blocks.map(typeOf)).toEqual(['block', 'richTable', 'block', 'richTable'])
+    expect(blocks.map(typeOf)).toEqual(['block', 'richTableBlock', 'block', 'richTableBlock'])
   })
 
   it('handles real clipboard HTML (meta prefix, wrapper, thead/tbody) mixed with prose', () => {
@@ -64,11 +64,11 @@ describe('htmlPasteToBlocks', () => {
     const types = blocks.map(typeOf)
 
     // A richTable block must be produced (not flattened into prose).
-    expect(types).toContain('richTable')
+    expect(types).toContain('richTableBlock')
     // Prose kept, and the table comes after the prose.
-    expect(types.indexOf('block')).toBeLessThan(types.indexOf('richTable'))
+    expect(types.indexOf('block')).toBeLessThan(types.indexOf('richTableBlock'))
 
-    const table = blocks.find((b) => typeOf(b) === 'richTable') as {rows?: unknown[]}
+    const table = blocks.find((b) => typeOf(b) === 'richTableBlock') as {rows?: unknown[]}
     expect((table.rows ?? []).length).toBe(1)
   })
 
