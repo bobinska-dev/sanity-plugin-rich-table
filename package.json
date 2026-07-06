@@ -63,11 +63,13 @@
     "@sanity/ui": "^3.1.11",
     "emojilib": "^4.0.2",
     "fuse.js": "^7.1.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-icons": "^5.5.0",
-    "sanity": "^5.11.0",
-    "styled-components": "^6.3.11"
+    "react-icons": "^5.5.0"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19",
+    "sanity": "^4 || ^5",
+    "styled-components": "^6"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.2",
@@ -99,6 +101,10 @@
     "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
     "prettier-plugin-packagejson": "^3.0.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "sanity": "^5.11.0",
+    "styled-components": "^6.3.11",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
