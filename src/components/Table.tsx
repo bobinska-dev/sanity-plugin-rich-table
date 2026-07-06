@@ -133,23 +133,35 @@ const Table: ComponentType<
       draftWidths[colHeaderMember.item.value._key] ?? colHeaderMember.item.value.width,
   )
 
+  // The in-progress resize, so headers can highlight what's affected: just the
+  // dragged column, or every column when Shift ("resize all") is held.
+  const [activeResize, setActiveResize] = useState<{columnKey: string; applyToAll: boolean} | null>(
+    null,
+  )
+
   // Plain handlers (not `useCallback`) so the React Compiler memoizes them — a
   // manual `useCallback` closing over `columnHeaderMembers` can't be preserved.
   const handleColumnResize = (columnKey: string, width: number, applyToAll: boolean) => {
-    setDraftWidths((prev) => {
-      if (!applyToAll) {
-        return {...prev, [columnKey]: width}
-      }
-      // Shift-drag sizes every column to the dragged width ("widen all").
+    // Replace the whole draft each move (rather than merge) so toggling Shift
+    // mid-drag cleanly switches between "this column" and "all columns".
+    if (applyToAll) {
       const next: Record<string, number> = {}
       columnHeaderMembers?.forEach((member) => {
         next[member.item.value._key] = width
       })
-      return next
-    })
+      setDraftWidths(next)
+    } else {
+      setDraftWidths({[columnKey]: width})
+    }
+    setActiveResize((prev) =>
+      prev?.columnKey === columnKey && prev.applyToAll === applyToAll
+        ? prev
+        : {columnKey, applyToAll},
+    )
   }
 
   const handleColumnResizeEnd = (columnKey: string, width: number, applyToAll: boolean) => {
+    setActiveResize(null)
     if (props.readOnly) return
     const keysToSet = applyToAll
       ? (columnHeaderMembers?.map((member) => member.item.value._key) ?? [])
@@ -197,7 +209,7 @@ const Table: ComponentType<
               const colHeaderItem = colHeaderMember.item.value
               // TODO: force remount when columnHeader value has changed in dialog but not in inline table input -> this is maybe caused by missing blur event in the input👇
               return (
-                <ColumnHeaderCell key={colHeaderItem._key} role="columnheader">
+                <ColumnHeaderCell key={colHeaderItem._key} role="columnheader" data-rt-column-cell>
                   {hasColumnTitles && (
                     <ColumnHeaderWithInput
                       columnHeader={colHeaderItem}
@@ -227,6 +239,10 @@ const Table: ComponentType<
                     <ColumnResizeHandle
                       columnKey={colHeaderItem._key}
                       columnIndex={columnIndex}
+                      active={
+                        !!activeResize &&
+                        (activeResize.applyToAll || activeResize.columnKey === colHeaderItem._key)
+                      }
                       onResize={handleColumnResize}
                       onResizeEnd={handleColumnResizeEnd}
                     />

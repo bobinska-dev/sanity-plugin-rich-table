@@ -1,3 +1,4 @@
+import {Box, Text, Tooltip} from '@sanity/ui'
 import {
   ComponentType,
   KeyboardEvent as ReactKeyboardEvent,
@@ -13,15 +14,16 @@ const MIN_COLUMN_WIDTH = 48
 // Nudge per arrow-key press, for keyboard-driven resizing.
 const KEYBOARD_STEP = 16
 
-// The handle sits in the header cell's right-hand gutter (see `ColumnHeaderCell`)
-// so it never overlaps the column context-menu button. A thin guide line is
-// centered in the grab area and brightens on hover / focus / drag.
+// A persistent faint divider marks the draggable boundary between columns so the
+// affordance is discoverable; it thickens to the focus-ring colour on hover /
+// focus and while the resize is active — the dragged column, or every column
+// during a Shift-drag (see the `active` prop), so "resize all" is visible.
 const Handle = styled.button`
   position: absolute;
   top: 0;
   bottom: 0;
   right: 0;
-  width: 8px;
+  width: 9px;
   padding: 0;
   border: none;
   background: transparent;
@@ -33,20 +35,24 @@ const Handle = styled.button`
   &::after {
     content: '';
     position: absolute;
-    top: 15%;
-    bottom: 15%;
+    top: 10%;
+    bottom: 10%;
     left: 50%;
     width: 2px;
     transform: translateX(-50%);
     border-radius: 2px;
     background: var(--card-border-color);
-    opacity: 0;
-    transition: opacity 100ms;
+    opacity: 0.6;
+    transition:
+      opacity 100ms,
+      width 100ms,
+      background 100ms;
   }
 
   &:hover::after,
   &:focus-visible::after,
-  &[data-dragging='true']::after {
+  &[data-active='true']::after {
+    width: 3px;
     opacity: 1;
     background: var(--card-focus-ring-color);
   }
@@ -55,46 +61,43 @@ const Handle = styled.button`
 interface ColumnResizeHandleProps {
   columnKey: string
   columnIndex: number
+  /** True while this column is part of the active resize — its own drag, or any
+   * column during a Shift-drag — so its divider stays highlighted. */
+  active?: boolean
   /** Live width during the drag (optimistic, not yet persisted). */
   onResize: (columnKey: string, width: number, applyToAll: boolean) => void
   /** Final width on pointer release / key press (persisted via patch). */
   onResizeEnd: (columnKey: string, width: number, applyToAll: boolean) => void
 }
 
+// The header cell (`data-rt-column-cell`) is the track we measure and resize.
+const measureCell = (handle: HTMLButtonElement) =>
+  handle.closest<HTMLElement>('[data-rt-column-cell]')
+
 /**
  * A drag handle rendered in the right edge of a column header. Dragging resizes
- * the column; holding Shift resizes every column to the same width. Widths are
- * measured from the live cell so an unsized (`1fr`) column resizes from its
- * rendered width. Arrow keys nudge the width for keyboard users.
+ * the column; holding Shift (live — press or release mid-drag) resizes every
+ * column to the same width. Widths are measured from the live cell so an unsized
+ * (`1fr`) column resizes from its rendered width. Arrow keys nudge the width for
+ * keyboard users.
  */
 export const ColumnResizeHandle: ComponentType<ColumnResizeHandleProps> = ({
   columnKey,
   columnIndex,
+  active,
   onResize,
   onResizeEnd,
 }) => {
   // Drag bookkeeping lives in a ref so the move/up handlers stay stable and a
   // pointer move doesn't re-render the whole table on every pixel.
-  const drag = useRef<{
-    startX: number
-    startWidth: number
-    width: number
-    applyToAll: boolean
-  } | null>(null)
+  const drag = useRef<{startX: number; startWidth: number; width: number} | null>(null)
 
   const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
-    // The header cell is the handle's offset parent (position: relative).
-    const cell = event.currentTarget.parentElement
+    const cell = measureCell(event.currentTarget)
     if (!cell) return
     event.preventDefault()
     event.currentTarget.setPointerCapture(event.pointerId)
-    event.currentTarget.dataset.dragging = 'true'
-    drag.current = {
-      startX: event.clientX,
-      startWidth: cell.offsetWidth,
-      width: cell.offsetWidth,
-      applyToAll: event.shiftKey,
-    }
+    drag.current = {startX: event.clientX, startWidth: cell.offsetWidth, width: cell.offsetWidth}
   }, [])
 
   const handlePointerMove = useCallback(
@@ -106,7 +109,7 @@ export const ColumnResizeHandle: ComponentType<ColumnResizeHandleProps> = ({
         current.startWidth + (event.clientX - current.startX),
       )
       current.width = width
-      onResize(columnKey, width, current.applyToAll)
+      onResize(columnKey, width, event.shiftKey)
     },
     [columnKey, onResize],
   )
@@ -116,9 +119,8 @@ export const ColumnResizeHandle: ComponentType<ColumnResizeHandleProps> = ({
       const current = drag.current
       if (!current) return
       event.currentTarget.releasePointerCapture(event.pointerId)
-      event.currentTarget.dataset.dragging = 'false'
       drag.current = null
-      onResizeEnd(columnKey, current.width, current.applyToAll)
+      onResizeEnd(columnKey, current.width, event.shiftKey)
     },
     [columnKey, onResizeEnd],
   )
@@ -128,7 +130,7 @@ export const ColumnResizeHandle: ComponentType<ColumnResizeHandleProps> = ({
       let step = 0
       if (event.key === 'ArrowLeft') step = -KEYBOARD_STEP
       if (event.key === 'ArrowRight') step = KEYBOARD_STEP
-      const cell = event.currentTarget.parentElement
+      const cell = measureCell(event.currentTarget)
       if (!step || !cell) return
       event.preventDefault()
       const width = Math.max(MIN_COLUMN_WIDTH, cell.offsetWidth + step)
@@ -139,17 +141,27 @@ export const ColumnResizeHandle: ComponentType<ColumnResizeHandleProps> = ({
   )
 
   return (
-    <Handle
-      type="button"
-      aria-label={`Resize column ${columnIndex + 1} (hold Shift to resize all columns)`}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onKeyDown={handleKeyDown}
-      // Don't let the drag reach the card's double-click-to-open handler in Portable Text.
-      onDoubleClick={(event) => event.stopPropagation()}
-    />
+    <Tooltip
+      content={
+        <Box padding={2}>
+          <Text size={1}>Drag to resize. Hold Shift to resize all columns.</Text>
+        </Box>
+      }
+      portal
+    >
+      <Handle
+        type="button"
+        data-active={active ? 'true' : undefined}
+        aria-label={`Resize column ${columnIndex + 1} (hold Shift to resize all columns)`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onKeyDown={handleKeyDown}
+        // Don't let the drag reach the card's double-click-to-open handler in Portable Text.
+        onDoubleClick={(event) => event.stopPropagation()}
+      />
+    </Tooltip>
   )
 }
 
