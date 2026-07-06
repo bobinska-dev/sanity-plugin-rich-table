@@ -55,6 +55,53 @@ The plugin ships two lines. **2.x** targets Sanity 6 and is the `latest` release
 > npm install sanity-plugin-rich-table@1.0.5
 > ```
 
+## Migrating from 1.x
+
+**2.0.0 is a breaking release** in two ways:
+
+### 1. Platform requirements
+
+2.x targets **Sanity 6** (React 19, Node ≥ 22.12). If you're still on Sanity 5, stay on the `^1.1` line (see [Compatibility](README.md#compatibility)). Otherwise bump Sanity, React and Node together, then install `sanity-plugin-rich-table@^2`.
+
+### 2. `customBlockTypes` / `customInlineBlockTypes` are removed
+
+Cell content is now driven by a **Portable Text array type you define in your own schema** and reference by name via `portableTextSchemaTypeName`, instead of passing arrays of types to the plugin. Everything lives in one schema — styles, decorators, annotations, block **and** inline objects, initial values and validation — and custom in-cell renderers attach to that schema through the `table*` component slots.
+
+**Before (1.x):**
+
+```ts
+richTablePlugin({
+  customBlockTypes: [calloutType, imageType],
+  customInlineBlockTypes: [mentionType],
+})
+```
+
+**After (2.x):**
+
+```ts
+// schemas/tableCellContent.ts
+export const tableCellContent = defineType({
+  name: 'tableCellContent',
+  type: 'array',
+  of: [
+    defineArrayMember({
+      type: 'block',
+      // styles / decorators / annotations, plus inline objects on `of`
+      of: [mentionType],
+    }),
+    calloutType, // block objects are top-level array members
+    imageType,
+  ],
+})
+
+// sanity.config.ts — register tableCellContent in your schema, then:
+richTablePlugin({portableTextSchemaTypeName: 'tableCellContent'})
+```
+
+Attach custom in-cell renderers with the `table*` slots (`tableBlock` / `tableInlineBlock` / `tableAnnotation`) — see [Customizing cell content](README.md#customizing-cell-content) and the [custom Portable Text schema guide](./docs/README.md#using-a-custom-portable-text-schema). Omit `portableTextSchemaTypeName` to keep the built-in default cell content (bold, italic, headings, lists, links).
+
+> If you never passed `customBlockTypes` / `customInlineBlockTypes`, there's nothing to change here beyond the platform bump.
+
 ## Installation
 
 ```sh
