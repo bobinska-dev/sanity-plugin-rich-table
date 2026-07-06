@@ -163,7 +163,15 @@ export function extractBlockConfig(
   const annotations: ExtractedType[] = Array.isArray(span?.annotations)
     ? (span!.annotations as Loose[]).map((a) => ({
         ...toObjectType(a),
-        component: (a.components as Loose | undefined)?.annotation as ExtractedType['component'],
+        // Prefer the table-specific `tableAnnotation` slot (falling back to the
+        // standard `annotation`). Sanity's native annotation component renders
+        // via `props.renderDefault`, which `@portabletext/editor` does not
+        // provide (the cell editor gets the annotated text as `props.children`),
+        // so a component authored for the native slot breaks in cells and vice
+        // versa. Keeping the cell visual on `tableAnnotation` leaves the native
+        // `annotation` slot for Sanity's default rendering (debug/document view).
+        component: ((a.components as Loose | undefined)?.tableAnnotation ??
+          (a.components as Loose | undefined)?.annotation) as ExtractedType['component'],
       }))
     : []
 

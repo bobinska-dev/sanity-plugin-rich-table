@@ -4,12 +4,14 @@ import type {BlockAnnotationProps} from 'sanity'
 
 /**
  * A consumer-supplied custom annotation component, keyed by annotation name.
- * Wired via Sanity's native `components.annotation` slot and typed against
- * Sanity's {@link BlockAnnotationProps}.
+ * Wired via the table-specific `components.tableAnnotation` slot (sibling of a
+ * block object's `tableBlock`) and typed against Sanity's {@link BlockAnnotationProps}.
  *
- * NOTE: this editor is built on `@portabletext/editor`, which supplies the
- * annotated text (as `children`) but not Sanity's full form-interaction props
- * (`onOpen`/`renderInput`/`textElement`/…). Editing is handled separately: the
+ * The sibling matters: Sanity's native PTE renders annotations via
+ * `props.renderDefault`, which `@portabletext/editor` does not provide (the cell
+ * editor supplies the annotated text as `props.children`). Keeping the cell
+ * visual on `tableAnnotation` leaves the native `annotation` slot for Sanity's
+ * default rendering (debug/document view). Editing is handled separately: the
  * toolbar's AnnotationPopover opens the annotation in Sanity's native document
  * form via `useDocumentPane().onPathOpen`.
  */
