@@ -2,6 +2,8 @@ import {RenderAnnotationFunction} from '@portabletext/editor'
 import type {ComponentType} from 'react'
 import type {BlockAnnotationProps} from 'sanity'
 
+import {CRITICAL_TEXT} from '../../../utils/diffColors'
+
 /**
  * A consumer-supplied custom annotation component, keyed by annotation name.
  * Wired via the table-specific `components.tableAnnotation` slot (sibling of a
@@ -24,7 +26,7 @@ export type AnnotationComponent = ComponentType<BlockAnnotationProps>
  * broken annotation is pinpointed inline — the per-cell marker badge lives at
  * the rich-table level, not on each cell.
  */
-const CRITICAL_COLOR = 'rgb(244, 84, 84)'
+const CRITICAL_COLOR = CRITICAL_TEXT
 
 const renderBuiltinAnnotation = (
   props: Parameters<RenderAnnotationFunction>[0],

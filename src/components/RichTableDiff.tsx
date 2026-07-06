@@ -13,6 +13,8 @@ import {
 import {type DiffProps} from 'sanity'
 import styled from 'styled-components'
 
+import {DIFF_ADDED_BG, DIFF_REMOVED_BG} from '../utils/diffColors'
+
 import type {RichTableType} from '../schemas/richTable.object'
 import {
   buildTableDiffModel,
@@ -79,11 +81,11 @@ const Struck = styled(Text)`
 // Inline diff spans, echoing Sanity's positive/critical diff tones. Semi-transparent
 // so they tint whatever card background they sit on and stay legible in light and dark.
 const AddedText = styled.span`
-  background-color: rgba(38, 175, 95, 0.22);
+  background-color: ${DIFF_ADDED_BG};
   border-radius: 2px;
 `
 const RemovedText = styled.span`
-  background-color: rgba(244, 84, 84, 0.18);
+  background-color: ${DIFF_REMOVED_BG};
   text-decoration: line-through;
   border-radius: 2px;
 `

@@ -9,6 +9,7 @@ import {Component, type ErrorInfo, type PropsWithChildren, type ReactNode, useMe
 import type {Path} from 'sanity'
 import {useDocumentPane} from 'sanity/structure'
 
+import {DIFF_ADDED_BG, DIFF_REMOVED_BG} from '../../utils/diffColors'
 import {StyledPortableTextEditable} from '../components/StyledPortableTextEditable'
 import {type CellDiffRange, computeCellDiffRanges, rangeToSelection} from './computeCellDiffRanges'
 import {getValueAtPath} from './getValueAtPath'
@@ -16,18 +17,14 @@ import {getValueAtPath} from './getValueAtPath'
 // Inline-change highlights, echoing Sanity's positive/critical diff tones and
 // kept semi-transparent so they tint the live editor's own background.
 function AddedInline({children}: PropsWithChildren) {
-  return (
-    <span style={{backgroundColor: 'rgba(38, 175, 95, 0.22)', borderRadius: '2px'}}>
-      {children}
-    </span>
-  )
+  return <span style={{backgroundColor: DIFF_ADDED_BG, borderRadius: '2px'}}>{children}</span>
 }
 
 function RemovedInline({text}: {text: string}) {
   return (
     <span
       style={{
-        backgroundColor: 'rgba(244, 84, 84, 0.18)',
+        backgroundColor: DIFF_REMOVED_BG,
         borderRadius: '2px',
         opacity: 0.85,
         textDecoration: 'line-through',
