@@ -109,8 +109,8 @@
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
-    "react": "^18 || ^19",
-    "react-dom": "^18 || ^19",
+    "react": "^19",
+    "react-dom": "^19",
     "sanity": "^6",
     "styled-components": "^6"
   },
