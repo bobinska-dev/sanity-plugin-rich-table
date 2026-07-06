@@ -4,19 +4,36 @@ import {defineTypeaheadPicker, useTypeaheadPicker} from '@portabletext/plugin-ty
 import {Box, Text} from '@sanity/ui'
 import Fuse from 'fuse.js'
 import {useMemo} from 'react'
+import type {ArrayDefinition, ArraySchemaType, PortableTextBlock} from 'sanity'
 
 import {FloatingPanel} from '../components/FloatingPanel'
+import {extractBlockConfig} from '../configs/extractBlockConfig'
 import CommandListBox from './CommandListBox'
 import {buildSlashCommands, CommandMatch} from './commands'
 
-export function SlashCommandPickerPlugin() {
+interface SlashCommandPickerPluginProps {
+  /** The cell's resolved PT array schema — supplies each command's schema-defined icon. */
+  schemaType?: ArraySchemaType<PortableTextBlock> | ArrayDefinition
+}
+
+export function SlashCommandPickerPlugin({schemaType}: SlashCommandPickerPluginProps) {
   const editor = useEditor()
+
+  // The toolbar's icon source; overlaid onto the schema-driven commands below so
+  // the picker shows the same custom icons the toolbar does.
+  const config = useMemo(
+    () => extractBlockConfig(schemaType as ArraySchemaType<PortableTextBlock> | undefined),
+    [schemaType],
+  )
 
   // Build the command list from the cell's compiled PT schema so the picker
   // offers exactly what the schema allows — styles, decorators, lists, block
   // objects and inline objects, including any custom entries. The schema is
   // fixed for an editor instance, so this is computed once per editor.
-  const commands = useMemo(() => buildSlashCommands(editor.getSnapshot().context.schema), [editor])
+  const commands = useMemo(
+    () => buildSlashCommands(editor.getSnapshot().context.schema, config),
+    [editor, config],
+  )
 
   const picker = useMemo(() => {
     const fuse = new Fuse(commands, {

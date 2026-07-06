@@ -78,7 +78,9 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
     cfg?.styles.forEach((s) => s.component && styleComponents.set(s.name, s.component))
     cfg?.decorators.forEach((d) => d.component && decoratorComponents.set(d.name, d.component))
     cfg?.annotations.forEach((a) => a.component && annotationComponents.set(a.name, a.component))
-    cfg?.inlineObjects.forEach((o) => o.component && inlineObjectComponents.set(o.name, o.component))
+    cfg?.inlineObjects.forEach(
+      (o) => o.component && inlineObjectComponents.set(o.name, o.component),
+    )
     return {
       renderStyle: createRenderStyle(styleComponents),
       renderDecorator: createRenderDecorator(decoratorComponents),
@@ -124,7 +126,7 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
             path={props.path}
             handleFocus={handleFocus}
           />
-          <SlashCommandPickerPlugin />
+          <SlashCommandPickerPlugin schemaType={configSchema} />
           <PasteLinkPlugin />
           <EmojiPickerPlugin />
           <MarkdownShortcutsPlugin
