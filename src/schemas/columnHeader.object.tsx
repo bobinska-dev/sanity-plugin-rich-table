@@ -30,6 +30,8 @@ export default defineType({
       title: 'Width',
       type: 'number',
       description: 'Column width in pixels. Unset columns share the remaining width equally.',
+      // Guard against a bad persisted value producing an invalid CSS track.
+      validation: (Rule) => Rule.positive(),
     }),
   ],
   preview: {

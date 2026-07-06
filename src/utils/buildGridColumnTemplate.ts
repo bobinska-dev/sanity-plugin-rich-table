@@ -39,7 +39,10 @@ export const buildGridColumnTemplate = ({
   }
   const contentTracks = Array.from({length: contentColumnCount}, (_, i) => {
     const width = columnWidths?.[i]
-    return width ? `${width}px` : CONTENT_COLUMN_DEFAULT_TRACK
+    // Only a finite, positive width is a usable px track; anything else
+    // (undefined, 0, negative, NaN) shares the default flexible track.
+    const isSized = typeof width === 'number' && Number.isFinite(width) && width > 0
+    return isSized ? `${width}px` : CONTENT_COLUMN_DEFAULT_TRACK
   }).join(' ')
   return `${firstColumn} ${contentTracks}`
 }

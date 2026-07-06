@@ -112,12 +112,18 @@ const Table: ComponentType<
   const [draftWidths, setDraftWidths] = useState<Record<string, number>>({})
 
   // Reconcile drafts against persisted widths during render (React's "adjust
-  // state when a prop changes" pattern — not an effect, so no cascading render)
-  // so a committed drag doesn't flash back and later external edits (undo,
-  // collaboration) take over instead of being masked by a stale draft.
-  const [reconciledMembers, setReconciledMembers] = useState(columnHeaderMembers)
-  if (columnHeaderMembers !== reconciledMembers) {
-    setReconciledMembers(columnHeaderMembers)
+  // state when a prop changes" pattern — not an effect, since this repo's React
+  // Compiler lint forbids setState in effects) so a committed drag doesn't flash
+  // back and later external edits (undo, collaboration) take over instead of
+  // being masked by a stale draft. Keyed off a signature of the persisted widths
+  // (not the members array identity) so it can't loop if that identity churns.
+  const persistedWidthSignature =
+    columnHeaderMembers
+      ?.map((member) => `${member.item.value._key}:${member.item.value.width ?? ''}`)
+      .join('|') ?? ''
+  const [reconciledSignature, setReconciledSignature] = useState(persistedWidthSignature)
+  if (persistedWidthSignature !== reconciledSignature) {
+    setReconciledSignature(persistedWidthSignature)
     setDraftWidths((prev) => {
       if (Object.keys(prev).length === 0) return prev
       const next = {...prev}

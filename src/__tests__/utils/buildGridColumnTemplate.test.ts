@@ -37,9 +37,9 @@ describe('buildGridColumnTemplate', () => {
   })
 
   it('ignores non-positive widths and falls back to the default track', () => {
-    expect(buildGridColumnTemplate({columnCount: 2, hasRowTitles: true, columnWidths: [0]})).toBe(
-      `1fr ${CONTENT_COLUMN_DEFAULT_TRACK}`,
-    )
+    expect(
+      buildGridColumnTemplate({columnCount: 3, hasRowTitles: true, columnWidths: [0, -10]}),
+    ).toBe(`1fr ${CONTENT_COLUMN_DEFAULT_TRACK} ${CONTENT_COLUMN_DEFAULT_TRACK}`)
   })
 
   it('pads missing width entries with the default track', () => {
