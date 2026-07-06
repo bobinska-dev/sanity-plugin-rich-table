@@ -3,7 +3,7 @@ import {render, screen} from '@testing-library/react'
 import type {DiffProps} from 'sanity'
 import {describe, expect, it} from 'vitest'
 
-import RichTableDiff from '../components/RichTableDiff'
+import RichTableDiff, {columnsTrackList} from '../components/RichTableDiff'
 
 function cell(key: string, text: string) {
   return {
@@ -56,6 +56,29 @@ describe('RichTableDiff', () => {
     const value = {rows: [{_key: 'r1', title: 'Row', cells: [cell('c0', 'x')]}]}
     renderDiff(value, value)
     expect(screen.getByText(/no visible changes/i)).toBeInTheDocument()
+  })
+
+  it('renders rows that have no columns without breaking', () => {
+    // Smoke test: a row present with an empty cells array and no column headers → 0
+    // columns. The component must still render the row label.
+    const from = {rows: [{_key: 'r1', title: 'A', cells: []}]}
+    const to = {rows: [{_key: 'r1', title: 'B', cells: []}]}
+
+    expect(() => renderDiff(from, to)).not.toThrow()
+    expect(screen.getByText('B')).toBeInTheDocument()
+  })
+
+  describe('columnsTrackList', () => {
+    it('omits repeat() when there are no columns (repeat(0, …) is invalid CSS)', () => {
+      // Regression guard: the pre-fix code emitted `repeat(0, …)`, which the browser
+      // rejects, dropping the whole grid-template-columns declaration.
+      expect(columnsTrackList(0)).toBe('minmax(64px, auto)')
+      expect(columnsTrackList(0)).not.toContain('repeat')
+    })
+
+    it('emits one repeat() track for the data columns', () => {
+      expect(columnsTrackList(3)).toBe('minmax(64px, auto) repeat(3, minmax(96px, 1fr))')
+    })
   })
 
   it('renders each cell as an inspectable button', () => {
