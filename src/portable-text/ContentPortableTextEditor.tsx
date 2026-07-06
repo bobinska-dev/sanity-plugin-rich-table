@@ -3,7 +3,7 @@ import {ListIndexProvider} from '@portabletext/plugin-list-index'
 import {MarkdownShortcutsPlugin} from '@portabletext/plugin-markdown-shortcuts'
 import {PasteLinkPlugin} from '@portabletext/plugin-paste-link'
 import {Card} from '@sanity/ui'
-import {ComponentType, Suspense, useCallback, useRef, useState} from 'react'
+import {ComponentType, Suspense, useCallback, useMemo, useRef, useState} from 'react'
 import {
   ArrayDefinition,
   ArraySchemaType,
@@ -19,11 +19,12 @@ import content from '../schemas/content'
 import ButtonToolbar from './components/context-menu-toolbar/ButtonToolbar'
 import CustomListenerPlugin from './components/EventListenerPlugin'
 import {StyledPortableTextEditable} from './components/StyledPortableTextEditable'
-import {renderAnnotation} from './configs/renderer/renderAnnotation'
+import {extractBlockConfig} from './configs/extractBlockConfig'
+import {AnnotationComponent, createRenderAnnotation} from './configs/renderer/renderAnnotation'
 import {renderBlock} from './configs/renderer/renderBlock'
-import renderDecorator from './configs/renderer/renderDecorators'
+import {createRenderDecorator, DecoratorComponent} from './configs/renderer/renderDecorators'
 import {renderListItem} from './configs/renderer/renderListItem'
-import renderStyle from './configs/renderer/renderStyle'
+import {createRenderStyle, StyleComponent} from './configs/renderer/renderStyle'
 import {EmojiPickerPlugin} from './emoji-picker/EmojiPicker'
 import {SlashCommandPickerPlugin} from './pte-slash-commands/SlashCommandPicker'
 import {resolveSchemaDefinition} from './resolveSchemaDefinition'
@@ -62,6 +63,25 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
   const configSchema = props.portableTextSchemaTypeName
     ? (schema.get(props.portableTextSchemaTypeName) as ArraySchemaType<PortableTextBlock>)
     : undefined
+
+  // Consumer-defined custom render components for marks, keyed by name. They are
+  // read off the compiled schema (styles/decorators carry `component`;
+  // annotations carry `components.annotation`) so the renderers can prefer them
+  // over the built-ins — the mark equivalent of a custom block's `tableBlock`.
+  const markRenderers = useMemo(() => {
+    const cfg = extractBlockConfig(configSchema)
+    const styleComponents = new Map<string, StyleComponent>()
+    const decoratorComponents = new Map<string, DecoratorComponent>()
+    const annotationComponents = new Map<string, AnnotationComponent>()
+    cfg?.styles.forEach((s) => s.component && styleComponents.set(s.name, s.component))
+    cfg?.decorators.forEach((d) => d.component && decoratorComponents.set(d.name, d.component))
+    cfg?.annotations.forEach((a) => a.component && annotationComponents.set(a.name, a.component))
+    return {
+      renderStyle: createRenderStyle(styleComponents),
+      renderDecorator: createRenderDecorator(decoratorComponents),
+      renderAnnotation: createRenderAnnotation(annotationComponents),
+    }
+  }, [configSchema])
 
   // * INITIAL CONFIG FOR EDITOR PROVIDER
   const pteSchemaType = configSchema
@@ -159,22 +179,17 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
 
           <ListIndexProvider>
             <StyledPortableTextEditable
-              renderStyle={renderStyle}
-              renderDecorator={renderDecorator}
+              renderStyle={markRenderers.renderStyle}
+              renderDecorator={markRenderers.renderDecorator}
               renderBlock={renderBlock({
                 configSchema,
               })}
               renderListItem={renderListItem}
-              renderAnnotation={renderAnnotation}
+              renderAnnotation={markRenderers.renderAnnotation}
             />
           </ListIndexProvider>
           {!props.readOnly && (
-            <ButtonToolbar
-              focused={focused}
-              editorRef={initialConfig}
-              schemaType={pteSchemaType}
-              path={props.path}
-            />
+            <ButtonToolbar focused={focused} schemaType={pteSchemaType} path={props.path} />
           )}
         </EditorProvider>
       </Card>

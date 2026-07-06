@@ -40,6 +40,10 @@ const StyleSelector: ComponentType<{toolbarSchema: ToolbarSchema}> = ({toolbarSc
                 onClick={() => styleSelector.send({type: 'toggle', style: style.name})}
                 selected={currentStyle == style.name}
                 icon={style.icon}
+                // Show the style title as the label — a custom style without an
+                // icon (e.g. one whose icon wasn't set) would otherwise render as
+                // a blank, invisible menu item.
+                text={style.title}
                 as={'button'}
                 padding={2}
                 tone={'default'}

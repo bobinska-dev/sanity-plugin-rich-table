@@ -1,10 +1,14 @@
+import {AsteriskIcon, HighlightIcon, ImageIcon, LinkIcon} from '@sanity/icons'
 import {visionTool} from '@sanity/vision'
 import {defineArrayMember, defineConfig, defineField, defineType} from 'sanity'
-
-import {AsteriskIcon, ImageIcon} from '@sanity/icons'
-import {richTablePlugin} from 'sanity-plugin-rich-table'
 import {structureTool} from 'sanity/structure'
+import {richTablePlugin} from 'sanity-plugin-rich-table'
+
 import CustomBock from './components/CustomBock'
+import FootnoteAnnotation from './components/FootnoteAnnotation'
+import HighlightDecorator from './components/HighlightDecorator'
+import LeadStyle from './components/LeadStyle'
+import LinkAnnotation from './components/LinkAnnotation'
 import TestBlock from './TestBlock'
 
 export default defineConfig({
@@ -40,6 +44,17 @@ export default defineConfig({
             type: 'richTable',
           }),
           defineField({
+            name: 'myRichTables',
+            title: 'My Richest of Tables',
+            type: 'array',
+            of: [
+              defineArrayMember({
+                name: 'richTableItem',
+                type: 'richTable',
+              }),
+            ],
+          }),
+          defineField({
             name: 'portableText',
             type: 'array',
             of: [
@@ -71,6 +86,52 @@ export default defineConfig({
         of: [
           defineArrayMember({
             type: 'block',
+            // Demo of a fully customisable cell PTE: the standard marks plus a
+            // custom style, decorator and annotation (each with its own icon).
+            // The toolbar shows the icons; the renderer tags custom output with
+            // data-style / data-decorator / data-annotation for CSS targeting.
+            styles: [
+              {title: 'Normal', value: 'normal'},
+              {title: 'Heading 1', value: 'h1'},
+              {title: 'Heading 2', value: 'h2'},
+              // Custom style with its own render component (mirrors custom blocks).
+              {title: 'Lead', value: 'lead', icon: AsteriskIcon, component: LeadStyle},
+            ],
+            lists: [
+              {title: 'Bullet', value: 'bullet'},
+              {title: 'Numbered', value: 'number'},
+            ],
+            marks: {
+              decorators: [
+                {title: 'Strong', value: 'strong'},
+                {title: 'Emphasis', value: 'em'},
+                // Custom decorator with its own render component.
+                {
+                  title: 'Highlight',
+                  value: 'highlight',
+                  icon: HighlightIcon,
+                  component: HighlightDecorator,
+                },
+              ],
+              annotations: [
+                {
+                  name: 'link',
+                  type: 'object',
+                  icon: LinkIcon,
+                  fields: [{name: 'href', type: 'url', title: 'URL'}],
+                  // Annotations use Sanity's native `components.annotation` slot.
+                  components: {annotation: LinkAnnotation},
+                },
+                {
+                  name: 'footnote',
+                  type: 'object',
+                  title: 'Footnote',
+                  icon: AsteriskIcon,
+                  fields: [{name: 'text', type: 'string', title: 'Note'}],
+                  components: {annotation: FootnoteAnnotation},
+                },
+              ],
+            },
           }),
           defineArrayMember({
             type: 'image',

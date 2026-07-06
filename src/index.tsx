@@ -11,12 +11,17 @@ import rowObject, {RichTableRowType} from './schemas/row.object'
 // Re-export types for consumers
 export type {ColumnHeader, RichTableCellType, RichTableRowType, RichTableType}
 
-// Augment @sanity/types so array members can specify components.tableBlock (ImageComponents/ObjectComponents live there).
+// Augment @sanity/types so object/image array members can specify a
+// `components.tableBlock` render component (used for custom blocks/images).
+// Marks need no augmentation: styles/decorators use Sanity's native `component`
+// field and annotations use its native `components.annotation` slot.
 declare module '@sanity/types' {
   interface ImageComponents {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tableBlock?: ComponentType<any>
   }
   interface ObjectComponents {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tableBlock?: ComponentType<any>
   }
 }
