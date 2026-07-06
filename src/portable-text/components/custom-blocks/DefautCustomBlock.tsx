@@ -23,23 +23,20 @@ const DefaultCustomBlock: ComponentType<BlockRenderProps> = (props) => {
     if (previewSelect) {
       const selection = Object.keys(previewSelect).reduce(
         (acc, key) => {
-          // Preview field values are arbitrary/dynamic, so `any` is pragmatic here.
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          acc[key] = (props.value as Record<string, any>)[previewSelect[key]]
+          // Preview field values are arbitrary/dynamic.
+          acc[key] = (props.value as Record<string, unknown>)[previewSelect[key]]
           return acc
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as Record<string, any>,
+        {} as Record<string, unknown>,
       )
       const prepared = (previewPrepare ? previewPrepare(selection) : selection) as PreviewValue
       if (prepared?.title || prepared?.subtitle || prepared?.media) return prepared
     }
     // No usable preview config: derive a title from the first string field (as
     // Sanity's default preview does), then fall back to the type title / name.
-    const firstString = Object.entries(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (props.value as Record<string, any>) ?? {},
-    ).find(([key, v]) => !key.startsWith('_') && typeof v === 'string' && v.trim() !== '')?.[1]
+    const firstString = Object.entries((props.value as Record<string, unknown>) ?? {}).find(
+      ([key, v]) => !key.startsWith('_') && typeof v === 'string' && v.trim() !== '',
+    )?.[1]
     return {
       title: (firstString as string | undefined) ?? (schemaType.title as string) ?? schemaType.name,
     }

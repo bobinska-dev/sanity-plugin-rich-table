@@ -1,32 +1,49 @@
 import type {ComponentType} from 'react'
-import type {ArraySchemaType, PortableTextBlock} from 'sanity'
+import type {
+  ArraySchemaType,
+  BlockAnnotationProps,
+  BlockDecoratorProps,
+  BlockListItemProps,
+  BlockProps,
+  BlockStyleProps,
+  PortableTextBlock,
+} from 'sanity'
 
 /**
  * A decorator / style / list entry extracted from a compiled Sanity block.
  *
  * `component` is the consumer's optional custom render component, defined on the
- * style/decorator in the schema (`{title, value, component}`). Sanity preserves
- * it through compilation even though its public type omits it.
+ * style/decorator/list in the schema (`{title, value, component}`). Sanity
+ * preserves it through compilation even though its public type omits it. `TProps`
+ * pins it to the exact Studio render-props shape for the entry's kind —
+ * {@link BlockDecoratorProps} for decorators, {@link BlockStyleProps} for styles,
+ * {@link BlockListItemProps} for lists — the same API a consumer uses on a native
+ * Portable Text input.
  */
-export interface ExtractedMark {
+export interface ExtractedMark<
+  TProps = BlockDecoratorProps | BlockStyleProps | BlockListItemProps,
+> {
   name: string
   title?: string
   icon?: ComponentType
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  component?: ComponentType<any>
+  component?: ComponentType<TProps>
 }
 
 /** The coarse field types the editor's SchemaDefinition understands. */
 export type SchemaFieldType = 'string' | 'number' | 'boolean' | 'array' | 'object'
 
-/** An annotation / block-object / inline-object entry (an object type). */
-export interface ExtractedType {
+/**
+ * An annotation / block-object / inline-object entry (an object type). `TProps`
+ * pins the custom render component to its Studio render-props shape:
+ * {@link BlockAnnotationProps} for annotations (from the `components.annotation`
+ * slot), {@link BlockProps} for block / inline objects.
+ */
+export interface ExtractedType<TProps = BlockAnnotationProps | BlockProps> {
   name: string
   title?: string
   icon?: ComponentType
   // Custom render component from the annotation's `components.annotation` slot.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  component?: ComponentType<any>
+  component?: ComponentType<TProps>
   fields: Array<{name: string; title?: string; type: SchemaFieldType}>
 }
 
@@ -53,12 +70,12 @@ function coerceFieldType(type: unknown): SchemaFieldType {
 }
 
 export interface ExtractedBlockConfig {
-  decorators: ExtractedMark[]
-  styles: ExtractedMark[]
-  lists: ExtractedMark[]
-  annotations: ExtractedType[]
-  blockObjects: ExtractedType[]
-  inlineObjects: ExtractedType[]
+  decorators: ExtractedMark<BlockDecoratorProps>[]
+  styles: ExtractedMark<BlockStyleProps>[]
+  lists: ExtractedMark<BlockListItemProps>[]
+  annotations: ExtractedType<BlockAnnotationProps>[]
+  blockObjects: ExtractedType<BlockProps>[]
+  inlineObjects: ExtractedType<BlockProps>[]
 }
 
 // The compiled schema is loosely typed; traverse it with a permissive shape.
@@ -95,13 +112,18 @@ function getSpan(block: Loose | undefined): Loose | undefined {
 }
 
 /** Read a `style`/`list` field's enum (`type.options.list`) as `{name,title}` marks. */
-function marksFromListField(field: Loose | undefined): ExtractedMark[] {
+function marksFromListField<TProps>(field: Loose | undefined): ExtractedMark<TProps>[] {
   const list = field?.type?.options?.list
   if (!Array.isArray(list)) return []
   return (list as Array<string | Loose>).map((item) =>
     typeof item === 'string'
       ? {name: item}
-      : {name: item.value, title: item.title, icon: item.icon, component: item.component},
+      : {
+          name: item.value,
+          title: item.title,
+          icon: item.icon,
+          component: item.component as ComponentType<TProps> | undefined,
+        },
   )
 }
 
@@ -115,7 +137,7 @@ function fieldsOf(objectType: Loose | undefined): ExtractedType['fields'] {
   }))
 }
 
-function toObjectType(member: Loose): ExtractedType {
+function toObjectType<TProps = BlockProps>(member: Loose): ExtractedType<TProps> {
   return {
     name: member.name as string,
     title: member.title as string | undefined,
@@ -149,20 +171,20 @@ export function extractBlockConfig(
   if (!block) return undefined
 
   const span = getSpan(block)
-  const decorators: ExtractedMark[] = Array.isArray(span?.decorators)
+  const decorators: ExtractedMark<BlockDecoratorProps>[] = Array.isArray(span?.decorators)
     ? (span!.decorators as Loose[]).map((d) => ({
         name: d.value as string,
         title: d.title as string | undefined,
         icon: d.icon as ComponentType | undefined,
-        component: d.component as ExtractedMark['component'],
+        component: d.component as ComponentType<BlockDecoratorProps> | undefined,
       }))
     : []
   // Annotations are object types; their custom render component lives on Sanity's
   // native `components.annotation` slot (an object's whole `components` map
   // survives compilation).
-  const annotations: ExtractedType[] = Array.isArray(span?.annotations)
+  const annotations: ExtractedType<BlockAnnotationProps>[] = Array.isArray(span?.annotations)
     ? (span!.annotations as Loose[]).map((a) => ({
-        ...toObjectType(a),
+        ...toObjectType<BlockAnnotationProps>(a),
         // Prefer the table-specific `tableAnnotation` slot (falling back to the
         // standard `annotation`). Sanity's native annotation component renders
         // via `props.renderDefault`, which `@portabletext/editor` does not
@@ -171,23 +193,29 @@ export function extractBlockConfig(
         // versa. Keeping the cell visual on `tableAnnotation` leaves the native
         // `annotation` slot for Sanity's default rendering (debug/document view).
         component: ((a.components as Loose | undefined)?.tableAnnotation ??
-          (a.components as Loose | undefined)?.annotation) as ExtractedType['component'],
+          (a.components as Loose | undefined)?.annotation) as
+          | ComponentType<BlockAnnotationProps>
+          | undefined,
       }))
     : []
 
-  const styles = marksFromListField(getField(block, 'style'))
+  const styles = marksFromListField<BlockStyleProps>(getField(block, 'style'))
   // The compiled list field is named `listItem` (not `list`); fall back to
   // `list` defensively in case a future schema version renames it.
-  const lists = marksFromListField(getField(block, 'listItem') ?? getField(block, 'list'))
+  const lists = marksFromListField<BlockListItemProps>(
+    getField(block, 'listItem') ?? getField(block, 'list'),
+  )
 
-  const blockObjects = (members ?? []).filter((m) => !isTextBlockMember(m)).map(toObjectType)
+  const blockObjects = (members ?? [])
+    .filter((m) => !isTextBlockMember(m))
+    .map((m) => toObjectType<BlockProps>(m))
 
   const childrenOf = getField(block, 'children')?.type?.of
   const inlineObjects = Array.isArray(childrenOf)
     ? (childrenOf as Loose[])
         .filter((m) => m.name !== 'span' && !Array.isArray(m.decorators))
         .map((m) => ({
-          ...toObjectType(m),
+          ...toObjectType<BlockProps>(m),
           // Prefer a table-specific `tableInlineBlock` slot (falling back to the
           // standard `inlineBlock`). Like block objects' `tableBlock`, this
           // decouples the cell's custom visual from the NATIVE PT input that
@@ -199,7 +227,9 @@ export function extractBlockConfig(
           // input keep its default node (editing works) while the cell editor
           // still renders the custom component.
           component: ((m.components as Loose | undefined)?.tableInlineBlock ??
-            (m.components as Loose | undefined)?.inlineBlock) as ExtractedType['component'],
+            (m.components as Loose | undefined)?.inlineBlock) as
+            | ComponentType<BlockProps>
+            | undefined,
         }))
     : []
 

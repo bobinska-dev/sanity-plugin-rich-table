@@ -18,8 +18,7 @@ const ICON_SIZE = 12
  */
 const DefaultInlineBlock: ComponentType<BlockProps> = (props) => {
   const schemaType = props.schemaType as unknown as ObjectSchemaType
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const value = props.value as Record<string, any>
+  const value = props.value as Record<string, unknown>
   const title = getInlineTitle(schemaType, value)
 
   return (
@@ -52,11 +51,7 @@ const DefaultInlineBlock: ComponentType<BlockProps> = (props) => {
  * `preview` (select + optional prepare), else the first non-meta string field on
  * the value, else the type's title or name.
  */
-function getInlineTitle(
-  schemaType: ObjectSchemaType,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: Record<string, any>,
-): string {
+function getInlineTitle(schemaType: ObjectSchemaType, value: Record<string, unknown>): string {
   const select = schemaType.preview?.select
   if (select) {
     const selection = Object.fromEntries(
