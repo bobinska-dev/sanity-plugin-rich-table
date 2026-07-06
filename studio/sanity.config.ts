@@ -2,7 +2,7 @@ import {AsteriskIcon, HighlightIcon, IceCreamIcon, ImageIcon, LinkIcon} from '@s
 import {visionTool} from '@sanity/vision'
 import {defineArrayMember, defineConfig, defineField, defineType} from 'sanity'
 import {structureTool} from 'sanity/structure'
-import {richTablePlugin} from 'sanity-plugin-rich-table'
+import {richTablePlugin, richTableRules} from 'sanity-plugin-rich-table'
 
 import CustomBock from './components/CustomBock'
 import FootnoteAnnotation from './components/FootnoteAnnotation'
@@ -54,6 +54,8 @@ export default defineConfig({
             name: 'myRichTable',
             title: 'My Rich Table',
             type: 'richTable',
+            // Per-instance validation on an object field.
+            validation: richTableRules().minRows(2).requireColumnTitles(),
           }),
           defineField({
             name: 'myRichTables',
@@ -63,6 +65,8 @@ export default defineConfig({
               defineArrayMember({
                 name: 'richTableItem',
                 type: 'richTable',
+                // Per-instance validation on an array member (different rules).
+                validation: richTableRules().minColumns(3),
               }),
             ],
           }),
@@ -75,6 +79,8 @@ export default defineConfig({
                 name: 'richTableBlock',
                 title: 'Rich Table Block',
                 type: 'richTableBlock',
+                // Per-instance validation on a Portable Text block.
+                validation: richTableRules().requireRowTitles().requireColumnTitles(),
               }),
               defineArrayMember({
                 name: 'image',

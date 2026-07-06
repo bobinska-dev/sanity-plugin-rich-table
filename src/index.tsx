@@ -8,10 +8,22 @@ import columnHeaderObject, {ColumnHeader} from './schemas/columnHeader.object'
 import {defineContentArrayMember} from './schemas/content'
 import richTableBlock from './schemas/richTable.block'
 import {defineRichTableObject, RichTableType} from './schemas/richTable.object'
+import {
+  richTableRules,
+  type RichTableRuleBuilder,
+  type RichTableValidationConfig,
+  richTableValidator,
+} from './schemas/richTableValidation'
 import rowObject, {RichTableRowType} from './schemas/row.object'
 
 // Re-export types for consumers
 export type {ColumnHeader, RichTableCellType, RichTableRowType, RichTableType}
+
+// Per-instance validation. Preferred: the chainable, table-scoped rule builder —
+// `validation: richTableRules().minRows(2).requireColumnTitles()`. Also exposed:
+// `richTableValidator(config)` for composing inside your own `Rule.custom`.
+export {richTableRules, richTableValidator}
+export type {RichTableRuleBuilder, RichTableValidationConfig}
 
 // ---------------------------------------------------------------------------
 // Table-import feature — public API

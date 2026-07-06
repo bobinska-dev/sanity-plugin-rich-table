@@ -28,6 +28,8 @@ interface RowHeaderWithInputProps {
   readOnly: boolean | undefined
   path: string
   role?: string
+  /** Tone from this row's title validation markers (e.g. a required title). */
+  validationTone?: 'critical' | 'caution'
 }
 
 /** Row header component with input field for editing the row title */
@@ -38,6 +40,7 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
   rowIndex,
   rowCount,
   readOnly,
+  validationTone,
 }) => {
   const [title, setTitle] = useState(row.title || '')
   const [isFocused, setIsFocused] = useState(false)
@@ -70,7 +73,7 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
     >
       <StyledCard
         shadow={isFocused ? 1 : undefined}
-        tone={isFocused ? 'primary' : undefined}
+        tone={isFocused ? 'primary' : validationTone}
         paddingLeft={1}
       >
         <TextInput
