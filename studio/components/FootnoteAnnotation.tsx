@@ -18,7 +18,7 @@ const FootnoteAnnotation: ComponentType<BlockAnnotationProps> = (props) => {
       style={{borderBottom: '1px dotted currentColor'}}
     >
       {props.children}
-      <sup style={{color: 'var(--card-focus-ring-color)', fontWeight: 600}}>†</sup>
+      <sup style={{color: 'var(--card-focus-ring-color)', fontWeight: 600}}>*</sup>
     </span>
   )
 }

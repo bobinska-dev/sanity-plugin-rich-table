@@ -34,6 +34,7 @@ const CommandListItem: ComponentType<CommandListItemProps> = (props) => {
       aria-selected={props.selected}
       aria-label={props.match.label}
       style={{cursor: 'pointer'}}
+      marginBottom={1}
     >
       <Flex align={'center'} gap={2}>
         {/* Fixed-width, centered icon gutter at a uniform font-size so icons from
@@ -46,7 +47,7 @@ const CommandListItem: ComponentType<CommandListItemProps> = (props) => {
         >
           {props.match.icon}
         </Flex>
-        <Stack gap={1} style={{flex: 1, minWidth: 0}} paddingBottom={1}>
+        <Stack gap={1} style={{flex: 1, minWidth: 0}}>
           <Box>
             <Text size={1} weight={'medium'} textOverflow={'ellipsis'}>
               {props.match.label}
