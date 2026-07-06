@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.2](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.2.1...v1.2.2) (2026-07-06)
+
+### Bug Fixes
+
+- **deps:** declare sanity/react/styled-components as peerDependencies ([bc40fd7](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/bc40fd7cdfc5adaac3f88ee2e2d23cda25695bfe)), closes [#10](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/10) [#10](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/10)
+
 ## [1.2.1](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.2.0...v1.2.1) (2026-07-06)
 
 ### Bug Fixes
