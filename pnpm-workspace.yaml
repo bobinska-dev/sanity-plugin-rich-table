@@ -8,13 +8,20 @@ packages:
 allowBuilds:
   esbuild: true
 
-# Dependency overrides live here (NOT package.json's `pnpm.overrides`): pnpm 11
-# in CI reads workspace settings from pnpm-workspace.yaml, so overrides in
-# package.json were applied by local pnpm 10 but ignored by CI's pnpm 11 →
-# `--frozen-lockfile` mismatch. Dedupe to a single copy: React (transitive Sanity
-# deps pulled 19.2.4 alongside the app's 19.2.7 → useMemoCache errors) and vite
-# (Sanity bundles 8; the test toolchain would otherwise drift to a second major).
+# Dependency overrides live here (NOT package.json's `pnpm.overrides`): pnpm 11 in
+# CI reads workspace settings from pnpm-workspace.yaml, so overrides in package.json
+# were applied by local pnpm 10 but ignored by CI's pnpm 11 → `--frozen-lockfile`
+# mismatch.
+#
+# - react/react-dom/vite: dedupe to a single copy (transitive Sanity deps pulled
+#   19.2.4 alongside the app's 19.2.7 → useMemoCache errors; Sanity bundles vite 8,
+#   the test toolchain would otherwise drift to a second major).
+# - @semantic-release/github: force the release-asset-upload fix. <=12.0.6 sends a
+#   numeric content-length that Node 24's undici rejects, leaving the GitHub release
+#   a draft; fixed in 12.0.9 (semantic-release/github#1224). Pinned transitively
+#   (12.0.6) via @sanity/semantic-release-preset, so this override is what applies.
 overrides:
   react: ^19.2.7
   react-dom: ^19.2.7
   vite: ^8.1.3
+  '@semantic-release/github': '^12.0.9'

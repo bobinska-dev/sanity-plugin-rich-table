@@ -5,6 +5,44 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.2](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.2.1...v1.2.2) (2026-07-06)
+
+### Bug Fixes
+
+- **deps:** declare sanity/react/styled-components as peerDependencies ([bc40fd7](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/bc40fd7cdfc5adaac3f88ee2e2d23cda25695bfe)), closes [#10](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/10) [#10](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/10)
+
+## [1.2.1](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.2.0...v1.2.1) (2026-07-06)
+
+### Bug Fixes
+
+- keep diff grid valid when a table has no columns ([388161d](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/388161dddde50548425b989627765df897c569b5))
+
+## [1.2.0](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.5...v1.2.0) (2026-07-03)
+
+### Features
+
+- render rich table diffs in the review changes pane ([3f631c0](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/3f631c05589042e62242e48efc10a5c71b533deb))
+
+### Bug Fixes
+
+- convey cell status in diff inspect aria-label; cover preview guard ([b51a3de](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/b51a3dee3b3d31b7371e2ed38b00d2701815e3cc))
+
+### Performance Improvements
+
+- memoize rich table diff model computation ([5b43d74](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/5b43d7499404278b84b6253eba18d23ac749a387))
+
+## [1.1.5](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.4...v1.1.5) (2026-07-03)
+
+### Bug Fixes
+
+- **table:** keep \_type/\_key when initialising a table + key all cell content ([7e10414](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/7e10414ff2bae78a4279920d273436c3aad4d3c6))
+
+## [1.1.4](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.3...v1.1.4) (2026-07-03)
+
+### Bug Fixes
+
+- register row schema type as row so graphql deploy works (SYS-141) ([4029dbf](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/4029dbfea5165d6c508ea79da1bf4665edae50ea))
+
 ## [1.1.3](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.2...v1.1.3) (2026-07-03)
 
 ### Bug Fixes

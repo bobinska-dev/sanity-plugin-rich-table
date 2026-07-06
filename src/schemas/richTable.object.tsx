@@ -49,7 +49,7 @@ export default defineType({
       of: [
         defineArrayMember({
           name: 'row',
-          type: 'richTableRow',
+          type: 'row',
         }),
       ],
     }),
@@ -126,7 +126,7 @@ export const defineRichTableObject = ({
         of: [
           defineArrayMember({
             name: 'row',
-            type: 'richTableRow',
+            type: 'row',
           }),
         ],
       }),

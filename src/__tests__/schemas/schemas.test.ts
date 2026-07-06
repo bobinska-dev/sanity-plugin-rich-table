@@ -53,7 +53,9 @@ describe('richTableObject schema', () => {
 
 describe('rowObject schema', () => {
   it('has correct name', () => {
-    expect(rowObject.name).toBe('richTableRow')
+    // Registered as `row` to match the `_type: 'row'` written to content and to
+    // keep GraphQL deploy working (array members must be top-level types). SYS-141.
+    expect(rowObject.name).toBe('row')
   })
 
   it('has correct type', () => {
@@ -142,5 +144,12 @@ describe('Row preview', () => {
     if (!prepare) return
     const result = prepare({title: undefined, cells: [{}]})
     expect(result.subtitle).toBe('1 cell')
+  })
+
+  it('handles missing cells without throwing (SYS-168 regression)', () => {
+    if (!prepare) return
+    const result = prepare({title: undefined, cells: undefined})
+    expect(result.title).toBe('Row')
+    expect(result.subtitle).toBe('0 cells')
   })
 })

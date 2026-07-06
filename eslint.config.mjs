@@ -22,6 +22,7 @@ export default [
       '**/.eslintrc.js',
       '**/commitlint.config.js',
       '**/dist/**',
+      '**/docs/**',
       '**/lint-staged.config.js',
       '**/package.config.ts',
       '**/scripts/**',

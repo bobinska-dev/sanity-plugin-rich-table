@@ -21,13 +21,13 @@ This means that an "empty" cell will still have a `content` field with an empty 
 - Type: `object`
 - Purpose: container for the table data and UI flags.
 - Fields:
-  - `rows` (array, required, min 1): array of `row` items (underlying type `richTableRow` object). Validation enforces at least one row.
+  - `rows` (array, required, min 1): array of `row` objects (stored with `_type: 'row'`). Validation enforces at least one row.
   - `columnHeaders` (array, optional): array of `columnHeader` objects.
   - `hasColumnTitles` (boolean): UI flag, initial value `true`.
   - `hasRowTitles` (boolean): UI flag, initial value `true`.
 - Components: custom `input` and `block` components are wired so the editor renders a table-specific UI.
 
-## Row object: `richTableRow`
+## Row object: `row`
 
 - Type: `object`
 - Purpose: represents a single table row.

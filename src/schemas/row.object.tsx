@@ -8,7 +8,10 @@ export type RichTableRowType = ObjectItem & {
 }
 
 export default defineType({
-  name: 'richTableRow',
+  // Named `row` (not `richTableRow`) so it matches the `_type: 'row'` written to
+  // content (see InitialiseTable / RowContextMenu) — a stored array-member `_type`
+  // must resolve to a registered top-level type or GraphQL deploy fails (SYS-141).
+  name: 'row',
   title: 'Rich Table Row',
   type: 'object',
   fields: [

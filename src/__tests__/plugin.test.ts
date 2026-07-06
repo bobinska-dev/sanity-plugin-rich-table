@@ -32,7 +32,7 @@ describe('richTablePlugin', () => {
     const typeNames = types?.map((t: SchemaTypeDefinition) => t.name) ?? []
 
     expect(typeNames).toContain('richTable')
-    expect(typeNames).toContain('richTableRow')
+    expect(typeNames).toContain('row')
     expect(typeNames).toContain('richTableCell')
     expect(typeNames).toContain('columnHeader')
     expect(typeNames).toContain('richTableBlock')
