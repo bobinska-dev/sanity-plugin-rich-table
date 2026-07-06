@@ -242,4 +242,22 @@ describe('buildTableDiffModel', () => {
     expect(model.rows[0].cells[0].toText).toBe('y')
     expect(model.summary.cellsChanged).toBe(1)
   })
+
+  it('aligns columns positionally when one revision has no column headers', () => {
+    // Same content, but `from` declares headers and `to` has none (legacy /
+    // header-less data). Columns must align by position, not read as all
+    // removed + added.
+    const from = table([row('r1', 'A', ['x', 'y'])], {
+      headers: [
+        {_key: 'h0', cellIndex: 0},
+        {_key: 'h1', cellIndex: 1},
+      ],
+    })
+    const to = table([row('r1', 'A', ['x', 'y'])], {headers: undefined})
+    const model = buildTableDiffModel(from, to)
+
+    expect(model.summary.columnsAdded).toBe(0)
+    expect(model.summary.columnsRemoved).toBe(0)
+    expect(model.summary.cellsChanged).toBe(0)
+  })
 })

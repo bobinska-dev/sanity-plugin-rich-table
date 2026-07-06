@@ -23,7 +23,9 @@ import {
   type TableDiffModel,
   type TableDiffRowModel,
 } from '../utils/buildTableDiffModel'
+import {DIFF_ADDED_BG, DIFF_REMOVED_BG} from '../utils/diffColors'
 import {getLetterBasedOnIndex} from '../utils/getLetterBasedOnIndex'
+import {hasInlineChanges, inlineTextDiff} from '../utils/inlineTextDiff'
 
 const CELL_TONE: Record<CellDiffStatus, CardTone> = {
   added: 'positive',
@@ -73,6 +75,18 @@ const Grid = styled.div<{$columns: number}>`
 
 const Struck = styled(Text)`
   text-decoration: line-through;
+`
+
+// Inline diff spans, echoing Sanity's positive/critical diff tones. Semi-transparent
+// so they tint whatever card background they sit on and stay legible in light and dark.
+const AddedText = styled.span`
+  background-color: ${DIFF_ADDED_BG};
+  border-radius: 2px;
+`
+const RemovedText = styled.span`
+  background-color: ${DIFF_REMOVED_BG};
+  text-decoration: line-through;
+  border-radius: 2px;
 `
 
 const PRE_WRAP: CSSProperties = {whiteSpace: 'pre-wrap', wordBreak: 'break-word'}
@@ -302,6 +316,25 @@ function InspectableCell({
   )
 }
 
+/** Collapsible raw Portable Text for a single revision — the escape hatch for
+ * anything the lossy plain-text view drops (marks, image refs, nested objects). */
+function RawContent({label, content}: {label: string; content: unknown}) {
+  return (
+    <details>
+      <summary style={CLICKABLE}>
+        <Text as="span" size={0} muted>
+          {label}
+        </Text>
+      </summary>
+      <Card tone="transparent" padding={2} radius={1} marginTop={2}>
+        <Text as="pre" size={0} muted style={{...PRE_WRAP, fontFamily: 'monospace'}}>
+          {safeJson(content)}
+        </Text>
+      </Card>
+    </details>
+  )
+}
+
 /** One before/after section inside the detail dialog: readable text + collapsible raw content. */
 function DetailSection({
   label,
@@ -330,26 +363,67 @@ function DetailSection({
           </Text>
         )}
       </Card>
-      <details>
-        <summary style={CLICKABLE}>
-          <Text as="span" size={0} muted>
-            Raw content
-          </Text>
-        </summary>
-        <Card tone="transparent" padding={2} radius={1} marginTop={2}>
-          <Text as="pre" size={0} muted style={{...PRE_WRAP, fontFamily: 'monospace'}}>
-            {safeJson(content)}
-          </Text>
-        </Card>
-      </details>
+      <RawContent label="Raw content" content={content} />
+    </Stack>
+  )
+}
+
+/** The old and new text merged into one view: removed text struck through, added
+ * text highlighted, unchanged text plain. Falls back to the plain "after" text
+ * when the word diff finds nothing to highlight (e.g. only formatting changed). */
+function InlineDiffText({from, to}: {from: string; to: string}) {
+  const segments = useMemo(() => inlineTextDiff(from, to), [from, to])
+
+  if (!hasInlineChanges(segments)) {
+    const text = to || from
+    return text ? (
+      <Text size={1} style={PRE_WRAP}>
+        {text}
+      </Text>
+    ) : (
+      <Text size={1} muted>
+        (empty)
+      </Text>
+    )
+  }
+
+  return (
+    <Text size={1} style={PRE_WRAP}>
+      {segments.map((segment, index) => {
+        const key = `${segment.status}-${index}`
+        if (segment.status === 'added') return <AddedText key={key}>{segment.value}</AddedText>
+        if (segment.status === 'removed')
+          return <RemovedText key={key}>{segment.value}</RemovedText>
+        return <Fragment key={key}>{segment.value}</Fragment>
+      })}
+    </Text>
+  )
+}
+
+/** The combined before→after view for a changed cell: one inline diff instead of
+ * two separate snapshots, with each revision's raw content still available. */
+function CombinedChangesSection({cell}: {cell: TableDiffCellModel}) {
+  return (
+    <Stack space={2}>
+      <Text size={1} weight="semibold" muted>
+        Changes
+      </Text>
+      <Card tone="transparent" padding={3} radius={2} border>
+        <InlineDiffText from={cell.fromText} to={cell.toText} />
+      </Card>
+      <RawContent label="Raw content (before)" content={cell.fromContent} />
+      <RawContent label="Raw content (after)" content={cell.toContent} />
     </Stack>
   )
 }
 
 function CellDetailDialog({selected, onClose}: {selected: SelectedCell; onClose: () => void}) {
   const {cell, columnLabel, rowLabel} = selected
-  const showBefore = cell.status === 'changed' || cell.status === 'removed'
-  const showAfter = cell.status === 'changed' || cell.status === 'added'
+  // A changed cell shows one combined inline diff; added/removed show the single
+  // relevant snapshot; unchanged shows the current content.
+  const showBefore = cell.status === 'removed'
+  const showAfter = cell.status === 'added'
+  const showCombined = cell.status === 'changed'
   const showCurrent = cell.status === 'unchanged'
 
   return (
@@ -367,6 +441,7 @@ function CellDetailDialog({selected, onClose}: {selected: SelectedCell; onClose:
               {CELL_STATUS_LABEL[cell.status]}
             </Badge>
           </Flex>
+          {showCombined ? <CombinedChangesSection cell={cell} /> : null}
           {showBefore ? (
             <DetailSection
               label="Before"

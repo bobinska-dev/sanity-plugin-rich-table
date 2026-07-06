@@ -2,7 +2,6 @@ import {Box, Button, Card, Flex, Text} from '@sanity/ui'
 import {ComponentType, useCallback, useEffect, useState} from 'react'
 import {FormPatch, FormPatchJSONValue, OperationsAPI, PatchEvent, SANITY_PATCH_TYPE} from 'sanity'
 
-import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableRowType} from '../schemas/row.object'
 import {createEmptyCell} from '../utils/createEmptyCell'
@@ -62,13 +61,12 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
     (rowCount: number, cols: number) => {
       setSelected({rows: rowCount, cols: cols})
 
-      // Prepare the initial table value
-      // Cells per row
-      const cells: RichTableCellType[] = Array.from({length: cols ?? 1}, () => createEmptyCell())
-      // New rows
+      // Prepare the initial table value. Generate a fresh `cells` array — with
+      // fresh cell/block `_key`s — for EACH row; reusing one array reference across
+      // rows would share cell objects and duplicate their keys.
       const rows: RichTableRowType[] = Array.from({length: rowCount ?? 1}, () => ({
         _type: 'row',
-        cells: cells,
+        cells: Array.from({length: cols ?? 1}, () => createEmptyCell()),
         _key: generateKey(),
       }))
 
@@ -182,12 +180,23 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
         userSelect: 'none',
       }}
     >
-      {/* Screen reader announcements */}
+      {/* Screen reader announcements. Visually hidden via inline styles because the
+          plugin ships no global `.sr-only` utility and Studio doesn't provide one. */}
       <div
         role="status"
         aria-live="polite"
         aria-atomic="true"
-        className="sr-only" // visually hidden
+        style={{
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          border: 0,
+        }}
       >
         {hover.rows > 0 && hover.cols > 0
           ? `Selected: ${hover.rows} rows by ${hover.cols} columns`

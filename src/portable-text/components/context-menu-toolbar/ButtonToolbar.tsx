@@ -1,5 +1,5 @@
 // typescript
-import {EditorConfig} from '@portabletext/editor'
+import {useEditor} from '@portabletext/editor'
 import {useToolbarSchema} from '@portabletext/toolbar'
 import {BlockContentIcon} from '@sanity/icons'
 import {Box, Card, Flex, Popover, Text} from '@sanity/ui'
@@ -8,24 +8,32 @@ import {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
   Ref,
-  RefObject,
   useCallback,
   useEffect,
+  useId,
+  useMemo,
   useRef,
   useState,
 } from 'react'
+import {ArraySchemaType, Path, PortableTextBlock} from 'sanity'
 import {styled} from 'styled-components'
 
-import {extendAnnotation} from '../../configs/extendAnnotation'
-import {extendBlockObject} from '../../configs/extendBlockObject'
-import extendDecorator from '../../configs/extendDecorators'
-import {extendInlineObject} from '../../configs/extendInlineObject'
-import {extendList} from '../../configs/extendList'
-import extendStyle from '../../configs/extendStyles'
+import {createExtendAnnotation} from '../../configs/extendAnnotation'
+import type {SanityBlockSchemaLike} from '../../configs/extendBlockObject'
+import {createExtendBlockObject} from '../../configs/extendBlockObject'
+import {createExtendDecorators} from '../../configs/extendDecorators'
+import {createExtendInlineObject} from '../../configs/extendInlineObject'
+import {createExtendList} from '../../configs/extendList'
+import {createExtendStyles} from '../../configs/extendStyles'
+import {extractBlockConfig} from '../../configs/extractBlockConfig'
 import AnnotationPopover from '../annotation/AnnotationPopover'
+import BlockPopover from '../custom-blocks/BlockPopover'
+import InlineObjectPopover from '../custom-blocks/InlineObjectPopover'
 import StyleSelector from '../StyleSelector'
 import AnnotationButton from './AnnotationButton'
+import BlockButton from './BlockButton'
 import DecoratorButton from './DecoratorButton'
+import InlineObjectButton from './InlineObjectButton'
 import FloatingButton from './FloatingButton'
 import ListButton from './ListButton'
 
@@ -33,13 +41,55 @@ const StyledFloatingButton = styled(FloatingButton)<{
   $isFocused: boolean
 }>`
   display: inline-block;
-  opacity: ${(props) => (props.$isFocused ? 1 : 0.2)};
+  opacity: ${(props) => (props.$isFocused ? 1 : 0.6)};
 `
 
-const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<EditorConfig>}> = ({
-  focused,
-  editorRef,
-}) => {
+const ButtonToolbar: ComponentType<{
+  focused: boolean
+  schemaType?: ArraySchemaType<PortableTextBlock>
+  path: Path
+}> = ({focused, schemaType, path}) => {
+  // The real editor (this component renders inside EditorProvider). Used to
+  // return focus to the editable — the previous `editorRef` was the EditorConfig,
+  // whose `.focus()` is a no-op, so focus/selection never came back.
+  const editor = useEditor()
+  // Whether the popover was opened via keyboard (⇧⌘O). Only then do we move focus
+  // into the popover on open; a mouse open must NOT steal focus from the editable
+  // (that collapses the selection and makes toggle buttons no-op).
+  const openedByKeyboardRef = useRef(false)
+  const blockSchemas = useMemo((): ReadonlyArray<SanityBlockSchemaLike> | undefined => {
+    const schema = schemaType as {type?: {of?: unknown[]}; of?: unknown[]} | undefined
+    // Prefer the array's own (populated) members; only fall back to the parent
+    // type's `of` when the schema itself carries none. The intrinsic `array`
+    // type's `of` is empty, so a plain `??` would shadow the real members.
+    const of = schema?.of?.length ? schema.of : schema?.type?.of
+    return of as ReadonlyArray<SanityBlockSchemaLike> | undefined
+  }, [schemaType])
+
+  const extendBlockObject = useMemo(() => createExtendBlockObject(blockSchemas), [blockSchemas])
+
+  // Pull the consumer's decorators/styles/lists/annotations off the compiled
+  // block (extractBlockConfig knows the nested compiled paths) so the toolbar
+  // shows their schema-defined icons/titles. Built-ins remain the fallback.
+  const blockConfig = useMemo(() => extractBlockConfig(schemaType), [schemaType])
+
+  const extendDecorator = useMemo(
+    () => createExtendDecorators(blockConfig?.decorators),
+    [blockConfig],
+  )
+  const extendStyle = useMemo(() => createExtendStyles(blockConfig?.styles), [blockConfig])
+  const extendList = useMemo(() => createExtendList(blockConfig?.lists), [blockConfig])
+  const extendAnnotation = useMemo(
+    () => createExtendAnnotation(blockConfig?.annotations),
+    [blockConfig],
+  )
+  // Restore the schema-defined icon onto toolbar inline objects (the editor
+  // strips it), mirroring extendBlockObject.
+  const extendInlineObject = useMemo(
+    () => createExtendInlineObject(blockConfig?.inlineObjects),
+    [blockConfig],
+  )
+
   const toolbarSchema = useToolbarSchema({
     extendDecorator,
     extendAnnotation,
@@ -55,7 +105,11 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
   // * REFS & IDS
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const popoverRef = useRef<HTMLDivElement | null>(null)
-  const popoverId = 'context-menu-toolbar-popover'
+  // Unique per toolbar instance — each cell editor renders its own toolbar, so
+  // constant ids would collide across cells (invalid duplicate DOM ids).
+  const toolbarUid = useId()
+  const popoverId = `context-menu-toolbar-popover-${toolbarUid}`
+  const styleSelectorId = `style-selection-${toolbarUid}`
 
   // Helpers: discover focusable elements inside popover
   const getFocusableElements = (root: HTMLElement | null) => {
@@ -70,39 +124,30 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
     )
   }
 
-  // Centralized close that returns focus to the editorRef
+  // Centralized close that returns focus to the editable
   const closePopover = useCallback(
     (returnFocusToEditor = true) => {
       setOpen(false)
       if (returnFocusToEditor) {
         // Defer focus so any click/activation handlers run first
-        setTimeout(() => {
-          try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ;(editorRef?.current as any)?.focus?.()
-          } catch {
-            // noop
-          }
-        }, 0)
+        setTimeout(() => editor.send({type: 'focus'}), 0)
       }
     },
-    [editorRef],
+    [editor],
   )
 
-  // Toggle handler
+  // Toggle handler (mouse) — must not steal focus from the editable
   const handleOpenClick = useCallback(() => {
+    openedByKeyboardRef.current = false
     setOpen((prev) => {
       const next = !prev
       // when closing via the trigger, return focus to editor
       if (!next) {
-        setTimeout(() => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ;(editorRef?.current as any)?.focus?.()
-        }, 0)
+        setTimeout(() => editor.send({type: 'focus'}), 0)
       }
       return next
     })
-  }, [editorRef])
+  }, [editor])
 
   // Close popover on outside click (but not on internal clicks)
   useEffect(() => {
@@ -142,6 +187,7 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
         target &&
         triggerRef.current?.parentNode?.contains(target)
       ) {
+        openedByKeyboardRef.current = true
         setOpen((prev) => !prev)
         e.preventDefault()
       }
@@ -151,9 +197,11 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
     return () => window.removeEventListener('keydown', handleHotkey)
   }, [])
 
-  // When opening, focus first focusable element inside the popover
+  // When opening VIA KEYBOARD, move focus into the popover for arrow-key nav.
+  // On a mouse open we intentionally leave focus on the editable so the current
+  // selection survives and the toggle buttons apply to it.
   useEffect(() => {
-    if (!open) return undefined
+    if (!open || !openedByKeyboardRef.current) return undefined
     const t = setTimeout(() => {
       const first = getFocusableElements(popoverRef.current)[0]
       if (first) {
@@ -255,7 +303,7 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
     const clickedFocusable = target.closest('button, [role="button"], a, input, select, textarea ')
 
     // Ignore clicks on the style selector button (id="style-select")
-    if (clickedFocusable?.id === 'style-selection') return
+    if (clickedFocusable?.id === styleSelectorId) return
 
     if (clickedFocusable && popoverRef.current.contains(clickedFocusable)) {
       // allow activation to proceed, then close & refocus
@@ -278,6 +326,10 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
             data-orientation={isVertical ? 'vertical' : 'horizontal'}
             onKeyDown={handlePopoverKeyDown}
             onClick={handlePopoverClick}
+            // Keep the editable focused (and its selection alive) when clicking
+            // toolbar buttons, so decorator/list/style toggles apply to the
+            // current selection instead of a lost one.
+            onMouseDown={(e) => e.preventDefault()}
           >
             <Box padding={4} paddingBottom={2}>
               <Text size={0} muted style={{fontStyle: 'italic'}}>
@@ -285,7 +337,7 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
               </Text>
             </Box>
             <Flex padding={3} justify={'space-between'} gap={1}>
-              <StyleSelector toolbarSchema={toolbarSchema} />
+              <StyleSelector toolbarSchema={toolbarSchema} id={styleSelectorId} />
               {toolbarSchema.decorators &&
                 toolbarSchema.decorators?.map((decorator) => (
                   <DecoratorButton key={decorator.name} decorator={decorator} />
@@ -299,6 +351,12 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
               {toolbarSchema.lists?.map((list) => (
                 <ListButton key={list.name} list={list} />
               ))}
+              {toolbarSchema.blockObjects?.map((blockObject) => (
+                <BlockButton key={blockObject.name} blockObject={blockObject} />
+              ))}
+              {toolbarSchema.inlineObjects?.map((inlineObject) => (
+                <InlineObjectButton key={inlineObject.name} inlineObject={inlineObject} />
+              ))}
             </Flex>
           </Box>
         }
@@ -311,6 +369,9 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
           mode={'bleed'}
           icon={BlockContentIcon}
           onClick={handleOpenClick}
+          // Opening the toolbar by mouse must not blur the editable / collapse
+          // the selection, so the buttons act on the text that was selected.
+          onMouseDown={(e: ReactMouseEvent<HTMLButtonElement>) => e.preventDefault()}
           padding={2}
           ref={triggerRef as unknown as Ref<HTMLButtonElement>}
           title="Open text formatting toolbar (⇧⌘O)"
@@ -321,7 +382,24 @@ const ButtonToolbar: ComponentType<{focused: boolean; editorRef: RefObject<Edito
           aria-controls={popoverId}
         />
       </Popover>
-      {toolbarSchema.annotations && <AnnotationPopover schemaTypes={toolbarSchema.annotations} />}
+      {toolbarSchema.annotations && (
+        <AnnotationPopover schemaTypes={toolbarSchema.annotations} path={path} />
+      )}
+      {/* Pass `focused` rather than gating the mount on it: the popovers stay
+          mounted while focus is within their own content (see usePopoverA11y), so a
+          keyboard user can Tab to the edit/remove actions. They still collapse when
+          focus leaves both the editable and the popover. Both edit via the native
+          document form (onPathOpen). */}
+      {toolbarSchema.blockObjects && (
+        <BlockPopover schemaTypes={toolbarSchema.blockObjects} path={path} focused={focused} />
+      )}
+      {toolbarSchema.inlineObjects && (
+        <InlineObjectPopover
+          schemaTypes={toolbarSchema.inlineObjects}
+          path={path}
+          focused={focused}
+        />
+      )}
     </>
   )
 }

@@ -1,21 +1,29 @@
 import {EllipsisHorizontalIcon, EllipsisVerticalIcon} from '@sanity/icons'
 import {PatchOperations} from '@sanity/types'
 import {Button, Menu, MenuButton, MenuDivider, MenuItem} from '@sanity/ui'
-import {ComponentType, useCallback} from 'react'
+import {ComponentType, Fragment, useCallback} from 'react'
 import {
   TbArrowBarLeft,
   TbArrowBarRight,
   TbColumnInsertLeft,
   TbColumnInsertRight,
   TbColumnRemove,
+  TbLayoutSidebar,
 } from 'react-icons/tb'
 import {ObjectItem, OperationsAPI} from 'sanity'
 
+import {
+  PROMOTE_PARAM,
+  promoteDialogParamValue,
+  useRouteDialogState,
+} from '../hooks/useDialogRouteState'
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'
 import {createEmptyCell} from '../utils/createEmptyCell'
 import {generateKey} from '../utils/generateKey'
+import {portableTextToPlain} from '../utils/portableTextToPlain'
+import ConfirmPromoteHeaderDialog from './ConfirmPromoteHeaderDialog'
 
 interface ColumnMenuButtonProps {
   columnIndex: number
@@ -30,6 +38,13 @@ interface ColumnMenuButtonProps {
   readOnly: boolean | undefined
   tableId?: string
   role?: string
+  /**
+   * Whether this menu's surface should render the (URL-param-driven) promote
+   * confirmation. The inline table and the expanded dialog are mounted at once
+   * and share the param, so only the active surface renders the dialog to avoid
+   * two stacked modals. Defaults to `true`. {@link ../hooks/useDialogRouteState}
+   */
+  ownsRouteDialog?: boolean
 }
 const ColumnContextMenu: ComponentType<ColumnMenuButtonProps> = (props) => {
   const {
@@ -42,13 +57,29 @@ const ColumnContextMenu: ComponentType<ColumnMenuButtonProps> = (props) => {
     value,
     iconHorizontal,
     readOnly,
-    // tableId is available for future use
+    role,
+    tableId,
+    ownsRouteDialog = true,
   } = props
   const columnHeaderPathString = `${path}.columnHeaders[_key=="${columnHeaderKey}"]`
-  const menuId = `column-menu-${columnHeaderKey}`
+  // Namespace the menu/button ids per table instance so the inline table and the
+  // expanded-table dialog don't emit duplicate DOM ids when both are mounted.
+  const menuId = `${tableId ? `${tableId}-` : ''}column-menu-${columnHeaderKey}`
   const buttonId = `${menuId}-button`
+  // Register the confirmation in the pane's URL params so it's deep-linkable,
+  // refresh-persistent, and closable with the browser back button. Keyed by the
+  // table path, so gate the dialog render to the first column (below) to avoid
+  // every column's menu opening its own copy.
+  const {
+    open: isPromoteConfirmOpen,
+    handleOpen: openPromoteConfirm,
+    handleClose: closePromoteConfirm,
+  } = useRouteDialogState(PROMOTE_PARAM, promoteDialogParamValue('columnToRowTitles', path))
 
-  const handleDeleteColumn = useCallback(() => {
+  // Build (but don't execute) the patches that remove this column: unset its
+  // header, unset the matching cell in every row, and decrement the `cellIndex`
+  // of every subsequent header. Shared by delete and promote-to-row-titles.
+  const buildDeleteColumnPatches = useCallback((): PatchOperations[] => {
     const headerUnsetPatch: PatchOperations = {
       unset: [columnHeaderPathString],
     }
@@ -73,8 +104,30 @@ const ColumnContextMenu: ComponentType<ColumnMenuButtonProps> = (props) => {
       }
     })
 
-    return patch.execute([headerUnsetPatch, cellUnsetPatch, ...cellIndexPatches])
-  }, [rowCount, columnIndex, columnCount, path, columnHeaderPathString, patch])
+    return [headerUnsetPatch, cellUnsetPatch, ...cellIndexPatches]
+  }, [rowCount, columnIndex, columnCount, path, columnHeaderPathString])
+
+  const handleDeleteColumn = useCallback(() => {
+    return patch.execute(buildDeleteColumnPatches())
+  }, [patch, buildDeleteColumnPatches])
+
+  // * Promote this column to be the row titles, then remove it.
+  // Each cell's rich content is flattened to plain text (marks/formatting are
+  // dropped) and written to the matching row's `title`.
+  const handlePromoteToRowTitles = useCallback(() => {
+    const rows = value.rows ?? []
+    const titlePatches: PatchOperations[] = rows.map((row) => ({
+      set: {
+        [`${path}.rows[_key=="${row._key}"].title`]: portableTextToPlain(
+          row.cells?.[columnIndex]?.content,
+        ),
+      },
+    }))
+    const showRowTitlesPatch: PatchOperations = {
+      set: {[`${path}.hasRowTitles`]: true},
+    }
+    return patch.execute([...titlePatches, showRowTitlesPatch, ...buildDeleteColumnPatches()])
+  }, [value.rows, path, columnIndex, patch, buildDeleteColumnPatches])
 
   const handleAddColumn = useCallback(
     (side: 'left' | 'right') => {
@@ -245,7 +298,7 @@ const ColumnContextMenu: ComponentType<ColumnMenuButtonProps> = (props) => {
     [columnIndex, path, value, patch],
   )
 
-  return (
+  const menuButton = (
     <MenuButton
       button={
         <Button
@@ -261,6 +314,19 @@ const ColumnContextMenu: ComponentType<ColumnMenuButtonProps> = (props) => {
       id={buttonId}
       menu={
         <Menu id={menuId}>
+          {columnIndex === 0 && (
+            <>
+              <MenuItem
+                text="Use as row titles"
+                onClick={openPromoteConfirm}
+                disabled={readOnly || columnCount <= 1}
+                icon={TbLayoutSidebar}
+                aria-label="Move this column's content into the row titles and remove the column"
+                as={'button'}
+              />
+              <MenuDivider />
+            </>
+          )}
           <MenuItem
             text="Add column (left)"
             onClick={() => handleAddColumn('left')}
@@ -307,6 +373,32 @@ const ColumnContextMenu: ComponentType<ColumnMenuButtonProps> = (props) => {
       }
       popover={{placement: 'right', portal: true}}
     />
+  )
+
+  // When rendered directly as a grid header cell (role provided), wrap so the
+  // ARIA `columnheader` lands on the cell that contains the menu button rather
+  // than on the button itself (which must keep its own button role). The promote
+  // confirmation is a sibling so it isn't scoped by the header cell's role.
+  return (
+    <Fragment>
+      {role ? (
+        <div role={role} style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+          {menuButton}
+        </div>
+      ) : (
+        menuButton
+      )}
+      {columnIndex === 0 && ownsRouteDialog && (
+        <ConfirmPromoteHeaderDialog
+          mode="columnToRowTitles"
+          open={isPromoteConfirmOpen}
+          onClose={closePromoteConfirm}
+          onConfirm={handlePromoteToRowTitles}
+          readOnly={readOnly}
+          path={path}
+        />
+      )}
+    </Fragment>
   )
 }
 export default ColumnContextMenu

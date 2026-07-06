@@ -15,3 +15,22 @@ export default defineType({
     }),
   ],
 })
+
+export const defineCellObject = ({
+  portableTextSchemaTypeName,
+}: {
+  portableTextSchemaTypeName?: string
+}) => {
+  return defineType({
+    name: 'richTableCell',
+    title: 'Rich Table Cell',
+    type: 'object',
+    fields: [
+      defineField({
+        name: 'content',
+        title: 'Content',
+        type: portableTextSchemaTypeName || 'content',
+      }),
+    ],
+  })
+}

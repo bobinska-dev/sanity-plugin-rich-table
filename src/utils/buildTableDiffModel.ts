@@ -183,6 +183,14 @@ function buildColumnDescriptors(
   const fromHeaders = asArray<MaybeHeader>(from?.columnHeaders)
   const toHeaders = asArray<MaybeHeader>(to?.columnHeaders)
 
+  // If EITHER revision lacks column headers (legacy / header-less data), keying by
+  // header `_key` on one side but positionally on the other would make every column
+  // read as removed + added. Fall back to positional keys on BOTH sides so columns
+  // align by index.
+  const positional = fromHeaders.length === 0 || toHeaders.length === 0
+  const columnKey = (header: MaybeHeader, index: number): string =>
+    positional ? `@p${index}` : keyOf(header, `@h${index}`)
+
   const descriptors: ColumnDescriptor[] = []
   const byKey = new Map<string, ColumnDescriptor>()
   const ensure = (key: string): ColumnDescriptor => {
@@ -197,12 +205,12 @@ function buildColumnDescriptors(
 
   // Current (to) columns first, in order, then removed (from-only) columns.
   toHeaders.forEach((header, index) => {
-    const descriptor = ensure(keyOf(header, `@h${index}`))
+    const descriptor = ensure(columnKey(header, index))
     descriptor.toIndex = index
     descriptor.toTitle = asString(header?.title)
   })
   fromHeaders.forEach((header, index) => {
-    const descriptor = ensure(keyOf(header, `@h${index}`))
+    const descriptor = ensure(columnKey(header, index))
     descriptor.fromIndex = index
     descriptor.fromTitle = asString(header?.title)
   })

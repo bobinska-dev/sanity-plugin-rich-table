@@ -31,7 +31,8 @@ const DecoratorButton: ComponentType<{decorator: ToolbarDecoratorSchemaType}> = 
         onClick={() => decoratorButton.send({type: 'toggle'})}
         selected={decoratorButton.snapshot.matches({enabled: 'active'})}
         aria-pressed={decoratorButton.snapshot.matches({enabled: 'active'})}
-        aria-label={decorator.title}
+        aria-label={decorator.title ?? decorator.name}
+        disabled={decoratorButton.snapshot.matches('disabled')}
         icon={decorator.icon}
         as={'button'}
         padding={2}

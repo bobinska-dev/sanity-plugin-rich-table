@@ -1,19 +1,28 @@
 import {EllipsisVerticalIcon} from '@sanity/icons'
 import {PatchOperations} from '@sanity/types'
 import {Button, Menu, MenuButton, MenuDivider, MenuItem} from '@sanity/ui'
-import {ComponentType, useCallback} from 'react'
+import {ComponentType, Fragment, useCallback} from 'react'
 import {
   TbArrowBarDown,
   TbArrowBarUp,
+  TbLayoutNavbar,
   TbRowInsertBottom,
   TbRowInsertTop,
   TbRowRemove,
 } from 'react-icons/tb'
 import {OperationsAPI} from 'sanity'
 
+import {
+  PROMOTE_PARAM,
+  promoteDialogParamValue,
+  useRouteDialogState,
+} from '../hooks/useDialogRouteState'
+import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
 import {createEmptyCell} from '../utils/createEmptyCell'
 import {generateKey} from '../utils/generateKey'
+import {portableTextToPlain} from '../utils/portableTextToPlain'
+import ConfirmPromoteHeaderDialog from './ConfirmPromoteHeaderDialog'
 
 interface RowContextMenuProps {
   rowIndex: number
@@ -24,6 +33,18 @@ interface RowContextMenuProps {
   path: string
   readOnly: boolean | undefined
   role?: string
+  /** Namespaces the menu/button ids per table instance so the inline table and
+   * the expanded-table dialog don't emit duplicate DOM ids when both are mounted. */
+  tableId?: string
+  /** Full table value — needed to read the column headers when promoting a row. */
+  value: RichTableType
+  /**
+   * Whether this menu's surface should render the (URL-param-driven) promote
+   * confirmation. The inline table and the expanded dialog are mounted at once
+   * and share the param, so only the active surface renders the dialog to avoid
+   * two stacked modals. Defaults to `true`. {@link ../hooks/useDialogRouteState}
+   */
+  ownsRouteDialog?: boolean
 }
 
 /** # Menu button for each row in the table
@@ -44,8 +65,21 @@ const RowContextMenu: ComponentType<RowContextMenuProps> = ({
   path,
   rowCount,
   readOnly,
+  role,
+  tableId,
+  value,
+  ownsRouteDialog = true,
 }) => {
-  const menuId = `row-menu-${rowIndex}`
+  const menuId = `${tableId ? `${tableId}-` : ''}row-menu-${rowIndex}`
+  // Register the confirmation in the pane's URL params so it's deep-linkable,
+  // refresh-persistent, and closable with the browser back button. Keyed by the
+  // table path, so gate the dialog render to the first row (below) to avoid every
+  // row's menu opening its own copy.
+  const {
+    open: isPromoteConfirmOpen,
+    handleOpen: openPromoteConfirm,
+    handleClose: closePromoteConfirm,
+  } = useRouteDialogState(PROMOTE_PARAM, promoteDialogParamValue('rowToColumnTitles', path))
   // * Handle delete row
   const handleDeleteRow = useCallback(() => {
     const rowUnsetPatch = {
@@ -116,7 +150,28 @@ const RowContextMenu: ComponentType<RowContextMenuProps> = ({
     },
     [patch, path, row, rowIndex],
   )
-  return (
+  // * Promote this row to be the column titles, then remove it.
+  // Each cell's rich content is flattened to plain text (marks/formatting are
+  // dropped) and written to the matching column header's `title`.
+  const handlePromoteToColumnTitles = useCallback(() => {
+    const headers = value.columnHeaders ?? []
+    const titlePatches: PatchOperations[] = headers.map((header, columnIndex) => ({
+      set: {
+        [`${path}.columnHeaders[_key=="${header._key}"].title`]: portableTextToPlain(
+          row.cells?.[columnIndex]?.content,
+        ),
+      },
+    }))
+    const showColumnTitlesPatch: PatchOperations = {
+      set: {[`${path}.hasColumnTitles`]: true},
+    }
+    const removeRowPatch: PatchOperations = {
+      unset: [`${path}.rows[${rowIndex}]`],
+    }
+    return patch.execute([...titlePatches, showColumnTitlesPatch, removeRowPatch])
+  }, [value.columnHeaders, row.cells, path, rowIndex, patch])
+
+  const menuButton = (
     <MenuButton
       button={
         <Button
@@ -131,6 +186,18 @@ const RowContextMenu: ComponentType<RowContextMenuProps> = ({
       id={`${menuId}-button`}
       menu={
         <Menu id={menuId}>
+          {rowIndex === 0 && (
+            <>
+              <MenuItem
+                text="Use as column titles"
+                onClick={openPromoteConfirm}
+                disabled={readOnly || rowCount <= 1}
+                icon={TbLayoutNavbar}
+                aria-label="Move this row's content into the column titles and remove the row"
+              />
+              <MenuDivider />
+            </>
+          )}
           <MenuItem
             text="Add row (above)"
             onClick={() => handleAddRow('above')}
@@ -167,6 +234,32 @@ const RowContextMenu: ComponentType<RowContextMenuProps> = ({
       }
       popover={{placement: 'right', portal: true}}
     />
+  )
+
+  // When rendered directly as a grid header cell (role provided), wrap so the
+  // ARIA `rowheader` lands on the cell that contains the menu button rather than
+  // on the button itself (which must keep its own button role). The promote
+  // confirmation is a sibling so it isn't scoped by the header cell's role.
+  return (
+    <Fragment>
+      {role ? (
+        <div role={role} style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+          {menuButton}
+        </div>
+      ) : (
+        menuButton
+      )}
+      {rowIndex === 0 && ownsRouteDialog && (
+        <ConfirmPromoteHeaderDialog
+          mode="rowToColumnTitles"
+          open={isPromoteConfirmOpen}
+          onClose={closePromoteConfirm}
+          onConfirm={handlePromoteToColumnTitles}
+          readOnly={readOnly}
+          path={path}
+        />
+      )}
+    </Fragment>
   )
 }
 export default RowContextMenu

@@ -5,10 +5,12 @@
 1. [Overview](#overview)
 2. [Installation](#installation)
 3. [Usage in Sanity Studio](#usage-in-sanity-studio)
-4. [Data Structure](#data-structure)
-5. [Debugging data issues](#debugging-data-issues)
-6. [Render tables](#render-tables)
-7. [Merging cells](#merging-cells)
+4. [Using a custom Portable Text schema](#using-a-custom-portable-text-schema)
+5. [Data Structure](#data-structure)
+6. [Debugging data issues](#debugging-data-issues)
+7. [Reviewing changes](#reviewing-changes)
+8. [Render tables](#render-tables)
+9. [Merging cells](#merging-cells)
 
 ## Overview
 
@@ -32,7 +34,14 @@ import {richTablePlugin} from 'sanity-plugin-rich-table'
 
 export default defineConfig({
   //...
-  plugins: [richTablePlugin({})],
+  plugins: [
+    richTablePlugin({
+      // Optional. Name of a Portable Text array type used for cell content.
+      // If omitted, cells use the built-in default (bold, italic, headings,
+      // lists, links, …). See "Using a custom Portable Text schema" below.
+      portableTextSchemaTypeName: 'tableCellContent',
+    }),
+  ],
 })
 ```
 
@@ -60,6 +69,176 @@ defineArrayMember({
   type: 'richTableBlock', // Use the rich table block type
 })
 ```
+
+## Using a custom Portable Text schema
+
+Every table cell is a Portable Text editor. Out of the box it offers the standard marks — bold, italic, headings, lists and links. To decide exactly what editors can do inside a cell, define your own Portable Text **array type**, register it, and pass its name to the plugin as `portableTextSchemaTypeName`. If you omit the option, cells fall back to the built-in default.
+
+```ts
+// sanity.config.ts
+plugins: [richTablePlugin({portableTextSchemaTypeName: 'tableCellContent'})]
+```
+
+Because it's a normal Portable Text array, everything you already know about `styles`, `lists`, `marks.decorators`, `marks.annotations`, block objects and inline objects applies. The cell toolbar, the slash-command picker (`/`) and the markdown shortcuts all follow whatever this schema declares.
+
+### Rendering your marks and objects in the cell
+
+To render custom output **inside a cell**, attach a component. Styles and decorators use Sanity's native `component` field. Annotations, block objects and inline objects use a **table-specific sibling slot**:
+
+| What          | Where you declare it            | Slot                          | Component props        |
+| ------------- | ------------------------------- | ----------------------------- | ---------------------- |
+| Style         | `styles[]`                      | `component` (native)          | `BlockStyleProps`      |
+| Decorator     | `marks.decorators[]`            | `component` (native)          | `BlockDecoratorProps`  |
+| Annotation    | `marks.annotations[]`           | `components.tableAnnotation`  | `BlockAnnotationProps` |
+| Block object  | top-level array member          | `components.tableBlock`       | `BlockProps`           |
+| Inline object | the block member's own `of[]`   | `components.tableInlineBlock` | `BlockProps`           |
+
+**Why the `table*` sibling slots?** The plugin renders each cell in its own editor, but the built-in **edit form** (the pencil in the cell's popover) is powered by Sanity's native Portable Text input behind the scenes. Sanity's native input renders annotations via `props.renderDefault` and needs its own default node to open the edit form — neither of which the cell editor provides. So the plugin reads your in-cell component from `tableBlock` / `tableInlineBlock` / `tableAnnotation`, leaving the native `block` / `inlineBlock` / `annotation` slots for Sanity's default rendering. That way your component shows in the cell **and** editing still works. Styles and decorators don't have this split — they use the native `component` field directly.
+
+If you don't supply a component, cells fall back to a sensible default: image and reference blocks get a preview, other block objects get a titled card, inline objects get a titled chip, and annotations get an underlined span.
+
+### Minimal starter
+
+A cell schema with a curated set of standard marks — no custom components, just control over what's available. Copy this as a starting point:
+
+```ts
+// schemas/tableCellContent.ts
+import {defineArrayMember, defineType} from 'sanity'
+
+export const tableCellContent = defineType({
+  name: 'tableCellContent',
+  type: 'array',
+  of: [
+    defineArrayMember({
+      type: 'block',
+      styles: [
+        {title: 'Normal', value: 'normal'},
+        {title: 'Heading', value: 'h2'},
+        {title: 'Quote', value: 'blockquote'},
+      ],
+      lists: [
+        {title: 'Bullet', value: 'bullet'},
+        {title: 'Numbered', value: 'number'},
+      ],
+      marks: {
+        decorators: [
+          {title: 'Strong', value: 'strong'},
+          {title: 'Emphasis', value: 'em'},
+          {title: 'Code', value: 'code'},
+        ],
+        annotations: [
+          {name: 'link', type: 'object', fields: [{name: 'href', type: 'url', title: 'URL'}]},
+        ],
+      },
+    }),
+  ],
+})
+```
+
+Add `tableCellContent` to your schema `types`, then set `portableTextSchemaTypeName: 'tableCellContent'` on the plugin.
+
+### Advanced example
+
+The same schema, now with a custom style, decorator, annotation, block object and inline object — each with its own in-cell renderer:
+
+```tsx
+// components/cell-components.tsx
+import type {
+  BlockAnnotationProps,
+  BlockDecoratorProps,
+  BlockProps,
+  BlockStyleProps,
+} from 'sanity'
+
+// Style — wraps the block's text
+export const LeadStyle = (props: BlockStyleProps) => (
+  <p style={{fontSize: '1.1em', color: 'var(--card-muted-fg-color)'}}>{props.children}</p>
+)
+
+// Decorator — wraps the marked text
+export const HighlightDecorator = (props: BlockDecoratorProps) => (
+  <mark style={{backgroundColor: '#fde68a'}}>{props.children}</mark>
+)
+
+// Annotation — `children` is the annotated text
+export const FootnoteAnnotation = (props: BlockAnnotationProps) => (
+  <span style={{borderBottom: '1px dotted currentColor'}}>
+    {props.children}
+    <sup>*</sup>
+  </span>
+)
+
+// Block object — `value` is the object; render your own preview
+export const CalloutBlock = (props: BlockProps) => {
+  const {text} = props.value as {text?: string}
+  return <aside style={{borderLeft: '3px solid var(--card-focus-ring-color)', paddingLeft: 8}}>{text}</aside>
+}
+
+// Inline object — a void inline node; render from `value`
+export const MentionInline = (props: BlockProps) => {
+  const {label} = props.value as {label?: string}
+  return <span style={{background: '#e6ebff', borderRadius: 3, padding: '0 0.25em'}}>@{label}</span>
+}
+```
+
+```ts
+// schemas/tableCellContent.ts
+import {defineArrayMember, defineField, defineType} from 'sanity'
+import {
+  CalloutBlock,
+  FootnoteAnnotation,
+  HighlightDecorator,
+  LeadStyle,
+  MentionInline,
+} from '../components/cell-components'
+
+export const tableCellContent = defineType({
+  name: 'tableCellContent',
+  type: 'array',
+  of: [
+    defineArrayMember({
+      type: 'block',
+      styles: [
+        {title: 'Normal', value: 'normal'},
+        {title: 'Lead', value: 'lead', component: LeadStyle}, // custom style
+      ],
+      lists: [{title: 'Bullet', value: 'bullet'}],
+      marks: {
+        decorators: [
+          {title: 'Strong', value: 'strong'},
+          {title: 'Highlight', value: 'highlight', component: HighlightDecorator}, // custom decorator
+        ],
+        annotations: [
+          {
+            name: 'footnote',
+            type: 'object',
+            fields: [defineField({name: 'text', type: 'string'})],
+            components: {tableAnnotation: FootnoteAnnotation}, // custom annotation renderer
+          },
+        ],
+      },
+      // inline objects are declared in the block member's own `of`
+      of: [
+        defineArrayMember({
+          name: 'mention',
+          type: 'object',
+          fields: [defineField({name: 'label', type: 'string'})],
+          components: {tableInlineBlock: MentionInline}, // custom inline renderer
+        }),
+      ],
+    }),
+    // block objects are top-level members of the array
+    defineArrayMember({
+      name: 'callout',
+      type: 'object',
+      fields: [defineField({name: 'text', type: 'text'})],
+      components: {tableBlock: CalloutBlock}, // custom block renderer
+    }),
+  ],
+})
+```
+
+Editing a block object, inline object or annotation opens Sanity's native edit form (the same fields you defined), so you never have to build an editing UI — only the in-cell presentation.
 
 ## Data Structure
 
@@ -99,10 +278,24 @@ Each instance of the rich table input has a debug button in the bottom-left corn
 
 When cells are created each cell will automatically receive a `content` array with one child. This child (type `PortableTextTextBlock`) has an empty `text` node. Unfortunately this is needed for the UI to play nice.
 
+## Reviewing changes
+
+Rich tables render a custom diff in the Studio's **Review changes** pane (used by document history and content releases), because the generic field-by-field differ struggles with the deeply nested rows → cells → Portable Text structure.
+
+What you get:
+
+- **A diff grid** summarising which rows and columns were added, removed or moved, and which cells changed. Column/row title edits and title-visibility toggles are shown too.
+- **A combined cell view.** Click a changed cell to open a detail dialog with a single **Changes** section: removed text is struck through, added text is highlighted, and unchanged text is left plain — instead of separate "Before" and "After" blocks. Each revision's raw Portable Text is still available under _Raw content_.
+- **Inline changes in the editor.** When Studio's inline-changes mode is enabled (the toggle that adds `?displayInlineChanges=true` to the URL), the same before→after highlights are overlaid directly on each cell's editor while it stays fully editable. This reads the compared revision from the Structure tool's document pane, so it applies when you are reviewing a revision there.
+
+The diff compares the plain text of each cell (marks and annotations are ignored), so formatting-only changes may not be highlighted — open the cell dialog's _Raw content_ to inspect those. Nothing here needs configuration; the diff is wired up automatically for the `richTable` type.
+
 ## Render tables
 
 To render the rich table data in your frontend application, you can use some of the following example React components.
 Other frameworks as well as libraries (like Tanstack Table) will be able to use a similar approach since your table data is not pesky like Mardown or locked in HTML strings or iFrames.
+
+> **Rendering a custom cell schema.** Cell content is plain Portable Text, so custom block objects, inline objects and annotations from a [custom Portable Text schema](#using-a-custom-portable-text-schema) are rendered on the frontend the usual way — pass matching renderers to `@portabletext/react`'s `components` prop (`types` for block/inline objects, `marks` for annotations and decorators). The Studio `tableBlock` / `tableInlineBlock` / `tableAnnotation` slots only affect the in-Studio cell editor; they don't ship to your frontend.
 
 ### Using a simple HTML table in React
 

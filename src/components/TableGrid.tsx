@@ -1,11 +1,10 @@
 import {Card} from '@sanity/ui'
 import {styled} from 'styled-components'
 
-const MINMAX_HEADER_ROW_HEIGHT = 30 // in px
-const ROW_COLUMN_WIDTH = 2 // in rem
+import {buildGridColumnTemplate} from '../utils/buildGridColumnTemplate'
 
-const rowTitleColumnTrack = '1fr'
-const rowContextColumnTrack = `${ROW_COLUMN_WIDTH}rem`
+const MINMAX_HEADER_ROW_HEIGHT = 30 // in px
+
 /** A styled Card component that uses CSS Grid to layout its children in a grid format.
  */
 export default styled(Card)<{
@@ -13,19 +12,22 @@ export default styled(Card)<{
   $rowCount: number
   $isInDialog: boolean
   $hasRowTitles?: boolean
+  /** Row-title column width in px (drag-handle sized); applies only when
+   * `$hasRowTitles`. */
+  $rowTitleWidth?: number
+  /** Per content-column width in px (drag-handle sized); `undefined` entries fall
+   * back to the default track. Index-aligned with the column headers. */
+  $columnWidths?: Array<number | undefined>
 }>`
   display: grid !important;
 
-  grid-template-columns: ${(props) => {
-    const firstColumn = props.$hasRowTitles ? rowTitleColumnTrack : rowContextColumnTrack
-    if (!props.$columnCount) {
-      return `${firstColumn} repeat(4, 1fr)`
-    }
-    if (props.$columnCount <= 1) {
-      return firstColumn
-    }
-    return `${firstColumn} repeat(${props.$columnCount - 1}, 1fr)`
-  }};
+  grid-template-columns: ${(props) =>
+    buildGridColumnTemplate({
+      columnCount: props.$columnCount,
+      hasRowTitles: props.$hasRowTitles,
+      rowTitleWidth: props.$rowTitleWidth,
+      columnWidths: props.$columnWidths,
+    })};
 
   grid-template-rows: ${(props) => {
     if (!props.$rowCount) {

@@ -1,0 +1,62 @@
+const ROW_COLUMN_WIDTH = 2 // in rem
+const CONTENT_COLUMN_MIN_WIDTH = 80 // in px
+const ROW_TITLE_COLUMN_MIN_WIDTH = 120 // in px
+
+const rowContextColumnTrack = `${ROW_COLUMN_WIDTH}rem`
+// Columns the editor has sized become a fixed px track; the rest share the
+// leftover space equally but never collapse below a readable minimum.
+export const CONTENT_COLUMN_DEFAULT_TRACK = `minmax(${CONTENT_COLUMN_MIN_WIDTH}px, 1fr)`
+// The row-title column grows to share space but keeps a wider floor so the row
+// titles stay readable without dragging the column open.
+export const ROW_TITLE_COLUMN_DEFAULT_TRACK = `minmax(${ROW_TITLE_COLUMN_MIN_WIDTH}px, 1fr)`
+
+// Only a finite, positive width is a usable px track; anything else (undefined,
+// 0, negative, NaN) falls back to the given flexible track.
+const isSizedWidth = (width: number | undefined): width is number =>
+  typeof width === 'number' && Number.isFinite(width) && width > 0
+
+const sizedTrack = (width: number | undefined, fallback: string): string =>
+  isSizedWidth(width) ? `${width}px` : fallback
+
+interface GridColumnTemplateOptions {
+  /** Total grid columns including the leading row-title / context-menu column. */
+  columnCount: number
+  /** When true the leading column stretches for row titles, otherwise it's a
+   * narrow fixed track for the row context menu. */
+  hasRowTitles?: boolean
+  /** Row-title column width in px (drag-handle sized); only applies when
+   * `hasRowTitles`, and falls back to a flexible track when unset. */
+  rowTitleWidth?: number
+  /** Per content-column width in px; `undefined` entries fall back to the default
+   * track. Index-aligned with the column headers. */
+  columnWidths?: Array<number | undefined>
+}
+
+/**
+ * Builds the `grid-template-columns` track list for the table: a leading column
+ * for row titles / the context menu, followed by one track per content column —
+ * fixed px where the editor has sized it, the shared default otherwise.
+ */
+export const buildGridColumnTemplate = ({
+  columnCount,
+  hasRowTitles,
+  rowTitleWidth,
+  columnWidths,
+}: GridColumnTemplateOptions): string => {
+  // Only the row-title column is resizable; the narrow context-menu column stays fixed.
+  const firstColumn = hasRowTitles
+    ? sizedTrack(rowTitleWidth, ROW_TITLE_COLUMN_DEFAULT_TRACK)
+    : rowContextColumnTrack
+  if (!columnCount) {
+    return `${firstColumn} repeat(4, 1fr)`
+  }
+  // the first column is the row title / context menu, the rest are content columns
+  const contentColumnCount = columnCount - 1
+  if (contentColumnCount < 1) {
+    return firstColumn
+  }
+  const contentTracks = Array.from({length: contentColumnCount}, (_, i) =>
+    sizedTrack(columnWidths?.[i], CONTENT_COLUMN_DEFAULT_TRACK),
+  ).join(' ')
+  return `${firstColumn} ${contentTracks}`
+}

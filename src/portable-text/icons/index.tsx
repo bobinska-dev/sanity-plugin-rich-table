@@ -1,8 +1,10 @@
 import {Box, Text} from '@sanity/ui'
 import {
+  TbAbc,
   TbBold,
   TbCode,
   TbCodePlus,
+  TbForms,
   TbH1,
   TbH2,
   TbH3,
@@ -15,6 +17,7 @@ import {
   TbMoodSmileBeam,
   TbPhoto,
   TbQuote,
+  TbSquarePlus,
   TbStrikethrough,
   TbUnderline,
 } from 'react-icons/tb'
@@ -46,3 +49,9 @@ export const CodeIcon = () => <TbCode />
 export const CodeBlockIcon = () => <TbCodePlus />
 
 export const EmojiIcon = () => <TbMoodSmileBeam />
+
+// Generic fallbacks for schema-driven slash commands (used when a style /
+// decorator / object has no dedicated icon above).
+export const DecoratorIcon = () => <TbAbc />
+export const BlockObjectIcon = () => <TbSquarePlus />
+export const InlineObjectIcon = () => <TbForms />

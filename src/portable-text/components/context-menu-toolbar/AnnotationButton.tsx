@@ -1,5 +1,5 @@
 import {ToolbarAnnotationSchemaType, useAnnotationButton} from '@portabletext/toolbar'
-import {Button} from '@sanity/ui'
+import {Box, Button, Text, Tooltip} from '@sanity/ui'
 import {ComponentType} from 'react'
 
 /** Button component for toggling annotations in a rich text editor.
@@ -20,26 +20,35 @@ const AnnotationButton: ComponentType<{annotation: ToolbarAnnotationSchemaType}>
 }) => {
   const annotationButton = useAnnotationButton({schemaType: annotation})
   return (
-    <Button
-      onClick={() =>
-        annotationButton.snapshot.matches({enabled: 'active'})
-          ? annotationButton.send({type: 'remove'})
-          : annotationButton.send({
-              type: 'add',
-              annotation: {
-                value: annotation.name === 'link' ? {href: ''} : {},
-              },
-            })
+    <Tooltip
+      content={
+        <Box padding={2}>
+          <Text size={1}>{annotation.title}</Text>
+        </Box>
       }
-      selected={annotationButton.snapshot.matches({enabled: 'active'})}
-      aria-pressed={annotationButton.snapshot.matches({enabled: 'active'})}
-      aria-label={annotation.title}
-      aria-keyshortcuts={annotation.shortcut?.keys.join('+')}
-      icon={annotation.icon}
-      padding={2}
-      mode={'bleed'}
-      title={annotation.shortcut?.keys.join('+')}
-    />
+    >
+      <Button
+        onClick={() =>
+          annotationButton.snapshot.matches({enabled: 'active'})
+            ? annotationButton.send({type: 'remove'})
+            : annotationButton.send({
+                type: 'add',
+                annotation: {
+                  value: annotation.name === 'link' ? {href: ''} : {},
+                },
+              })
+        }
+        selected={annotationButton.snapshot.matches({enabled: 'active'})}
+        aria-pressed={annotationButton.snapshot.matches({enabled: 'active'})}
+        aria-label={annotation.title ?? annotation.name}
+        disabled={annotationButton.snapshot.matches('disabled')}
+        aria-keyshortcuts={annotation.shortcut?.keys.join('+')}
+        icon={annotation.icon}
+        padding={2}
+        mode={'bleed'}
+        title={annotation.shortcut?.keys.join('+')}
+      />
+    </Tooltip>
   )
 }
 export default AnnotationButton

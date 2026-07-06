@@ -8,9 +8,8 @@ import {defineArrayMember, defineType} from 'sanity'
  * pipeline, but the raw object exported here does NOT contain them.
  *
  * The standalone PTE in {@link ../portable-text/ContentPortableTextEditor.tsx}
- * uses {@link ../portable-text/resolveSchemaDefinition.ts | defaultSchemaDefinition}
- * instead, which provides the same defaults in the format expected by
- * `@portabletext/editor` v6.
+ * reads the compiled schema type via `useSchema()`, so it receives those same
+ * Sanity-provided defaults in the format expected by `@portabletext/editor`.
  */
 export default defineType({
   name: 'content',
@@ -19,20 +18,27 @@ export default defineType({
   of: [
     defineArrayMember({
       type: 'block',
-      // TODO: add customizations for block and inline block types, decorators, annotations, etc. as needed
-      options: {
-        // Restrict to a single line for table cell content to make it more manageable
-        oneLine: false,
-      },
     }),
-
-    /*    defineArrayMember({
-      type: 'image',
-      name: 'image',
-      title: 'Image',
-      options: { hotspot: true },
-      // TODO: Add small preview and block component so that less real estate is being used inside of the table cell
-    }),*/
-    // TODO: test out richTable inside of portable text
   ],
 })
+
+/**
+ * The `content` array member registered by the plugin as the default cell schema.
+ *
+ * Custom blocks, inline objects and annotations are now defined entirely in the
+ * consumer's own Portable Text schema (passed via `portableTextSchemaTypeName`,
+ * which carries their fields, initial values and `table*` render slots in one
+ * place), so this fallback member is plain Portable Text — used only when no
+ * `portableTextSchemaTypeName` is provided.
+ */
+export const defineContentArrayMember = () =>
+  defineArrayMember({
+    name: 'content',
+    title: 'Rich table content',
+    type: 'array',
+    of: [
+      defineArrayMember({
+        type: 'block',
+      }),
+    ],
+  })
