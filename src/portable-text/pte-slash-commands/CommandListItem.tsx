@@ -1,4 +1,4 @@
-import {Button, Stack, Text} from '@sanity/ui'
+import {Card, Flex, Stack, Text} from '@sanity/ui'
 import {ComponentType, useEffect, useRef} from 'react'
 
 import {CommandMatch} from './commands'
@@ -11,7 +11,7 @@ export interface CommandListItemProps {
 }
 
 const CommandListItem: ComponentType<CommandListItemProps> = (props) => {
-  // Button renders as an <li> here, so the ref element type must match (styled-components/@sanity/ui v6 types this strictly).
+  // Rendered as an <li>, so the ref element type must match (@sanity/ui v6 types this strictly).
   const ref = useRef<HTMLLIElement>(null)
 
   useEffect(() => {
@@ -21,21 +21,32 @@ const CommandListItem: ComponentType<CommandListItemProps> = (props) => {
   }, [props.selected])
 
   return (
-    <Button
+    <Card
       as={'li'}
       ref={ref}
+      radius={2}
+      padding={2}
+      tone={props.selected ? 'primary' : 'default'}
+      pressed={props.selected}
       onMouseEnter={props.onMouseEnter}
       onClick={props.onSelect}
-      selected={props.selected}
-      tone={props.selected ? 'primary' : 'default'}
-      mode={'bleed'}
-      width={'fill'}
-      justify={'flex-start'}
-      icon={props.match.icon}
-      // A two-line label (title + description) makes the vertical list read as a
-      // command palette rather than a row of icons.
-      text={
-        <Stack space={2}>
+      role="option"
+      aria-selected={props.selected}
+      aria-label={props.match.label}
+      style={{cursor: 'pointer'}}
+    >
+      <Flex align={'center'} gap={3}>
+        {/* Fixed-width, centered icon gutter at a uniform font-size so icons from
+            different families (react-icons, @sanity/icons, custom) line up and the
+            label always starts at the same x. */}
+        <Flex
+          align={'center'}
+          justify={'center'}
+          style={{width: '1.375rem', height: '1.375rem', flex: 'none', fontSize: '1.125rem'}}
+        >
+          {props.match.icon}
+        </Flex>
+        <Stack space={2} style={{flex: 1, minWidth: 0}}>
           <Text size={1} weight={'medium'} textOverflow={'ellipsis'}>
             {props.match.label}
           </Text>
@@ -43,11 +54,8 @@ const CommandListItem: ComponentType<CommandListItemProps> = (props) => {
             {props.match.description}
           </Text>
         </Stack>
-      }
-      role="option"
-      aria-selected={props.selected}
-      aria-label={props.match.label}
-    />
+      </Flex>
+    </Card>
   )
 }
 export default CommandListItem
