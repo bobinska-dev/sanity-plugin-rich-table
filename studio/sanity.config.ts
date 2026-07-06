@@ -98,6 +98,77 @@ export default defineConfig({
           }),
         ],
       }),
+      // SAPP-3812 repro: a rich table nested DEEP inside a page-builder array.
+      // Adding a "Table block" and clicking the size picker must initialise the
+      // table without the "Cannot apply deep operations on primitive values"
+      // error, at every nesting position below.
+      defineType({
+        type: 'document',
+        name: 'contentPage',
+        title: 'Content Page (SAPP-3812)',
+        fields: [
+          defineField({
+            name: 'title',
+            type: 'string',
+          }),
+          defineField({
+            name: 'pageBuilder',
+            title: 'Page builder',
+            type: 'array',
+            of: [
+              defineArrayMember({
+                name: 'tableBlock',
+                title: 'Table block',
+                type: 'object',
+                fields: [
+                  defineField({
+                    name: 'heading',
+                    type: 'string',
+                  }),
+                  // (1) richTable as an OBJECT FIELD inside an array item — the
+                  // exact customer repro (`pageBuilder[_key].tableContent`).
+                  defineField({
+                    name: 'tableContent',
+                    title: 'Table content (field in array item)',
+                    type: 'richTable',
+                  }),
+                  // (2) richTable wrapped one further OBJECT level deep inside the
+                  // array item (`pageBuilder[_key].group.tableContent`).
+                  defineField({
+                    name: 'group',
+                    title: 'Group',
+                    type: 'object',
+                    options: {collapsible: true, collapsed: false},
+                    fields: [
+                      defineField({
+                        name: 'tableContent',
+                        title: 'Nested table content',
+                        type: 'richTable',
+                      }),
+                    ],
+                  }),
+                  // (3) richTable as an ARRAY MEMBER two array-levels deep
+                  // (`pageBuilder[_key].sections[_key]`). This is the case the old
+                  // schema-walk mis-detected — clicking the picker here used to
+                  // strip the item's _key/_type. Uses a renamed member on purpose.
+                  defineField({
+                    name: 'sections',
+                    title: 'Sections (nested table members)',
+                    type: 'array',
+                    of: [
+                      defineArrayMember({
+                        name: 'sectionTable',
+                        title: 'Section table',
+                        type: 'richTable',
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
       defineType({
         name: 'customPT',
         type: 'array',
