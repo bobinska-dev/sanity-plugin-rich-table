@@ -12,9 +12,11 @@ import {
   PortableTextBlock,
   useFormValue,
   useSchema,
+  type ValidationMarker,
 } from 'sanity'
 
 import LoadingIndicator from '../components/LoadingIndicator'
+import {invalidAnnotationKeysFrom} from '../hooks/useTableCellValidation'
 import content from '../schemas/content'
 import ButtonToolbar from './components/context-menu-toolbar/ButtonToolbar'
 import CustomListenerPlugin from './components/EventListenerPlugin'
@@ -51,6 +53,13 @@ interface ContentPortableTextInputProps {
    * overlay this cell's before→after diff on the live, still-editable editor.
    * Off during normal editing. */
   displayInlineChanges?: boolean
+  /** Validation markers at or below this cell, aggregated from the document-wide
+   * list. Cells stay space-tight: the marker messages/tooltip are surfaced once
+   * at the rich-table level, and here these markers drive only the cell tone plus
+   * red text on any annotation whose URL/field errors. */
+  validation?: ValidationMarker[]
+  /** Cell tone derived from the most severe marker (`critical` / `caution`). */
+  validationTone?: 'critical' | 'caution'
 }
 
 /** # ContentPortableTextInput
@@ -89,10 +98,19 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
     return {
       renderStyle: createRenderStyle(styleComponents),
       renderDecorator: createRenderDecorator(decoratorComponents),
-      renderAnnotation: createRenderAnnotation(annotationComponents),
+      // Kept as the raw map (not a built renderer) so `renderAnnotation` can be
+      // rebuilt when the set of invalid annotations changes, without recreating
+      // the other renderers.
+      annotationComponents,
       renderChild: createRenderChild(inlineObjectComponents),
     }
   }, [configSchema])
+
+  // markDef keys with errors → red annotation text (recomputed as markers change).
+  const invalidAnnotationKeys = useMemo(
+    () => invalidAnnotationKeysFrom(props.validation ?? []),
+    [props.validation],
+  )
 
   // * INITIAL CONFIG FOR EDITOR PROVIDER
   // Split out to avoid a nested ternary. Prefer the schema resolved from
@@ -119,10 +137,13 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
       renderDecorator: markRenderers.renderDecorator,
       renderBlock: renderBlock({configSchema}),
       renderListItem,
-      renderAnnotation: markRenderers.renderAnnotation,
+      renderAnnotation: createRenderAnnotation(
+        markRenderers.annotationComponents,
+        invalidAnnotationKeys,
+      ),
       renderChild: markRenderers.renderChild,
     }),
-    [markRenderers, configSchema],
+    [markRenderers, configSchema, invalidAnnotationKeys],
   )
 
   // TODO: fullscreen handling
@@ -131,7 +152,7 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
   return (
     <Suspense fallback={<LoadingIndicator />}>
       <Card
-        tone={'default'}
+        tone={props.validationTone ?? 'default'}
         id={`portable-text-${pathToString(props.path)}`}
         border
         style={{position: 'relative'}}
