@@ -10,6 +10,7 @@ import {
 } from 'sanity'
 
 import RichTableBock from '../components/RichTableBock'
+import RichTableDiff from '../components/RichTableDiff'
 import RichTableInput from '../components/RichTableInput'
 import RichTableItem from '../components/RichTableItem'
 import {ColumnHeader} from './columnHeader.object'
@@ -31,6 +32,9 @@ export default defineType({
     input: RichTableInput as ComponentType<ObjectInputProps>,
     block: RichTableBock,
     item: RichTableItem as ComponentType<ObjectItemProps<ObjectItem>>,
+    // Renders a readable table diff in the "Review changes" pane. `richTableBlock`
+    // (type: 'richTable') inherits this via schema-type resolution.
+    diff: RichTableDiff,
   },
   fields: [
     defineField({
@@ -95,6 +99,8 @@ export const defineRichTableObject = ({
         />
       ),
       block: RichTableBock,
+      // Renders a readable table diff in the "Review changes" pane.
+      diff: RichTableDiff,
     },
     fields: [
       defineField({
