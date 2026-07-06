@@ -64,3 +64,7 @@ tmp-studio-install-test
 
 # Compiled plugin
 dist
+
+# Local Claude Code state (agent worktrees, settings) — but DO track .claude/skills
+.claude/worktrees
+.claude/settings.local.json

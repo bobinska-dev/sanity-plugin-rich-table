@@ -1,4 +1,4 @@
-import {Button} from '@sanity/ui'
+import {Button, Stack, Text} from '@sanity/ui'
 import {ComponentType, useEffect, useRef} from 'react'
 
 import {CommandMatch} from './commands'
@@ -27,9 +27,23 @@ const CommandListItem: ComponentType<CommandListItemProps> = (props) => {
       onMouseEnter={props.onMouseEnter}
       onClick={props.onSelect}
       selected={props.selected}
+      tone={props.selected ? 'primary' : 'default'}
       mode={'bleed'}
+      width={'fill'}
+      justify={'flex-start'}
       icon={props.match.icon}
-      title={props.match.label}
+      // A two-line label (title + description) makes the vertical list read as a
+      // command palette rather than a row of icons.
+      text={
+        <Stack space={2}>
+          <Text size={1} weight={'medium'} textOverflow={'ellipsis'}>
+            {props.match.label}
+          </Text>
+          <Text size={0} muted textOverflow={'ellipsis'}>
+            {props.match.description}
+          </Text>
+        </Stack>
+      }
       role="option"
       aria-selected={props.selected}
       aria-label={props.match.label}
