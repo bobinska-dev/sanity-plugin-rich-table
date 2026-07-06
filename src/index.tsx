@@ -1,5 +1,6 @@
 import {ComponentType} from 'react'
 import {
+  type BlockProps,
   definePlugin,
   ImageDefinition,
   type LayoutProps,
@@ -68,16 +69,20 @@ export {
 // uses for the edit form (onPathOpen) — while the cell editor renders the
 // custom component. Marks need no augmentation: styles/decorators use Sanity's
 // native `component` field and annotations use its native `components.annotation`.
+// `ObjectComponents`/`ImageComponents` are the interfaces Sanity uses for an
+// object/image definition's `components`, so merging into them here (the
+// original declarations live in `@sanity/types`; `sanity` only re-exports them,
+// so augmenting the source propagates to both) adds our table-specific slots.
+// Both take Sanity's `BlockProps` — the render props for block AND inline
+// objects (there is no separate inline-block props type). `tableInlineBlock`
+// lives only on `ObjectComponents` since inline objects are object types.
 declare module '@sanity/types' {
   interface ImageComponents {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tableBlock?: ComponentType<any>
+    tableBlock?: ComponentType<BlockProps>
   }
   interface ObjectComponents {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tableBlock?: ComponentType<any>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tableInlineBlock?: ComponentType<any>
+    tableBlock?: ComponentType<BlockProps>
+    tableInlineBlock?: ComponentType<BlockProps>
   }
 }
 
