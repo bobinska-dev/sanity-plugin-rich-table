@@ -24,6 +24,9 @@ interface RowContextMenuProps {
   path: string
   readOnly: boolean | undefined
   role?: string
+  /** Namespaces the menu/button ids per table instance so the inline table and
+   * the expanded-table dialog don't emit duplicate DOM ids when both are mounted. */
+  tableId?: string
 }
 
 /** # Menu button for each row in the table
@@ -44,8 +47,10 @@ const RowContextMenu: ComponentType<RowContextMenuProps> = ({
   path,
   rowCount,
   readOnly,
+  role,
+  tableId,
 }) => {
-  const menuId = `row-menu-${rowIndex}`
+  const menuId = `${tableId ? `${tableId}-` : ''}row-menu-${rowIndex}`
   // * Handle delete row
   const handleDeleteRow = useCallback(() => {
     const rowUnsetPatch = {
@@ -116,7 +121,7 @@ const RowContextMenu: ComponentType<RowContextMenuProps> = ({
     },
     [patch, path, row, rowIndex],
   )
-  return (
+  const menuButton = (
     <MenuButton
       button={
         <Button
@@ -167,6 +172,17 @@ const RowContextMenu: ComponentType<RowContextMenuProps> = ({
       }
       popover={{placement: 'right', portal: true}}
     />
+  )
+
+  // When rendered directly as a grid header cell (role provided), wrap so the
+  // ARIA `rowheader` lands on the cell that contains the menu button rather than
+  // on the button itself (which must keep its own button role).
+  return role ? (
+    <div role={role} style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+      {menuButton}
+    </div>
+  ) : (
+    menuButton
   )
 }
 export default RowContextMenu

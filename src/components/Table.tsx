@@ -112,7 +112,11 @@ const Table: ComponentType<
         readOnly={props.readOnly}
         tableId={tableId}
       >
-        <TableScrollWrapper>
+        <TableScrollWrapper
+          tabIndex={0}
+          role="group"
+          aria-label="Table content, scroll horizontally to see more columns"
+        >
           <TableGrid
             id={tableId}
             $rowCount={value?.rows?.length || 0}
@@ -122,118 +126,129 @@ const Table: ComponentType<
             $hasRowTitles={hasRowTitles}
             role="table"
           >
-            {/* Placeholder for row title column */}
-            <div className={'placeholder-cell'} />
-
-            {/* HEADER ROW */}
-            {columnHeaderMembers?.map((colHeaderMember, columnIndex) => {
-              const colHeaderItem = colHeaderMember.item.value
-              const colValidation = getCellValidation(colHeaderMember.item.path)
-              // TODO: force remount when columnHeader value has changed in dialog but not in inline table input -> this is maybe caused by missing blur event in the input👇
-              return (
-                <Fragment key={colHeaderItem._key}>
-                  {hasColumnTitles && (
-                    <ColumnHeaderWithInput
-                      columnHeader={colHeaderItem}
-                      patch={patch}
-                      value={value!}
-                      path={path}
-                      key={colHeaderItem._key}
-                      columnIndex={columnIndex}
-                      rowCount={value?.rows?.length || 0}
-                      columnCount={value?.columnHeaders?.length || 0}
-                      readOnly={props.readOnly}
-                      role="columnheader"
-                      validationTone={colValidation.tone}
-                    />
-                  )}
-                  {!hasColumnTitles && (
-                    <ColumnContextMenu
-                      key={colHeaderItem._key}
-                      columnIndex={columnIndex}
-                      columnHeaderKey={colHeaderItem._key}
-                      patch={patch}
-                      value={value!}
-                      path={path}
-                      rowCount={value?.rows?.length || 0}
-                      columnCount={value?.columnHeaders?.length || 0}
-                      iconHorizontal
-                      readOnly={props.readOnly}
-                      role="columnheader"
-                    />
-                  )}
-                </Fragment>
-              )
-            })}
-
-            {/* CONTENT ROWS AND CELLS */}
-            {rowMembersWithCellMembers?.map(({rowMember, cellMembers}, rowIndex) =>
-              cellMembers?.map((cellMember, cellIndex) => {
-                const cellItem = cellMember.item
-                const cellPTEPath = cellItem.path.concat('content')
-                const cellValue = value?.rows?.[rowIndex]?.cells?.[cellIndex]?.content
-                const cellContentSchemaType = cellItem.schemaType.fields.find(
-                  (field) => field.name === 'content',
-                ) as ArraySchemaType<PortableTextBlock>
-                const cellValidation = getCellValidation(cellItem.path)
-                // Row-header tone comes from the row's *title* markers only, so a
-                // cell error inside the row doesn't also redden the row header.
-                const rowTitleTone =
-                  cellIndex === 0
-                    ? getCellValidation(rowMember.item.path.concat('title')).tone
-                    : undefined
+            {/* HEADER ROW — `display: contents` keeps the CSS-grid layout intact
+                while giving assistive tech a real `row` that owns the header cells. */}
+            <div role="row" style={{display: 'contents'}}>
+              {/* Corner cell above the row-title / context-menu column */}
+              <div className={'placeholder-cell'} role="presentation" />
+              {columnHeaderMembers?.map((colHeaderMember, columnIndex) => {
+                const colHeaderItem = colHeaderMember.item.value
+                const colValidation = getCellValidation(colHeaderMember.item.path)
+                // TODO: force remount when columnHeader value has changed in dialog but not in inline table input -> this is maybe caused by missing blur event in the input👇
                 return (
-                  <Fragment key={cellItem.id}>
-                    {/* CONTEXT MENU BUTTON */}
-                    {cellIndex === 0 && hasRowTitles && (
-                      <RowHeaderWithInput
-                        row={rowMember.item.value}
+                  <Fragment key={colHeaderItem._key}>
+                    {hasColumnTitles && (
+                      <ColumnHeaderWithInput
+                        columnHeader={colHeaderItem}
                         patch={patch}
-                        rowIndex={rowIndex}
-                        rowCount={value?.rows?.length || 0}
+                        value={value!}
                         path={path}
+                        key={colHeaderItem._key}
+                        columnIndex={columnIndex}
+                        rowCount={value?.rows?.length || 0}
+                        columnCount={value?.columnHeaders?.length || 0}
                         readOnly={props.readOnly}
-                        role="rowheader"
-                        validationTone={rowTitleTone}
+                        role="columnheader"
+                        validationTone={colValidation.tone}
+                        tableId={tableId}
                       />
                     )}
-                    {cellIndex === 0 && !hasRowTitles && (
-                      <RowContextMenu
-                        rowIndex={rowIndex}
-                        rowCount={value?.rows?.length || 0}
-                        row={rowMember.item.value}
+                    {!hasColumnTitles && (
+                      <ColumnContextMenu
+                        key={colHeaderItem._key}
+                        columnIndex={columnIndex}
+                        columnHeaderKey={colHeaderItem._key}
                         patch={patch}
+                        value={value!}
                         path={path}
+                        rowCount={value?.rows?.length || 0}
+                        columnCount={value?.columnHeaders?.length || 0}
+                        iconHorizontal
                         readOnly={props.readOnly}
-                        role="rowheader"
+                        role="columnheader"
+                        tableId={tableId}
                       />
                     )}
-                    {/* PTE CELL CONTENT */}
-                    <ContentPortableTextInput
-                      onChange={onChange}
-                      path={cellPTEPath}
-                      value={cellValue}
-                      key={cellItem.id}
-                      readOnly={props.readOnly}
-                      schemaType={cellContentSchemaType}
-                      // @ts-expect-error role prop not in type but needed for accessibility
-                      role="cell"
-                      portableTextSchemaTypeName={portableTextSchemaTypeName}
-                      displayInlineChanges={props.displayInlineChanges}
-                      validation={cellValidation.markers}
-                      validationTone={cellValidation.tone}
-                    />
                   </Fragment>
                 )
-              }),
-            )}
+              })}
+            </div>
+
+            {/* CONTENT ROWS AND CELLS — one `row` per table row (see note above). */}
+            {rowMembersWithCellMembers?.map(({rowMember, cellMembers}, rowIndex) => (
+              <div
+                role="row"
+                style={{display: 'contents'}}
+                key={rowMember.item.value?._key ?? rowIndex}
+              >
+                {cellMembers?.map((cellMember, cellIndex) => {
+                  const cellItem = cellMember.item
+                  const cellPTEPath = cellItem.path.concat('content')
+                  const cellValue = value?.rows?.[rowIndex]?.cells?.[cellIndex]?.content
+                  const cellContentSchemaType = cellItem.schemaType.fields.find(
+                    (field) => field.name === 'content',
+                  ) as ArraySchemaType<PortableTextBlock>
+                  const cellValidation = getCellValidation(cellItem.path)
+                  // Row-header tone comes from the row's *title* markers only, so a
+                  // cell error inside the row doesn't also redden the row header.
+                  const rowTitleTone =
+                    cellIndex === 0
+                      ? getCellValidation(rowMember.item.path.concat('title')).tone
+                      : undefined
+                  return (
+                    <Fragment key={cellItem.id}>
+                      {/* CONTEXT MENU BUTTON */}
+                      {cellIndex === 0 && hasRowTitles && (
+                        <RowHeaderWithInput
+                          row={rowMember.item.value}
+                          patch={patch}
+                          rowIndex={rowIndex}
+                          rowCount={value?.rows?.length || 0}
+                          path={path}
+                          readOnly={props.readOnly}
+                          role="rowheader"
+                          validationTone={rowTitleTone}
+                          tableId={tableId}
+                        />
+                      )}
+                      {cellIndex === 0 && !hasRowTitles && (
+                        <RowContextMenu
+                          rowIndex={rowIndex}
+                          rowCount={value?.rows?.length || 0}
+                          row={rowMember.item.value}
+                          patch={patch}
+                          path={path}
+                          readOnly={props.readOnly}
+                          role="rowheader"
+                          tableId={tableId}
+                        />
+                      )}
+                      {/* PTE CELL CONTENT */}
+                      <ContentPortableTextInput
+                        onChange={onChange}
+                        path={cellPTEPath}
+                        value={cellValue}
+                        key={cellItem.id}
+                        readOnly={props.readOnly}
+                        schemaType={cellContentSchemaType}
+                        role="cell"
+                        portableTextSchemaTypeName={portableTextSchemaTypeName}
+                        displayInlineChanges={props.displayInlineChanges}
+                        validation={cellValidation.markers}
+                        validationTone={cellValidation.tone}
+                      />
+                    </Fragment>
+                  )
+                })}
+              </div>
+            ))}
           </TableGrid>
         </TableScrollWrapper>
       </TableButtons>
       {isInDialog && (
         <Flex gap={3} justify={'flex-end'} align={'center'} paddingTop={3}>
           <Inline space={2}>
-            <Text as={'label'} htmlFor={'row-title-toggle'} size={0} muted>
+            <Text as={'label'} htmlFor={`${tableId}-row-title-toggle`} size={0} muted>
               Show row titles
             </Text>
             <Switch
@@ -242,12 +257,12 @@ const Table: ComponentType<
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
                 toggleRowTitles(e.currentTarget.checked)
               }
-              id={'row-title-toggle'}
+              id={`${tableId}-row-title-toggle`}
               aria-controls={tableId}
             />
           </Inline>
           <Inline space={2}>
-            <Text as={'label'} htmlFor={'column-title-toggle'} size={0} muted>
+            <Text as={'label'} htmlFor={`${tableId}-column-title-toggle`} size={0} muted>
               Show column titles
             </Text>
             <Switch
@@ -255,7 +270,7 @@ const Table: ComponentType<
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
                 toggleColumnTitles(e.currentTarget.checked)
               }
-              id={'column-title-toggle'}
+              id={`${tableId}-column-title-toggle`}
               aria-controls={tableId}
             />
           </Inline>

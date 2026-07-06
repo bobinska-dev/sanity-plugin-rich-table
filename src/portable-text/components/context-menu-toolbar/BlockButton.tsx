@@ -38,6 +38,7 @@ const BlockButton: ComponentType<{
           padding={2}
           tone={'default'}
           mode={'bleed'}
+          aria-label={blockObject.title}
           title={blockObject.shortcut?.keys.join('+')}
         />
       </Tooltip>

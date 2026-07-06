@@ -32,6 +32,7 @@ const InlineObjectButton: ComponentType<{
         padding={2}
         tone={'default'}
         mode={'bleed'}
+        aria-label={inlineObject.title}
         title={inlineObject.shortcut?.keys.join('+')}
       />
     </Tooltip>

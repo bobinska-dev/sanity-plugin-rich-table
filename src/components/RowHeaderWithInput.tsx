@@ -30,6 +30,8 @@ interface RowHeaderWithInputProps {
   role?: string
   /** Tone from this row's title validation markers (e.g. a required title). */
   validationTone?: 'critical' | 'caution'
+  /** Table-instance namespace forwarded to the row context menu's ids. */
+  tableId?: string
 }
 
 /** Row header component with input field for editing the row title */
@@ -41,6 +43,8 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
   rowCount,
   readOnly,
   validationTone,
+  role,
+  tableId,
 }) => {
   const [title, setTitle] = useState(row.title || '')
   const [isFocused, setIsFocused] = useState(false)
@@ -64,6 +68,7 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
   const newRowTitle = `${rowIndex ? rowIndex + 1 : 1}`
   return (
     <Flex
+      role={role}
       direction="row"
       gap={1}
       justify="flex-start"
@@ -110,6 +115,7 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
           rowIndex={rowIndex}
           rowCount={rowCount}
           readOnly={readOnly}
+          tableId={tableId}
         />
       </Box>
     </Flex>
