@@ -12,7 +12,7 @@ import {
   useFormValue,
   useSchema,
 } from 'sanity'
-import styled from 'styled-components'
+import styled, {createGlobalStyle} from 'styled-components'
 
 import {useDialogRouteState} from '../hooks/useDialogRouteState'
 import {useToggleTitles} from '../hooks/useToggleTitles'
@@ -46,6 +46,25 @@ const HiddenInputBox = styled(Box)<{$debug?: boolean}>`
   position: absolute !important;
   width: 1px !important;
 `}
+`
+
+/**
+ * Editing a cell member (block / annotation / inline object) through the native
+ * document form opens one Sanity dialog per nested path level — the cell's
+ * `Content` field and then the member itself — so the stack is 2+ deep. We only
+ * want the innermost (the member being edited) visible.
+ *
+ * `@sanity/ui` renders every open dialog as a sibling `Layer` under the shared
+ * `[data-portal]` root (nested dialogs are portaled out as siblings, not
+ * DOM-nested), so any layer that has a later dialog-bearing sibling is an
+ * ancestor level we can hide. Only `[data-ui="Dialog"]` stacks are touched —
+ * tooltips, popovers and menus are unaffected — and this is mounted only while a
+ * rich-table input exists, so it can't collapse unrelated dialog stacks.
+ */
+const CollapseStackedDialogs = createGlobalStyle`
+  [data-portal] > *:has([data-ui='Dialog']):has(~ *:has([data-ui='Dialog'])) {
+    display: none !important;
+  }
 `
 
 const RichTableInput: ComponentType<
@@ -349,6 +368,8 @@ const RichTableInput: ComponentType<
           </Inline>
         </Flex>
       </Flex>
+      {/* Collapse the native nested-edit dialog stack to just the innermost member. */}
+      <CollapseStackedDialogs />
       {/* TEST WITH HIDDEN BUT RENDERED INPUT */}
       <HiddenInputBox $debug={debug}>{props.renderDefault(props)}</HiddenInputBox>
       {/*      {debug &&
