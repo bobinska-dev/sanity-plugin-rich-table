@@ -50,7 +50,7 @@ const Handle = styled.button`
   }
 
   &:hover::after,
-  &:focus-visible::after,
+  &:focus::after,
   &[data-active='true']::after {
     width: 3px;
     opacity: 1;
@@ -90,14 +90,25 @@ export const ColumnResizeHandle: ComponentType<ColumnResizeHandleProps> = ({
 }) => {
   // Drag bookkeeping lives in a ref so the move/up handlers stay stable and a
   // pointer move doesn't re-render the whole table on every pixel.
-  const drag = useRef<{startX: number; startWidth: number; width: number} | null>(null)
+  const drag = useRef<{startX: number; startWidth: number; width: number; moved: boolean} | null>(
+    null,
+  )
 
   const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
     const cell = measureCell(event.currentTarget)
     if (!cell) return
+    // Stop text selection during the drag; but preventDefault also cancels the
+    // button's default focus, so focus it explicitly — otherwise arrow-key
+    // resizing never works because a click can't focus the handle.
     event.preventDefault()
+    event.currentTarget.focus()
     event.currentTarget.setPointerCapture(event.pointerId)
-    drag.current = {startX: event.clientX, startWidth: cell.offsetWidth, width: cell.offsetWidth}
+    drag.current = {
+      startX: event.clientX,
+      startWidth: cell.offsetWidth,
+      width: cell.offsetWidth,
+      moved: false,
+    }
   }, [])
 
   const handlePointerMove = useCallback(
@@ -109,6 +120,7 @@ export const ColumnResizeHandle: ComponentType<ColumnResizeHandleProps> = ({
         current.startWidth + (event.clientX - current.startX),
       )
       current.width = width
+      current.moved = true
       onResize(columnKey, width, event.shiftKey)
     },
     [columnKey, onResize],
@@ -120,7 +132,9 @@ export const ColumnResizeHandle: ComponentType<ColumnResizeHandleProps> = ({
       if (!current) return
       event.currentTarget.releasePointerCapture(event.pointerId)
       drag.current = null
-      onResizeEnd(columnKey, current.width, event.shiftKey)
+      // A plain click (to focus the handle for keyboard use) isn't a resize, so
+      // don't freeze an auto-width column at its current px.
+      if (current.moved) onResizeEnd(columnKey, current.width, event.shiftKey)
     },
     [columnKey, onResizeEnd],
   )
