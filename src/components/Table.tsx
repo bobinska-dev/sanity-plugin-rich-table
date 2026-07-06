@@ -204,6 +204,7 @@ const Table: ComponentType<
                       // @ts-expect-error role prop not in type but needed for accessibility
                       role="cell"
                       portableTextSchemaTypeName={portableTextSchemaTypeName}
+                      displayInlineChanges={props.displayInlineChanges}
                     />
                   </Fragment>
                 )

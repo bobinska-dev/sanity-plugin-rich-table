@@ -7,8 +7,9 @@
 3. [Usage in Sanity Studio](#usage-in-sanity-studio)
 4. [Data Structure](#data-structure)
 5. [Debugging data issues](#debugging-data-issues)
-6. [Render tables](#render-tables)
-7. [Merging cells](#merging-cells)
+6. [Reviewing changes](#reviewing-changes)
+7. [Render tables](#render-tables)
+8. [Merging cells](#merging-cells)
 
 ## Overview
 
@@ -98,6 +99,18 @@ Each instance of the rich table input has a debug button in the bottom-left corn
 **_DO NOT REMOVE CELLS WITH EMPTY CONTENT FROM THE ARRAYS MANUALLY!_**
 
 When cells are created each cell will automatically receive a `content` array with one child. This child (type `PortableTextTextBlock`) has an empty `text` node. Unfortunately this is needed for the UI to play nice.
+
+## Reviewing changes
+
+Rich tables render a custom diff in the Studio's **Review changes** pane (used by document history and content releases), because the generic field-by-field differ struggles with the deeply nested rows → cells → Portable Text structure.
+
+What you get:
+
+- **A diff grid** summarising which rows and columns were added, removed or moved, and which cells changed. Column/row title edits and title-visibility toggles are shown too.
+- **A combined cell view.** Click a changed cell to open a detail dialog with a single **Changes** section: removed text is struck through, added text is highlighted, and unchanged text is left plain — instead of separate "Before" and "After" blocks. Each revision's raw Portable Text is still available under _Raw content_.
+- **Inline changes in the editor.** When Studio's inline-changes mode is enabled (the toggle that adds `?displayInlineChanges=true` to the URL), the same before→after highlights are overlaid directly on each cell's editor while it stays fully editable. This reads the compared revision from the Structure tool's document pane, so it applies when you are reviewing a revision there.
+
+The diff compares the plain text of each cell (marks and annotations are ignored), so formatting-only changes may not be highlighted — open the cell dialog's _Raw content_ to inspect those. Nothing here needs configuration; the diff is wired up automatically for the `richTable` type.
 
 ## Render tables
 

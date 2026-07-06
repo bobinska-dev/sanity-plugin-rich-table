@@ -27,6 +27,7 @@ import {createRenderDecorator, DecoratorComponent} from './configs/renderer/rend
 import {renderListItem} from './configs/renderer/renderListItem'
 import {createRenderStyle, StyleComponent} from './configs/renderer/renderStyle'
 import {EmojiPickerPlugin} from './emoji-picker/EmojiPicker'
+import {InlineDiffEditable} from './inline-diff/InlineDiffEditable'
 import {SlashCommandPickerPlugin} from './pte-slash-commands/SlashCommandPicker'
 import {resolveSchemaDefinition} from './resolveSchemaDefinition'
 
@@ -46,6 +47,10 @@ interface ContentPortableTextInputProps {
    */
   schemaType?: ArraySchemaType<PortableTextBlock> | ArrayDefinition
   portableTextSchemaTypeName?: string
+  /** When true (Studio "inline changes" mode, `?displayInlineChanges=true`),
+   * overlay this cell's before→after diff on the live, still-editable editor.
+   * Off during normal editing. */
+  displayInlineChanges?: boolean
 }
 
 /** # ContentPortableTextInput
@@ -106,6 +111,19 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
     // schema resolved from `portableTextSchemaTypeName` (or fall back to defaults).
     schemaDefinition: resolveSchemaDefinition(configSchema),
   })
+
+  // Render callbacks shared by the plain editable and the inline-diff overlay.
+  const editableProps = useMemo(
+    () => ({
+      renderStyle: markRenderers.renderStyle,
+      renderDecorator: markRenderers.renderDecorator,
+      renderBlock: renderBlock({configSchema}),
+      renderListItem,
+      renderAnnotation: markRenderers.renderAnnotation,
+      renderChild: markRenderers.renderChild,
+    }),
+    [markRenderers, configSchema],
+  )
 
   // TODO: fullscreen handling
   // const { getFullscreenPath, setFullscreenPath } = useFullscreenPTE()
@@ -186,16 +204,11 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
           />
 
           <ListIndexProvider>
-            <StyledPortableTextEditable
-              renderStyle={markRenderers.renderStyle}
-              renderDecorator={markRenderers.renderDecorator}
-              renderBlock={renderBlock({
-                configSchema,
-              })}
-              renderListItem={renderListItem}
-              renderAnnotation={markRenderers.renderAnnotation}
-              renderChild={markRenderers.renderChild}
-            />
+            {props.displayInlineChanges ? (
+              <InlineDiffEditable path={props.path} editableProps={editableProps} />
+            ) : (
+              <StyledPortableTextEditable {...editableProps} />
+            )}
           </ListIndexProvider>
           {!props.readOnly && (
             <ButtonToolbar focused={focused} schemaType={pteSchemaType} path={props.path} />

@@ -19,6 +19,7 @@ Please be aware, that this plugin is still growing - so while this first version
 - Advanced row and column menus (move, delete, add new inline)
 - Option to show table headers
 - Unset table data with a button & confirmation dialog
+- **Readable diffs** in the Studio "Review changes" pane — a per-cell before→after view with inline highlights, plus inline changes right in the cells when Studio's inline-changes mode is on (see [Reviewing changes](README.md#reviewing-changes))
 - Dark and light mode support 😎
 
 | <img width="578" height="263" alt="Preview of inline slash command" src="https://github.com/user-attachments/assets/ebef6b77-15bf-4142-833b-ed6bbd462039" /> |
@@ -159,6 +160,16 @@ import {
 Read more about rendering rich tables in your frontend application in the [Render tables](./docs/README.md#render-tables) guide.
 In the docs you will find even more details about the [data structure](./docs/README.md#data-structure) used by this plugin.
 And get a suggestion on how to [merge cells when rendering](./docs/README.md#merging-cells).
+
+## Reviewing changes
+
+Rich tables get a custom diff in the Studio's **Review changes** pane (used by document history and content releases), instead of the generic field-by-field differ that struggles with the nested rows → cells → Portable Text structure:
+
+- A grid summarising added / removed / moved rows and columns and which cells changed.
+- Click a changed cell for a combined **before → after** view: removed text is struck through and added text is highlighted inline, rather than two separate snapshots.
+- When Studio's inline-changes mode is on (the toggle that adds `?displayInlineChanges=true` to the URL), the same highlights appear directly in the cells while they stay fully editable.
+
+See [Reviewing changes](./docs/README.md#reviewing-changes) in the docs for details.
 
 ## Features coming
 
