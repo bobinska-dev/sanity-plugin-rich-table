@@ -84,12 +84,14 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
   }, [configSchema])
 
   // * INITIAL CONFIG FOR EDITOR PROVIDER
-  const pteSchemaType = configSchema
-    ? configSchema
-    : props.schemaType
-      ? // @ts-ignore
-        props.schemaType.type.type // TODO change type in props to remove Boolean schemaType etc.
-      : content
+  // Split out to avoid a nested ternary. Prefer the schema resolved from
+  // portableTextSchemaTypeName; else the passed-in schemaType's resolved array
+  // type (legacy prop shape); else the built-in content type.
+  const legacySchemaType = props.schemaType
+    ? // @ts-expect-error legacy prop shape: unwrap the resolved array type
+      props.schemaType.type.type
+    : content
+  const pteSchemaType = configSchema ? configSchema : legacySchemaType
 
   const initialConfig = useRef<EditorConfig>({
     initialValue: props.value,
