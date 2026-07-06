@@ -1,12 +1,5 @@
 import {ComponentType} from 'react'
-import {
-  type BlockProps,
-  definePlugin,
-  ImageDefinition,
-  type LayoutProps,
-  ObjectDefinition,
-  ReferenceDefinition,
-} from 'sanity'
+import {type BlockAnnotationProps, type BlockProps, definePlugin, type LayoutProps} from 'sanity'
 
 import {TableImportProvider} from './import/TableImportContext'
 import {tableImportFieldAction} from './import/tableImportFieldAction'
@@ -61,42 +54,62 @@ export {
   type XlsxParseResult,
 } from './import/types'
 
-// Augment @sanity/types so object/image array members can specify a
-// `components.tableBlock` render component (used for custom blocks/images) and
-// inline objects a `components.tableInlineBlock`. Both are table-specific
-// siblings of Sanity's standard slots: they leave the native slot (`block` /
-// `inlineBlock`) for Sanity's default rendering — which the hidden native input
-// uses for the edit form (onPathOpen) — while the cell editor renders the
-// custom component. Marks need no augmentation: styles/decorators use Sanity's
-// native `component` field and annotations use its native `components.annotation`.
-// `ObjectComponents`/`ImageComponents` are the interfaces Sanity uses for an
-// object/image definition's `components`, so merging into them here (the
-// original declarations live in `@sanity/types`; `sanity` only re-exports them,
-// so augmenting the source propagates to both) adds our table-specific slots.
-// Both take Sanity's `BlockProps` — the render props for block AND inline
-// objects (there is no separate inline-block props type). `tableInlineBlock`
-// lives only on `ObjectComponents` since inline objects are object types.
+// Augment @sanity/types so ANY block-capable schema type used as a Portable Text
+// member can carry the rich-table render slots: `components.tableBlock` (block
+// objects), `components.tableInlineBlock` (inline objects) and
+// `components.tableAnnotation` (annotations). All three are table-specific
+// siblings of Sanity's standard `block`/`inlineBlock`/`annotation` slots — they
+// leave the native slot for Sanity's default rendering (which the hidden native
+// input uses for the edit form via onPathOpen, and for the debug/document view)
+// while the cell editor renders the custom component. This matters because the
+// native PTE renders annotations via `props.renderDefault`, which does NOT exist
+// in `@portabletext/editor`'s render props (the cell editor gets the annotated
+// text as `props.children`) — so a component authored for one breaks the other
+// unless they live on separate slots. `tableBlock`/`tableInlineBlock` take
+// `BlockProps`; `tableAnnotation` takes `BlockAnnotationProps`.
+//
+// These `*Components` interfaces are declared by the `sanity` package as its own
+// augmentation of `@sanity/types`; merging into the same module here extends them
+// (`sanity` re-exports the interfaces, so the merge reaches Studio code importing
+// from `sanity`). We cover every object-like type Sanity gives these slots —
+// object, image, reference, file, cross-dataset reference, geopoint — so
+// consumers can attach the slots to whichever block/inline/annotation type they
+// use. Styles/decorators need no augmentation: they use the native `component` field.
 declare module '@sanity/types' {
-  interface ImageComponents {
-    tableBlock?: ComponentType<BlockProps>
-  }
   interface ObjectComponents {
     tableBlock?: ComponentType<BlockProps>
     tableInlineBlock?: ComponentType<BlockProps>
+    tableAnnotation?: ComponentType<BlockAnnotationProps>
+  }
+  interface ImageComponents {
+    tableBlock?: ComponentType<BlockProps>
+    tableInlineBlock?: ComponentType<BlockProps>
+    tableAnnotation?: ComponentType<BlockAnnotationProps>
+  }
+  interface ReferenceComponents {
+    tableBlock?: ComponentType<BlockProps>
+    tableInlineBlock?: ComponentType<BlockProps>
+    tableAnnotation?: ComponentType<BlockAnnotationProps>
+  }
+  interface FileComponents {
+    tableBlock?: ComponentType<BlockProps>
+    tableInlineBlock?: ComponentType<BlockProps>
+    tableAnnotation?: ComponentType<BlockAnnotationProps>
+  }
+  interface CrossDatasetReferenceComponents {
+    tableBlock?: ComponentType<BlockProps>
+    tableInlineBlock?: ComponentType<BlockProps>
+    tableAnnotation?: ComponentType<BlockAnnotationProps>
+  }
+  interface GeopointComponents {
+    tableBlock?: ComponentType<BlockProps>
+    tableInlineBlock?: ComponentType<BlockProps>
+    tableAnnotation?: ComponentType<BlockAnnotationProps>
   }
 }
 
-interface CustomBlockType {
-  // TODO: adjust type so that helper functions work
-  type: ObjectDefinition | ImageDefinition | ReferenceDefinition
-  icon: ComponentType
-  defaultValues?: Record<string, unknown>
-}
 export interface RichTablePluginOptions {
   portableTextSchemaTypeName?: string
-  // TODO: add more configs or try complete PT schema customisation
-  customBlockTypes?: Array<CustomBlockType>
-  customInlineBlockTypes?: Array<CustomBlockType>
 }
 
 /**
@@ -110,7 +123,6 @@ function RichTableStudioLayout(props: LayoutProps) {
 
 /** # Rich Table Plugin for Sanity by Saskia Bobinska
  *
- * WIP!!!
  * This plugin adds a rich table object type and block type to your schemas.
  * It allows users to create and manage rich tables both in documents and in Portable Text.
  *
@@ -159,7 +171,7 @@ function RichTableStudioLayout(props: LayoutProps) {
  * @see {@link https://github.com/bobinska-dev/sanity-plugin-rich-table} for full documentation
  */
 export const richTablePlugin = definePlugin<RichTablePluginOptions>(
-  ({customBlockTypes, customInlineBlockTypes, portableTextSchemaTypeName}) => ({
+  ({portableTextSchemaTypeName}) => ({
     name: 'rich-table',
     title: 'Rich Table Plugin',
 
@@ -170,7 +182,7 @@ export const richTablePlugin = definePlugin<RichTablePluginOptions>(
         defineCellObject({portableTextSchemaTypeName}),
         columnHeaderObject,
         richTableBlock,
-        defineContentArrayMember({customBlockTypes, customInlineBlockTypes}),
+        defineContentArrayMember(),
       ],
     },
 
