@@ -180,9 +180,18 @@ export function extractBlockConfig(
         .filter((m) => m.name !== 'span' && !Array.isArray(m.decorators))
         .map((m) => ({
           ...toObjectType(m),
-          // Inline objects use their single standard `components.inlineBlock` slot
-          // (no table-specific sibling — only block objects need `tableBlock`).
-          component: (m.components as Loose | undefined)?.inlineBlock as ExtractedType['component'],
+          // Prefer a table-specific `tableInlineBlock` slot (falling back to the
+          // standard `inlineBlock`). Like block objects' `tableBlock`, this
+          // decouples the cell's custom visual from the NATIVE PT input that
+          // powers the edit form: if the consumer's component sits on the
+          // standard `inlineBlock` slot, the native input renders it too and
+          // loses its default inline-object open affordance, so `onPathOpen`
+          // only reaches the containing Content field instead of the object's
+          // own form. Putting the visual on `tableInlineBlock` lets the native
+          // input keep its default node (editing works) while the cell editor
+          // still renders the custom component.
+          component: ((m.components as Loose | undefined)?.tableInlineBlock ??
+            (m.components as Loose | undefined)?.inlineBlock) as ExtractedType['component'],
         }))
     : []
 

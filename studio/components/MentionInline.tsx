@@ -2,11 +2,12 @@ import type {ComponentType} from 'react'
 import type {BlockProps} from 'sanity'
 
 /**
- * Custom render component for the `mention` inline object — wired onto the inline
- * object in `customPT` via Sanity's native `components: {inlineBlock: MentionInline}`.
- * Renders an inline "@label" chip. Inline objects need no table-specific sibling
- * (only block objects use `tableBlock`), so this single component renders in a
- * cell exactly as it would in normal Portable Text.
+ * Custom render component for the inline object — wired onto the inline object in
+ * `customPT` via the table-specific `components: {tableInlineBlock: MentionInline}`
+ * slot (sibling of a block object's `tableBlock`). Using `tableInlineBlock`
+ * instead of the standard `inlineBlock` leaves the native PT input's default
+ * inline-object rendering intact, so the edit form still opens on the object.
+ * Renders an inline "@label" chip.
  */
 const MentionInline: ComponentType<BlockProps> = (props) => {
   const value = props.value as {label?: string; test?: string; title?: string}

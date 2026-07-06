@@ -4,10 +4,11 @@ import type {BlockProps} from 'sanity'
 
 /**
  * A consumer-supplied custom inline-object component, keyed by inline object name.
- * Wired via Sanity's native `components.inlineBlock` slot and typed against
- * Sanity's {@link BlockProps}. Unlike block objects (which need a table-specific
- * `tableBlock` sibling), an inline object renders the same in a cell as in normal
- * Portable Text, so it uses its single standard component.
+ * Wired via the table-specific `components.tableInlineBlock` slot (sibling of a
+ * block object's `tableBlock`) and typed against Sanity's {@link BlockProps}.
+ * The sibling keeps Sanity's standard `inlineBlock` slot free for the native PT
+ * input's default rendering, so the edit form still opens on the object itself
+ * (see extractBlockConfig); the cell editor renders this custom component.
  *
  * NOTE: this editor is built on `@portabletext/editor`, which supplies the child
  * render props (value/schemaType/selected/focused + the rendered `children`) but

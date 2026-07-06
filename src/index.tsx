@@ -61,9 +61,13 @@ export {
 } from './import/types'
 
 // Augment @sanity/types so object/image array members can specify a
-// `components.tableBlock` render component (used for custom blocks/images).
-// Marks need no augmentation: styles/decorators use Sanity's native `component`
-// field and annotations use its native `components.annotation` slot.
+// `components.tableBlock` render component (used for custom blocks/images) and
+// inline objects a `components.tableInlineBlock`. Both are table-specific
+// siblings of Sanity's standard slots: they leave the native slot (`block` /
+// `inlineBlock`) for Sanity's default rendering — which the hidden native input
+// uses for the edit form (onPathOpen) — while the cell editor renders the
+// custom component. Marks need no augmentation: styles/decorators use Sanity's
+// native `component` field and annotations use its native `components.annotation`.
 declare module '@sanity/types' {
   interface ImageComponents {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -72,6 +76,8 @@ declare module '@sanity/types' {
   interface ObjectComponents {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tableBlock?: ComponentType<any>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tableInlineBlock?: ComponentType<any>
   }
 }
 
