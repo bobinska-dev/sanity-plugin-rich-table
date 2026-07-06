@@ -13,6 +13,10 @@ export interface CommandListBoxProps {
   onSelect: () => void
 }
 
+/** Stable option id for a command match, shared by the option element and the
+ * listbox's `aria-activedescendant` so assistive tech tracks the active command. */
+const optionId = (key: string): string => `rt-command-option-${key}`
+
 const CommandListBox: ComponentType<CommandListBoxProps> = (props) => {
   if (props.matches.length === 0) {
     return (
@@ -35,10 +39,16 @@ const CommandListBox: ComponentType<CommandListBoxProps> = (props) => {
       aria-orientation={'vertical'}
       role="listbox"
       aria-label="Available commands"
+      aria-activedescendant={
+        props.matches[props.selectedIndex]
+          ? optionId(props.matches[props.selectedIndex].key)
+          : undefined
+      }
     >
       {props.matches.map((match, index) => (
         <CommandListItem
           key={match.key}
+          id={optionId(match.key)}
           match={match}
           selected={props.selectedIndex === index}
           onMouseEnter={() => props.onNavigateTo(index)}

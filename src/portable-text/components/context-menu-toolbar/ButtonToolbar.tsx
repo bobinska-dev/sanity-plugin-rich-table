@@ -10,6 +10,7 @@ import {
   Ref,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -104,7 +105,11 @@ const ButtonToolbar: ComponentType<{
   // * REFS & IDS
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const popoverRef = useRef<HTMLDivElement | null>(null)
-  const popoverId = 'context-menu-toolbar-popover'
+  // Unique per toolbar instance — each cell editor renders its own toolbar, so
+  // constant ids would collide across cells (invalid duplicate DOM ids).
+  const toolbarUid = useId()
+  const popoverId = `context-menu-toolbar-popover-${toolbarUid}`
+  const styleSelectorId = `style-selection-${toolbarUid}`
 
   // Helpers: discover focusable elements inside popover
   const getFocusableElements = (root: HTMLElement | null) => {
@@ -298,7 +303,7 @@ const ButtonToolbar: ComponentType<{
     const clickedFocusable = target.closest('button, [role="button"], a, input, select, textarea ')
 
     // Ignore clicks on the style selector button (id="style-select")
-    if (clickedFocusable?.id === 'style-selection') return
+    if (clickedFocusable?.id === styleSelectorId) return
 
     if (clickedFocusable && popoverRef.current.contains(clickedFocusable)) {
       // allow activation to proceed, then close & refocus
@@ -332,7 +337,7 @@ const ButtonToolbar: ComponentType<{
               </Text>
             </Box>
             <Flex padding={3} justify={'space-between'} gap={1}>
-              <StyleSelector toolbarSchema={toolbarSchema} />
+              <StyleSelector toolbarSchema={toolbarSchema} id={styleSelectorId} />
               {toolbarSchema.decorators &&
                 toolbarSchema.decorators?.map((decorator) => (
                   <DecoratorButton key={decorator.name} decorator={decorator} />

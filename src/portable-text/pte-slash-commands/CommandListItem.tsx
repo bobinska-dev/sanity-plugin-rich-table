@@ -4,6 +4,8 @@ import {ComponentType, useEffect, useRef} from 'react'
 import {CommandMatch} from './commands'
 
 export interface CommandListItemProps {
+  /** DOM id, referenced by the listbox's `aria-activedescendant` when selected. */
+  id: string
   match: CommandMatch
   selected: boolean
   onMouseEnter: () => void
@@ -24,6 +26,7 @@ const CommandListItem: ComponentType<CommandListItemProps> = (props) => {
     <Card
       as={'li'}
       ref={ref}
+      id={props.id}
       radius={2}
       padding={2}
       tone={props.selected ? 'primary' : 'default'}

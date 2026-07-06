@@ -3,7 +3,7 @@ import type {ReactElement} from 'react'
 import {ArraySchemaType, Path, PortableTextBlock} from 'sanity'
 
 import BlockEditWrapper from '../../components/custom-blocks/BlockEditWrapper'
-import DefaultCustomBlock from '../../components/custom-blocks/DefautCustomBlock'
+import DefaultCustomBlock from '../../components/custom-blocks/DefaultCustomBlock'
 import ImageBlock from '../../components/custom-blocks/ImageBlock'
 import ReferenceBlock from '../../components/custom-blocks/ReferenceBlock'
 

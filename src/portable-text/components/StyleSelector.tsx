@@ -3,7 +3,10 @@ import {ChevronDownIcon} from '@sanity/icons'
 import {Button, Card, Menu, MenuButton, MenuItem} from '@sanity/ui'
 import {ComponentType} from 'react'
 
-const StyleSelector: ComponentType<{toolbarSchema: ToolbarSchema}> = ({toolbarSchema}) => {
+const StyleSelector: ComponentType<{toolbarSchema: ToolbarSchema; id: string}> = ({
+  toolbarSchema,
+  id,
+}) => {
   const styleSelector = useStyleSelector({schemaTypes: toolbarSchema.styles || []})
 
   const currentStyle = styleSelector.snapshot.context?.activeStyle
@@ -27,10 +30,10 @@ const StyleSelector: ComponentType<{toolbarSchema: ToolbarSchema}> = ({toolbarSc
             tabIndex={-1}
             aria-label={`Text style, current style: ${styleDropdownTitle}`}
             aria-haspopup="menu"
-            aria-controls={'style-selection'}
+            aria-controls={id}
           />
         }
-        id="style-selection"
+        id={id}
         popover={{portal: true}}
         menu={
           <Menu>

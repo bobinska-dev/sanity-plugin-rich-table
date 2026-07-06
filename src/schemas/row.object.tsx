@@ -32,15 +32,11 @@ export default defineType({
     },
     prepare(selection) {
       const {title, cells} = selection
-      if (!title) {
-        return {
-          title: 'Row',
-          subtitle: `${cells.length} cell${cells && cells.length === 1 ? '' : 's'}`,
-        }
-      }
+      // Guard: a row may have no `cells` yet (freshly inserted / cleared).
+      const count = Array.isArray(cells) ? cells.length : 0
       return {
-        title: title,
-        subtitle: `${cells.length} cell${cells && cells.length === 1 ? '' : 's'}`,
+        title: title || 'Row',
+        subtitle: `${count} cell${count === 1 ? '' : 's'}`,
       }
     },
   },

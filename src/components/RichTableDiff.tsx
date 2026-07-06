@@ -13,8 +13,6 @@ import {
 import {type DiffProps} from 'sanity'
 import styled from 'styled-components'
 
-import {DIFF_ADDED_BG, DIFF_REMOVED_BG} from '../utils/diffColors'
-
 import type {RichTableType} from '../schemas/richTable.object'
 import {
   buildTableDiffModel,
@@ -25,6 +23,7 @@ import {
   type TableDiffModel,
   type TableDiffRowModel,
 } from '../utils/buildTableDiffModel'
+import {DIFF_ADDED_BG, DIFF_REMOVED_BG} from '../utils/diffColors'
 import {getLetterBasedOnIndex} from '../utils/getLetterBasedOnIndex'
 import {hasInlineChanges, inlineTextDiff} from '../utils/inlineTextDiff'
 
