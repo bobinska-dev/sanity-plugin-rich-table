@@ -2,6 +2,8 @@ import {EmojiMatch} from '@portabletext/plugin-emoji-picker'
 import {Button} from '@sanity/ui'
 import {ComponentType, useEffect, useRef} from 'react'
 
+import {scrollOptionIntoView} from '../../utils/scrollOptionIntoView'
+
 interface EmojiListItemProps {
   match: EmojiMatch
   selected: boolean
@@ -16,7 +18,7 @@ const EmojiListItem: ComponentType<EmojiListItemProps> = (props) => {
 
   useEffect(() => {
     if (selected && ref.current) {
-      ref.current.scrollIntoView({behavior: 'smooth', block: 'nearest'})
+      scrollOptionIntoView(ref.current)
     }
   }, [selected])
   return (

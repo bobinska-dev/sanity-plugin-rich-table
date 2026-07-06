@@ -1,6 +1,7 @@
 import {Box, Card, Flex, Stack, Text} from '@sanity/ui'
 import {ComponentType, useEffect, useRef} from 'react'
 
+import {scrollOptionIntoView} from '../../utils/scrollOptionIntoView'
 import {CommandMatch} from './commands'
 
 export interface CommandListItemProps {
@@ -18,7 +19,7 @@ const CommandListItem: ComponentType<CommandListItemProps> = (props) => {
 
   useEffect(() => {
     if (props.selected && ref.current) {
-      ref.current.scrollIntoView({behavior: 'smooth', block: 'nearest'})
+      scrollOptionIntoView(ref.current)
     }
   }, [props.selected])
 
