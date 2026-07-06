@@ -1,15 +1,16 @@
-import { BlockRenderProps } from '@portabletext/editor'
-import {ComponentType, useEffect, useState} from 'react'
-import {Box, Card, Flex, Stack, Text} from '@sanity/ui'
-import {Image, ReferenceSchemaType, ReferenceValue} from '@sanity/types'
-import groq, {defineQuery} from 'groq'
-import {PortableTextBlock, useClient, usePerspective} from 'sanity'
-import {Subscription} from 'rxjs'
-import {createImageUrlBuilder} from '@sanity/image-url'
+import {BlockRenderProps} from '@portabletext/editor'
 import {DocumentIcon} from '@sanity/icons'
+import {createImageUrlBuilder} from '@sanity/image-url'
+import {Image, ReferenceSchemaType, ReferenceValue} from '@sanity/types'
+import {Box, Card, Flex, Stack, Text} from '@sanity/ui'
+import groq, {defineQuery} from 'groq'
+import {ComponentType, useEffect, useState} from 'react'
+import {Subscription} from 'rxjs'
+import {PortableTextBlock, useClient, usePerspective} from 'sanity'
+
 import {PREVIEW_SIZE} from '../../configs/renderer/renderBlock'
 
-const ReferenceBlock:ComponentType<BlockRenderProps> = (props) => {
+const ReferenceBlock: ComponentType<BlockRenderProps> = (props) => {
   // * CLIENT & IMAGE
   // Fetch the referenced document in the editor's active perspective (release/drafts stack)
   // so the preview reflects the version being edited, not always drafts.
@@ -26,58 +27,72 @@ const ReferenceBlock:ComponentType<BlockRenderProps> = (props) => {
   const refSchemaTypes = schemaType.to
 
   // * STATES
-  const [refDoc, setRefDoc] = useState<{_type: string, title:string, subtitle:string, image:Image }|null>(null)
+  const [refDoc, setRefDoc] = useState<{
+    _type: string
+    title: string
+    subtitle: string
+    image: Image
+  } | null>(null)
 
-  const getPreviewConfigs =() => {
+  const getPreviewConfigs = () => {
     // since a reference will only show the preview of the referenced document we need to check the ref schemaTypes for the preview select and prepare functions
-     return refSchemaTypes.map((refSchemaType) => {
+    return refSchemaTypes.map((refSchemaType) => {
       const previewSelect = refSchemaType.preview?.select
       const previewPrepare = refSchemaType.preview?.prepare
-       return {
-          type: refSchemaType.name,
-          select: previewSelect,
-          prepare: previewPrepare,
-       }
-     })
+      return {
+        type: refSchemaType.name,
+        select: previewSelect,
+        prepare: previewPrepare,
+      }
+    })
   }
   const configs = getPreviewConfigs()
 
-  const preparePreviewQuery = ()=> {
+  const preparePreviewQuery = () => {
     const titleOptions = configs
       .map((config) => config?.select?.title)
       .filter((title): title is string => Boolean(title))
-    const titleFragment =
-      titleOptions.length === 0
-        ? '"title": coalesce(name, title, headline)' // fallback to common fields if no title select is defined in the ref schema types
-        : titleOptions.length > 1
-          ? `"title": coalesce(${titleOptions.join(', ')})`
-          : titleOptions[0] === 'title'
-            ? 'title, '
-            : `"title": ${titleOptions[0]}, `
+    let titleFragment: string
+    if (titleOptions.length === 0) {
+      // fallback to common fields if no title select is defined in the ref schema types
+      titleFragment = '"title": coalesce(name, title, headline)'
+    } else if (titleOptions.length > 1) {
+      titleFragment = `"title": coalesce(${titleOptions.join(', ')})`
+    } else if (titleOptions[0] === 'title') {
+      titleFragment = 'title, '
+    } else {
+      titleFragment = `"title": ${titleOptions[0]}, `
+    }
 
     const subtitleOptions = configs
       .map((config) => config?.select?.subtitle)
       .filter((subtitle): subtitle is string => Boolean(subtitle))
-    const subtitleFragment =
-      subtitleOptions.length === 0
-        ? '"subtitle": coalesce(description, overview, excerpt, subtitle),' // fallback to common fields if no subtitle select is defined in the ref schema types
-        : subtitleOptions?.length > 1
-          ? `"subtitle": coalesce(${subtitleOptions.join(', ')}),`
-          : subtitleOptions[0] === 'subtitle'
-            ? 'subtitle,'
-            : `"subtitle": ${subtitleOptions[0]},`
+    let subtitleFragment: string
+    if (subtitleOptions.length === 0) {
+      // fallback to common fields if no subtitle select is defined in the ref schema types
+      subtitleFragment = '"subtitle": coalesce(description, overview, excerpt, subtitle),'
+    } else if (subtitleOptions.length > 1) {
+      subtitleFragment = `"subtitle": coalesce(${subtitleOptions.join(', ')}),`
+    } else if (subtitleOptions[0] === 'subtitle') {
+      subtitleFragment = 'subtitle,'
+    } else {
+      subtitleFragment = `"subtitle": ${subtitleOptions[0]},`
+    }
 
     const imageOptions = configs
       .map((config) => config?.select?.media)
       .filter((media): media is string => Boolean(media))
-    const imageFragment =
-      imageOptions.length === 0
-        ? '"image": coalesce(image, media, picture),' // fallback to media field if no media select is defined in the ref schema types
-        : imageOptions?.length > 1
-          ? `coalesce(${imageOptions.join(', ')}),`
-          : imageOptions[0] === 'media'
-            ? 'media,'
-            : `"image": ${imageOptions[0]},`
+    let imageFragment: string
+    if (imageOptions.length === 0) {
+      // fallback to media field if no media select is defined in the ref schema types
+      imageFragment = '"image": coalesce(image, media, picture),'
+    } else if (imageOptions.length > 1) {
+      imageFragment = `coalesce(${imageOptions.join(', ')}),`
+    } else if (imageOptions[0] === 'media') {
+      imageFragment = 'media,'
+    } else {
+      imageFragment = `"image": ${imageOptions[0]},`
+    }
 
     return groq`*[_id == $refId][0]{
       _type,
@@ -92,7 +107,7 @@ const ReferenceBlock:ComponentType<BlockRenderProps> = (props) => {
   // listen to changes in the reference and update the preview accordingly
   let subscription: Subscription
   useEffect(() => {
-    if(value._ref){
+    if (value._ref) {
       const listen = () => {
         subscription = client
           .listen(query, params, {
@@ -123,28 +138,28 @@ const ReferenceBlock:ComponentType<BlockRenderProps> = (props) => {
         }
       }
     }
+    return undefined
   }, [value._ref])
 
   const renderMedia = () => {
-    if (!refDoc?.image){
+    if (!refDoc?.image) {
       // if there is no image we will return the schema icon and if not the document icon from Sanity Icons
-      const refSchema = refSchemaTypes.find((schema) => schema.name === refDoc?._type)
+      if (schemaType.icon)
+        return (
+          <schemaType.icon
+            // @ts-expect-error - the icon property on the schema type can be a React component but the type definitions don't reflect that, so we need to ignore the type check here
+            style={{
+              width: `${PREVIEW_SIZE}px`,
+              height: `${PREVIEW_SIZE}px`,
+              objectFit: 'cover',
 
-      if (schemaType.icon) return (
-        <schemaType.icon
-          // @ts-ignore - the icon property on the schema type can be a React component but the type definitions don't reflect that, so we need to ignore the type check here
-          style={{
-            width: `${PREVIEW_SIZE}px`,
-            height: `${PREVIEW_SIZE}px`,
-            objectFit: 'cover',
-
-            borderRadius: '4px',
-            border: '1px solid var(--card-border-color)',
-          }}
-        />
-      )
+              borderRadius: '4px',
+              border: '1px solid var(--card-border-color)',
+            }}
+          />
+        )
       return (
-        <DocumentIcon // @ts-ignore - the icon property on the schema type can be a React component but the type definitions don't reflect that, so we need to ignore the type check here
+        <DocumentIcon
           style={{
             width: `${PREVIEW_SIZE}px`,
             height: `${PREVIEW_SIZE}px`,

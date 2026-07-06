@@ -1,5 +1,6 @@
 import type {BlockObjectSchemaType} from '@portabletext/editor'
 import type {ExtendBlockObjectSchemaType, ToolbarBlockObjectSchemaType} from '@portabletext/toolbar'
+import type {ComponentType} from 'react'
 
 /**
  * Minimal shape of a block schema from Sanity (e.g. from schemaType.type.of).
@@ -7,8 +8,8 @@ import type {ExtendBlockObjectSchemaType, ToolbarBlockObjectSchemaType} from '@p
  */
 export interface SanityBlockSchemaLike {
   name: string
-  icon?: React.ComponentType
-  components?: Record<string, React.ComponentType>
+  icon?: ComponentType
+  components?: Record<string, ComponentType>
   initialValue?: Record<string, unknown>
   [key: string]: unknown
 }

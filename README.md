@@ -10,6 +10,7 @@ Please be aware, that this plugin is still growing - so while this first version
 
 - 100% Typescript
 - Initialise a table with intuitive table selection by click or drag
+- **Import tables** from CSV, TSV, Excel (`.xlsx`), HTML or Markdown — via the field-actions menu, an inline button, or by pasting (see [Importing tables](README.md#importing-tables))
 - Rich table schema type `richTable` with Portable Text based cells
 - Portable Text block type `richTableBlock`
 - Portable Text editor goodies like Slash commands, Markdown shortcuts, LinkPlugin and emoji picker - thanks to the amazing work of Christian Groengaard!
@@ -88,6 +89,69 @@ defineArrayMember({
   title: 'Rich Table Block',
   type: 'richTableBlock', // Use the rich table block type
 })
+```
+
+## Importing tables
+
+Instead of building a table cell by cell, editors can import existing tabular data. Everything here works with the default `richTablePlugin({})` — there is nothing extra to configure.
+
+**Supported formats:** CSV, TSV, HTML and Markdown, plus Excel (`.xls` / `.xlsx`). Pasting auto-detects HTML, Markdown and TSV (CSV can be parsed on request); file upload accepts `.csv`, `.tsv`, `.xls`, `.xlsx`. The dialog shows a live preview and lets you mark the first row / first column as headers. Imports are capped at 300 rows.
+
+### Where import appears
+
+- **On a `richTable` field** — an **Import table** entry in the field-actions menu (the `⋮` next to the field label).
+- **On a rich table used as an array item or a `richTableBlock`** — an inline **Import table** button (array items and Portable Text blocks have no field-actions menu).
+
+### Paste-to-import (opt-in)
+
+To turn tables **pasted into a Portable Text field** into rich-table blocks — including a table copied alongside prose from a web page or document (the prose is kept, each table becomes a `richTableBlock`) — add the exported `RichTablePastePlugin` to your Portable Text input:
+
+```tsx
+// sanity.config.ts
+import {defineConfig} from 'sanity'
+import type {PortableTextPluginsProps} from 'sanity'
+import {richTablePlugin, RichTablePastePlugin} from 'sanity-plugin-rich-table'
+
+function PortableTextPlugins(props: PortableTextPluginsProps) {
+  return (
+    <>
+      {props.renderDefault(props)}
+      <RichTablePastePlugin />
+    </>
+  )
+}
+
+export default defineConfig({
+  // ...
+  plugins: [richTablePlugin({})],
+  form: {components: {portableText: {plugins: PortableTextPlugins}}},
+})
+```
+
+This affects only Sanity's document-body Portable Text inputs — not the rich table's own cell editors.
+
+### Excel (`.xlsx`) support
+
+Excel parsing uses [SheetJS](https://sheetjs.com) (`xlsx`), declared as an **optional dependency** (installed by default). If you install without optional dependencies, CSV / TSV / HTML / Markdown import still work and Excel upload simply reports that it is unavailable.
+
+### Building your own import UI
+
+The parsers and converter are exported, so you can drive imports programmatically or build a custom dialog:
+
+```ts
+import {
+  toRichTableValue, // ParsedTable -> the richTable value shape
+  parseFile, // File -> ParsedTable (by extension)
+  detectFormat, // sniff clipboard html/plain -> format
+  parseCsvTable,
+  parseTsvTable,
+  parseXlsxTable,
+  parseHtmlTable,
+  parseMarkdownTable,
+  TableImportDialog, // the built-in paste/upload dialog component
+  RichTablePastePlugin,
+  createTablePasteBehaviors,
+} from 'sanity-plugin-rich-table'
 ```
 
 ## Render tables

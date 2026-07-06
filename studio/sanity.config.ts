@@ -10,6 +10,7 @@ import HighlightDecorator from './components/HighlightDecorator'
 import LeadStyle from './components/LeadStyle'
 import LinkAnnotation from './components/LinkAnnotation'
 import MentionInline from './components/MentionInline'
+import StudioPTPlugins from './components/StudioPTPlugins'
 import TestBlock from './TestBlock'
 
 export default defineConfig({
@@ -26,6 +27,15 @@ export default defineConfig({
       portableTextSchemaTypeName: 'customPT',
     }),
   ],
+
+  // Enable paste-to-import on document-body Portable Text fields (dev/testing).
+  form: {
+    components: {
+      portableText: {
+        plugins: StudioPTPlugins,
+      },
+    },
+  },
 
   schema: {
     types: [
@@ -61,7 +71,7 @@ export default defineConfig({
             of: [
               defineArrayMember({type: 'block'}),
               defineArrayMember({
-                name: 'richTable',
+                name: 'richTableBlock',
                 title: 'Rich Table Block',
                 type: 'richTableBlock',
               }),

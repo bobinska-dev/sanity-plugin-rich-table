@@ -1,5 +1,6 @@
 import {RenderBlockFunction} from '@portabletext/editor'
 import {ArraySchemaType, PortableTextBlock} from 'sanity'
+
 import DefaultCustomBlock from '../../components/custom-blocks/DefautCustomBlock'
 import ImageBlock from '../../components/custom-blocks/ImageBlock'
 import ReferenceBlock from '../../components/custom-blocks/ReferenceBlock'
@@ -13,7 +14,7 @@ export interface RenderBlockOptions {
 export const renderBlock = (options?: RenderBlockOptions): RenderBlockFunction => {
   // Captured in closure when ContentPortableTextEditor calls renderBlock({ portableTextSchemaTypeName })
   const customPTschema = options?.configSchema
-  return (props) => {
+  return function RenderBlock(props) {
     const currentSchema = customPTschema?.of?.find(
       (schema) => schema.name === props.schemaType.name,
     )

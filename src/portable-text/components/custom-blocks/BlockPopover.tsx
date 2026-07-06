@@ -1,17 +1,14 @@
-import {ComponentType} from 'react'
-import {
-  ToolbarAnnotationSchemaType,
-  ToolbarBlockObjectSchemaType,
-  useBlockObjectButton,
-  useBlockObjectPopover,
-} from '@portabletext/toolbar'
-import {Box, Button, Flex, Popover, Stack, Text} from '@sanity/ui'
+import {ToolbarBlockObjectSchemaType, useBlockObjectPopover} from '@portabletext/toolbar'
 import {EditIcon, TrashIcon} from '@sanity/icons'
-import {useDocumentPane} from 'sanity/structure'
+import {Box, Button, Flex, Popover, Stack, Text} from '@sanity/ui'
+import {ComponentType} from 'react'
 import {Path} from 'sanity'
+import {useDocumentPane} from 'sanity/structure'
 
-
-const BlockPopover: ComponentType<{schemaTypes: readonly ToolbarBlockObjectSchemaType[], path: Path}> = (props) => {
+const BlockPopover: ComponentType<{
+  schemaTypes: readonly ToolbarBlockObjectSchemaType[]
+  path: Path
+}> = (props) => {
   const blockObjectPopover = useBlockObjectPopover(props)
 
   const documentPane = useDocumentPane()

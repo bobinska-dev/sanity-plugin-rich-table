@@ -1,9 +1,11 @@
-import {ExpandIcon, ResetIcon} from '@sanity/icons'
-import {Box, Button, Flex, Inline, Stack, Switch, Text, Tooltip} from '@sanity/ui'
+import {ExpandIcon, ResetIcon, UploadIcon} from '@sanity/icons'
+import {Box, Button, Flex, Inline, Stack, Switch, Text, Tooltip, useToast} from '@sanity/ui'
 import {ChangeEvent, ComponentType, Suspense, useCallback, useMemo, useState} from 'react'
 import {
   getPublishedId,
   getVersionFromId,
+  isIndexSegment,
+  isKeySegment,
   ObjectInputProps,
   pathToString,
   useDocumentOperation,
@@ -14,6 +16,11 @@ import styled from 'styled-components'
 
 import {useDialogRouteState} from '../hooks/useDialogRouteState'
 import {useToggleTitles} from '../hooks/useToggleTitles'
+import {useRegisterTableImport} from '../import/TableImportContext'
+import {TableImportDialog} from '../import/TableImportDialog'
+import {getToastForResult} from '../import/toastMessages'
+import type {RichTableValue} from '../import/toRichTableValue'
+import type {ParseResult, TableFormat} from '../import/types'
 import {RichTableType} from '../schemas/richTable.object'
 import {isRichTableArrayMemberContext} from '../utils/isRichTableArrayMemberContext'
 import ConfirmClearTableDialog from './ConfirmClearTableDialog'
@@ -69,6 +76,18 @@ const RichTableInput: ComponentType<
       }),
     [_type, props.isInPortableText, props.path, props.schemaType.name, schema],
   )
+
+  // Whether this table is an array item or Portable Text block (vs. a plain
+  // object field) — from the path's last segment, so it holds regardless of the
+  // array member's schema name (e.g. a custom `richTableItem`). These have no
+  // field-actions menu, so they get an inline import button instead of the
+  // "Import table" field action used on object fields.
+  const lastPathSegment = props.path[props.path.length - 1]
+  const isArrayItemOrBlock =
+    Boolean(props.isInPortableText) ||
+    isKeySegment(lastPathSegment) ||
+    isIndexSegment(lastPathSegment)
+
   // table ID
   const tableId = `table-${props.id}`
 
@@ -83,6 +102,50 @@ const RichTableInput: ComponentType<
   const [openConfirmClearDialog, setOpenConfirmClearDialog] = useState(false)
   const handleOpenConfirmClearDialog = useCallback(() => setOpenConfirmClearDialog(true), [])
   const handleCloseConfirmClearDialog = useCallback(() => setOpenConfirmClearDialog(false), [])
+  // * Import table dialog
+  const toast = useToast()
+  const [openImportDialog, setOpenImportDialog] = useState(false)
+  const handleOpenImportDialog = useCallback(() => setOpenImportDialog(true), [])
+  const handleCloseImportDialog = useCallback(() => setOpenImportDialog(false), [])
+
+  // Writes the imported table into this field via document operations.
+  // `setIfMissing` establishes the container object when the field is empty
+  // (avoiding "deep operations on primitive values" — SAPP-3812) WITHOUT
+  // clobbering an array item's / PT block's `_key` and `_type`; the fields are
+  // then set on it. A single `patch.execute` is required — an `onChange({})`
+  // reset first would wipe an array item's `_key`, so the keyed path no longer
+  // matched and the import silently failed to land.
+  const applyImportedTable = useCallback(
+    (imported: RichTableValue) => {
+      patch.execute([
+        {setIfMissing: {[pathString]: {}}},
+        {
+          set: {
+            [`${pathString}.rows`]: imported.rows,
+            [`${pathString}.columnHeaders`]: imported.columnHeaders,
+            [`${pathString}.hasColumnTitles`]: imported.hasColumnTitles,
+            [`${pathString}.hasRowTitles`]: imported.hasRowTitles,
+          },
+        },
+      ])
+    },
+    [patch, pathString],
+  )
+
+  const handleImportConfirm = useCallback(
+    (value: RichTableValue, result: ParseResult, format: TableFormat) => {
+      applyImportedTable(value)
+      setOpenImportDialog(false)
+      // TSV/CSV are plain text; everything else can carry rich formatting.
+      const isRichFormat = format !== 'tsv' && format !== 'csv'
+      toast.push(getToastForResult(result, result.totalRows, isRichFormat))
+    },
+    [applyImportedTable, toast],
+  )
+
+  // Expose this field's import dialog to the "Import table" field action, which
+  // (being a menu descriptor) cannot render the dialog itself.
+  useRegisterTableImport(pathString, handleOpenImportDialog)
 
   const {hasColumnTitles, hasRowTitles} = props.value || {}
   const {toggleColumnTitles, toggleRowTitles} = useToggleTitles(
@@ -96,20 +159,66 @@ const RichTableInput: ComponentType<
     <Stack space={4} as={'section'} aria-label={'Rich table input'}>
       <Suspense fallback={<LoadingIndicator />} name={'RichTableInput Suspense'}>
         {!props.value?.rows && (
-          <InitialiseTable
-            patch={patch}
-            path={pathString}
-            isInPortableText={props.isInPortableText}
-            isInArray={isInArray}
-            readOnly={props.readOnly}
-            onChange={props.onChange}
-          />
+          <Stack space={3}>
+            <InitialiseTable
+              patch={patch}
+              path={pathString}
+              isInPortableText={props.isInPortableText}
+              isInArray={isInArray}
+              readOnly={props.readOnly}
+              onChange={props.onChange}
+            />
+            {/* Array items and Portable Text blocks have no field-actions menu,
+                so the import trigger is shown inline; object fields use the
+                "Import table" field action instead. */}
+            {isArrayItemOrBlock && !props.readOnly && (
+              <Box>
+                <Button
+                  icon={UploadIcon}
+                  text={'Import table'}
+                  mode={'ghost'}
+                  fontSize={1}
+                  onClick={handleOpenImportDialog}
+                  aria-haspopup="dialog"
+                  aria-expanded={openImportDialog}
+                  type="button"
+                />
+              </Box>
+            )}
+          </Stack>
         )}
         {props.value && props.value.rows && (
           <>
             <Box>
               {/* EXPAND TABLE BUTTON */}
               <Flex justify={'flex-end'} gap={4}>
+                {/* Import/replace lives inline for array items and Portable Text
+                    blocks (no field-actions menu there); object fields use the field action. */}
+                {isArrayItemOrBlock && (
+                  <Tooltip
+                    content={
+                      <Box>
+                        <Text size={1}>Import / replace table</Text>
+                      </Box>
+                    }
+                    portal
+                  >
+                    <Button
+                      iconRight={UploadIcon}
+                      onClick={handleOpenImportDialog}
+                      mode={'bleed'}
+                      fontSize={0}
+                      text={'Import'}
+                      muted
+                      disabled={props.readOnly}
+                      aria-label={'Import or replace table'}
+                      aria-haspopup="dialog"
+                      aria-expanded={openImportDialog}
+                      aria-controls={tableId}
+                      type="button"
+                    />
+                  </Tooltip>
+                )}
                 <Tooltip
                   content={
                     <Box>
@@ -191,6 +300,9 @@ const RichTableInput: ComponentType<
           path={pathString}
           readOnly={props.readOnly}
         />
+      )}
+      {openImportDialog && (
+        <TableImportDialog onClose={handleCloseImportDialog} onConfirm={handleImportConfirm} />
       )}
       {/* DEBUG SWITCH*/}
       <Flex justify={'space-between'} align={'center'} gap={2} key={`debug-switch-${openDialog}`}>
