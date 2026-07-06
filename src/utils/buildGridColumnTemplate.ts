@@ -1,11 +1,14 @@
 const ROW_COLUMN_WIDTH = 2 // in rem
 const CONTENT_COLUMN_MIN_WIDTH = 80 // in px
+const ROW_TITLE_COLUMN_MIN_WIDTH = 120 // in px
 
-const rowTitleColumnTrack = '1fr'
 const rowContextColumnTrack = `${ROW_COLUMN_WIDTH}rem`
 // Columns the editor has sized become a fixed px track; the rest share the
 // leftover space equally but never collapse below a readable minimum.
 export const CONTENT_COLUMN_DEFAULT_TRACK = `minmax(${CONTENT_COLUMN_MIN_WIDTH}px, 1fr)`
+// The row-title column grows to share space but keeps a wider floor so the row
+// titles stay readable without dragging the column open.
+export const ROW_TITLE_COLUMN_DEFAULT_TRACK = `minmax(${ROW_TITLE_COLUMN_MIN_WIDTH}px, 1fr)`
 
 // Only a finite, positive width is a usable px track; anything else (undefined,
 // 0, negative, NaN) falls back to the given flexible track.
@@ -42,7 +45,7 @@ export const buildGridColumnTemplate = ({
 }: GridColumnTemplateOptions): string => {
   // Only the row-title column is resizable; the narrow context-menu column stays fixed.
   const firstColumn = hasRowTitles
-    ? sizedTrack(rowTitleWidth, rowTitleColumnTrack)
+    ? sizedTrack(rowTitleWidth, ROW_TITLE_COLUMN_DEFAULT_TRACK)
     : rowContextColumnTrack
   if (!columnCount) {
     return `${firstColumn} repeat(4, 1fr)`
