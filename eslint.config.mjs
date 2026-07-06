@@ -45,4 +45,14 @@ export default [
       },
     },
   },
+  {
+    // Test assertions frequently reach into PortableText block internals
+    // (a `string | PortableTextBlock[]` union) to inspect children/marks, where
+    // precise typing adds noise without value. Relax `no-explicit-any` for tests
+    // only — shipped source stays strict.
+    files: ['**/__tests__/**', '**/*.test.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 ]
