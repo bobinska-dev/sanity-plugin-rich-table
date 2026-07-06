@@ -178,7 +178,12 @@ export function extractBlockConfig(
   const inlineObjects = Array.isArray(childrenOf)
     ? (childrenOf as Loose[])
         .filter((m) => m.name !== 'span' && !Array.isArray(m.decorators))
-        .map(toObjectType)
+        .map((m) => ({
+          ...toObjectType(m),
+          // Inline objects use their single standard `components.inlineBlock` slot
+          // (no table-specific sibling — only block objects need `tableBlock`).
+          component: (m.components as Loose | undefined)?.inlineBlock as ExtractedType['component'],
+        }))
     : []
 
   return {decorators, styles, lists, annotations, blockObjects, inlineObjects}

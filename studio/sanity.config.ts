@@ -1,4 +1,4 @@
-import {AsteriskIcon, HighlightIcon, ImageIcon, LinkIcon} from '@sanity/icons'
+import {AsteriskIcon, HighlightIcon, IceCreamIcon, ImageIcon, LinkIcon} from '@sanity/icons'
 import {visionTool} from '@sanity/vision'
 import {defineArrayMember, defineConfig, defineField, defineType} from 'sanity'
 import {structureTool} from 'sanity/structure'
@@ -9,6 +9,7 @@ import FootnoteAnnotation from './components/FootnoteAnnotation'
 import HighlightDecorator from './components/HighlightDecorator'
 import LeadStyle from './components/LeadStyle'
 import LinkAnnotation from './components/LinkAnnotation'
+import MentionInline from './components/MentionInline'
 import TestBlock from './TestBlock'
 
 export default defineConfig({
@@ -86,6 +87,23 @@ export default defineConfig({
         of: [
           defineArrayMember({
             type: 'block',
+            of: [
+              defineArrayMember({
+                name: 'inlineBlock',
+                type: 'object',
+                icon: IceCreamIcon,
+                fields: [
+                  defineField({
+                    name: 'test',
+                    type: 'string',
+                  }),
+                ],
+                // Inline objects render via Sanity's single native
+                // `components.inlineBlock` slot (no table-specific sibling —
+                // only block objects need `tableBlock`).
+                components: {inlineBlock: MentionInline},
+              }),
+            ],
             // Demo of a fully customisable cell PTE: the standard marks plus a
             // custom style, decorator and annotation (each with its own icon).
             // The toolbar shows the icons; the renderer tags custom output with
@@ -124,8 +142,7 @@ export default defineConfig({
                       type: 'url',
                       title: 'URL',
                       // Allow email and telephone links in addition to web URLs.
-                      validation: (Rule) =>
-                        Rule.uri({scheme: ['http', 'https', 'mailto', 'tel']}),
+                      validation: (Rule) => Rule.uri({scheme: ['http', 'https', 'mailto', 'tel']}),
                     }),
                   ],
                   // Annotations use Sanity's native `components.annotation` slot.

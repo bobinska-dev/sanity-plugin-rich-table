@@ -22,6 +22,7 @@ import {StyledPortableTextEditable} from './components/StyledPortableTextEditabl
 import {extractBlockConfig} from './configs/extractBlockConfig'
 import {AnnotationComponent, createRenderAnnotation} from './configs/renderer/renderAnnotation'
 import {renderBlock} from './configs/renderer/renderBlock'
+import {createRenderChild, InlineObjectComponent} from './configs/renderer/renderChild'
 import {createRenderDecorator, DecoratorComponent} from './configs/renderer/renderDecorators'
 import {renderListItem} from './configs/renderer/renderListItem'
 import {createRenderStyle, StyleComponent} from './configs/renderer/renderStyle'
@@ -73,13 +74,16 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
     const styleComponents = new Map<string, StyleComponent>()
     const decoratorComponents = new Map<string, DecoratorComponent>()
     const annotationComponents = new Map<string, AnnotationComponent>()
+    const inlineObjectComponents = new Map<string, InlineObjectComponent>()
     cfg?.styles.forEach((s) => s.component && styleComponents.set(s.name, s.component))
     cfg?.decorators.forEach((d) => d.component && decoratorComponents.set(d.name, d.component))
     cfg?.annotations.forEach((a) => a.component && annotationComponents.set(a.name, a.component))
+    cfg?.inlineObjects.forEach((o) => o.component && inlineObjectComponents.set(o.name, o.component))
     return {
       renderStyle: createRenderStyle(styleComponents),
       renderDecorator: createRenderDecorator(decoratorComponents),
       renderAnnotation: createRenderAnnotation(annotationComponents),
+      renderChild: createRenderChild(inlineObjectComponents),
     }
   }, [configSchema])
 
@@ -188,6 +192,7 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
               })}
               renderListItem={renderListItem}
               renderAnnotation={markRenderers.renderAnnotation}
+              renderChild={markRenderers.renderChild}
             />
           </ListIndexProvider>
           {!props.readOnly && (
