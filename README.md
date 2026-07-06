@@ -15,6 +15,7 @@ Please be aware, that this plugin is still growing - so while this first version
 - Portable Text block type `richTableBlock`
 - Portable Text editor goodies like Slash commands, Markdown shortcuts, LinkPlugin and emoji picker - thanks to the amazing work of Christian Groengaard!
 - Optional row and column titles
+- **Per-table validation** (min rows / columns, required row / column titles) that surfaces inline on the offending cell, header or field marker (see [Validation](README.md#validation))
 - Expandable table dialog
 - Advanced row and column menus (move, delete, add new inline)
 - Option to show table headers
@@ -32,10 +33,10 @@ Please be aware, that this plugin is still growing - so while this first version
 
 ## Compatibility
 
-| Plugin version | Sanity | React | Node   |
-| -------------- | ------ | ----- | ------ |
-| **≥ 1.1.0**   | **5.x** (≥ 5.11.0) | 19    | ≥ 18   |
-| 1.0.5          | 3.x / 4.x / 5.x (< 5.13) | 18–19 | ≥ 18   |
+| Plugin version | Sanity                   | React | Node |
+| -------------- | ------------------------ | ----- | ---- |
+| **≥ 1.1.0**    | **5.x** (≥ 5.11.0)       | 19    | ≥ 18 |
+| 1.0.5          | 3.x / 4.x / 5.x (< 5.13) | 18–19 | ≥ 18 |
 
 > **Why the change?** Starting with Sanity **5.13.0**, the internal `@portabletext/sanity-bridge` package was upgraded to v3, which requires `@portabletext/editor` v6 and `@portabletext/toolbar` v7. These packages in turn require **React 19**. Plugin versions **≥ 1.1.0** ship the updated `@portabletext/*` stack so that studio builds (`sanity build`, `sanity deploy`, etc.) work correctly.
 >
@@ -90,6 +91,83 @@ defineArrayMember({
   title: 'Rich Table Block',
   type: 'richTableBlock', // Use the rich table block type
 })
+```
+
+## Validation
+
+Add validation **per instance** — on the field, array member or Portable Text block — with the chainable `richTableRules()` builder. It reads like a native rule chain and drops straight into `validation` (no `(Rule) =>` wrapper needed):
+
+```ts
+import {defineField} from 'sanity'
+import {richTableRules} from 'sanity-plugin-rich-table'
+
+defineField({
+  name: 'myRichTable',
+  title: 'My Rich Table',
+  type: 'richTable',
+  validation: richTableRules().minRows(2).requireColumnTitles(),
+})
+```
+
+Because it's applied per instance, each table can have its own rules:
+
+```ts
+// array member
+defineArrayMember({
+  name: 'richTableItem',
+  type: 'richTable',
+  validation: richTableRules().minColumns(3),
+})
+
+// Portable Text block
+defineArrayMember({
+  name: 'richTableBlock',
+  type: 'richTableBlock',
+  validation: richTableRules().requireRowTitles().requireColumnTitles(),
+})
+```
+
+### Available rules
+
+| Rule                     | Description                                                                        |
+| ------------------------ | ---------------------------------------------------------------------------------- |
+| `.minRows(count)`        | The table must have at least `count` rows.                                         |
+| `.minColumns(count)`     | The table must have at least `count` columns.                                      |
+| `.requireRowTitles()`    | Every row must have a title. Only enforced while **row titles** are enabled.       |
+| `.requireColumnTitles()` | Every column must have a title. Only enforced while **column titles** are enabled. |
+
+The title rules respect the table's row/column title toggles — a table with column titles turned off is never flagged for missing them.
+
+### How errors show up
+
+Each violated rule reports a marker on the exact offending path, so the plugin surfaces it in place:
+
+- **A specific row / column title** → that row / column header is toned (red for errors, amber for warnings).
+- **Too few rows / columns** → the field/block header validation marker (identical to any native field), plus a banner in the empty-table state.
+- **Cell content** (from your own PT / annotation validation) → the cell is toned and an invalid annotation (e.g. a bad link URL) renders in red.
+
+All of the above also roll up into the standard field-title / block validation marker, exactly like a native field.
+
+### Composing with native rules
+
+`richTableRules()` is a normal `ValidationBuilder`, so combine it with built-in rules using the array form:
+
+```ts
+validation: [richTableRules().minRows(1), (Rule) => Rule.required()]
+```
+
+For custom logic, the lower-level `richTableValidator(config)` returns a `CustomValidator` you can drop into your own `Rule.custom`:
+
+```ts
+import {richTableValidator} from 'sanity-plugin-rich-table'
+
+validation: (Rule) =>
+  Rule.custom((table, context) => {
+    const builtIn = richTableValidator({minRows: 2})(table, context)
+    if (builtIn !== true) return builtIn
+    // ...your own checks
+    return true
+  })
 ```
 
 ## Importing tables
@@ -184,10 +262,16 @@ See [Reviewing changes](./docs/README.md#reviewing-changes) in the docs for deta
 This plugin is written in TypeScript and exports types for consumers:
 
 ```ts
-import type {RichTableType, RichTableRowType, RichTableCellType} from 'sanity-plugin-rich-table'
+import type {
+  RichTableType,
+  RichTableRowType,
+  RichTableCellType,
+  RichTableValidationConfig, // shape accepted by the validation helpers
+  RichTableRuleBuilder, // return type of richTableRules()
+} from 'sanity-plugin-rich-table'
 ```
 
-See the [data structure documentation](./docs/data-structure.md) for detailed type information.
+See the [data structure documentation](./docs/data-structure.md) for detailed type information, and [Validation](README.md#validation) for `richTableRules()` / `richTableValidator()`.
 
 ## License
 
@@ -200,7 +284,6 @@ with default configuration for build & watch scripts.
 
 See [Testing a plugin in Sanity Studio](https://github.com/sanity-io/plugin-kit#testing-a-plugin-in-sanity-studio)
 on how to run this plugin with hotreload in the studio.
-
 
 ### Running tests
 

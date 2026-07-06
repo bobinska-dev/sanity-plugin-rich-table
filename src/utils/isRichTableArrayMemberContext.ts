@@ -77,8 +77,15 @@ const stepPath = (
 /**
  * Whether the rich table object input sits under an array field (array member),
  * determined by walking the form path against the compiled schema.
- * Portable Text blocks and non-`richTable` object types are handled by the caller
- * (`isInPortableText` / schema type name).
+ *
+ * `objectSchemaTypeName` is the input's own schema type name — for an array
+ * member it is the MEMBER name (e.g. `richTableItem` from
+ * `defineArrayMember({name: 'richTableItem', type: 'richTable'})`), not
+ * `richTable`. The walk finds the array member by that name and validates the
+ * match below, so we must NOT hardcode a `=== 'richTable'` check here (that
+ * wrongly bailed for renamed members, sending the array item down the
+ * object-field init path that clobbers its `_key`). Portable Text blocks are
+ * excluded up front via `isInPortableText`.
  */
 export const isRichTableArrayMemberContext = (params: {
   schema: Schema
@@ -90,7 +97,6 @@ export const isRichTableArrayMemberContext = (params: {
   const {schema, documentTypeName, path, objectSchemaTypeName, isInPortableText} = params
 
   if (isInPortableText) return false
-  if (objectSchemaTypeName !== 'richTable') return false
   if (!documentTypeName) return false
   if (path.length === 0) return false
 

@@ -268,6 +268,12 @@ const Table: ComponentType<
                   (field) => field.name === 'content',
                 ) as ArraySchemaType<PortableTextBlock>
                 const cellValidation = getCellValidation(cellItem.path)
+                // Row-header tone comes from the row's *title* markers only, so a
+                // cell error inside the row doesn't also redden the row header.
+                const rowTitleTone =
+                  cellIndex === 0
+                    ? getCellValidation(rowMember.item.path.concat('title')).tone
+                    : undefined
                 return (
                   <Fragment key={cellItem.id}>
                     {/* CONTEXT MENU BUTTON */}
@@ -280,6 +286,7 @@ const Table: ComponentType<
                         path={path}
                         readOnly={props.readOnly}
                         role="rowheader"
+                        validationTone={rowTitleTone}
                       />
                     )}
                     {cellIndex === 0 && !hasRowTitles && (
