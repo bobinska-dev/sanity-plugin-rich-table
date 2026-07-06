@@ -28,7 +28,7 @@ const CommandListBox: ComponentType<CommandListBoxProps> = (props) => {
   return (
     <Flex
       direction={'column'}
-      gap={1}
+      gap={3}
       as={'ol'}
       padding={1}
       style={{maxHeight: 300, minWidth: 220, overflowY: 'auto', listStyle: 'none'}}

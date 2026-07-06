@@ -1,4 +1,4 @@
-import {Card, Flex, Stack, Text} from '@sanity/ui'
+import {Box, Card, Flex, Stack, Text} from '@sanity/ui'
 import {ComponentType, useEffect, useRef} from 'react'
 
 import {CommandMatch} from './commands'
@@ -35,7 +35,7 @@ const CommandListItem: ComponentType<CommandListItemProps> = (props) => {
       aria-label={props.match.label}
       style={{cursor: 'pointer'}}
     >
-      <Flex align={'center'} gap={3}>
+      <Flex align={'center'} gap={2}>
         {/* Fixed-width, centered icon gutter at a uniform font-size so icons from
             different families (react-icons, @sanity/icons, custom) line up and the
             label always starts at the same x. */}
@@ -46,13 +46,17 @@ const CommandListItem: ComponentType<CommandListItemProps> = (props) => {
         >
           {props.match.icon}
         </Flex>
-        <Stack space={2} style={{flex: 1, minWidth: 0}}>
-          <Text size={1} weight={'medium'} textOverflow={'ellipsis'}>
-            {props.match.label}
-          </Text>
-          <Text size={0} muted textOverflow={'ellipsis'}>
-            {props.match.description}
-          </Text>
+        <Stack gap={1} style={{flex: 1, minWidth: 0}} paddingBottom={1}>
+          <Box>
+            <Text size={1} weight={'medium'} textOverflow={'ellipsis'}>
+              {props.match.label}
+            </Text>
+          </Box>
+          <Box>
+            <Text size={0} muted textOverflow={'ellipsis'}>
+              {props.match.description}
+            </Text>
+          </Box>
         </Stack>
       </Flex>
     </Card>
