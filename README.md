@@ -30,16 +30,10 @@ Please be aware, that this plugin is still growing - so while this first version
 
 ## Installation
 
-**Sanity version support:** The plugin is tested with **Sanity 3, 4, and 5**. For **Sanity 5** you can install normally. For **Sanity 3 or 4**, peer dependency resolution may require one of:
-
-- **npm:** `npm install sanity-plugin-rich-table --legacy-peer-deps`
-- **pnpm:** add to `package.json`: `"packageManager": "pnpm@..."` and use `pnpm add sanity-plugin-rich-table` (pnpm is more lenient with peers); if you see peer warnings in a monorepo, you can add an `overrides` / `pnpm.overrides` entry for the reported package.
+**Sanity version support:** This `1.0.x` line supports **Sanity 4 and 5 (< 5.13)** on **React 19** — install normally, no `--legacy-peer-deps` workaround needed. On **Sanity ≥ 5.13**, install the latest **1.1.x+** release instead: it ships the updated `@portabletext/*` stack required by Sanity's newer internal `@portabletext/sanity-bridge`.
 
 ```sh
 npm install sanity-plugin-rich-table
-# or (Sanity 3/4)
-npm install sanity-plugin-rich-table --legacy-peer-deps
-
 # or
 pnpm add sanity-plugin-rich-table
 # or
