@@ -5,6 +5,7 @@ import {AsteriskIcon, ImageIcon} from '@sanity/icons'
 import {richTablePlugin} from 'sanity-plugin-rich-table'
 import {structureTool} from 'sanity/structure'
 import CustomBock from './components/CustomBock'
+import StudioPTPlugins from './components/StudioPTPlugins'
 import TestBlock from './TestBlock'
 
 export default defineConfig({
@@ -22,6 +23,15 @@ export default defineConfig({
     }),
   ],
 
+  // Enable paste-to-import on document-body Portable Text fields (dev/testing).
+  form: {
+    components: {
+      portableText: {
+        plugins: StudioPTPlugins,
+      },
+    },
+  },
+
   schema: {
     types: [
       defineType({
@@ -38,6 +48,17 @@ export default defineConfig({
             name: 'myRichTable',
             title: 'My Rich Table',
             type: 'richTable',
+          }),
+          defineField({
+            name: 'myRichTables',
+            title: 'My Richest of Tables',
+            type: 'array',
+            of: [
+              defineArrayMember({
+                name: 'richTableItem',
+                type: 'richTable',
+              }),
+            ],
           }),
           defineField({
             name: 'portableText',
