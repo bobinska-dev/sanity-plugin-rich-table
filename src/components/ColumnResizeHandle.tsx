@@ -59,7 +59,11 @@ const Handle = styled.button`
 
 interface ColumnResizeHandleProps {
   columnKey: string
-  columnIndex: number
+  /** Accessible name for the handle, e.g. "Resize column 2". */
+  label: string
+  /** Whether holding Shift resizes every column (content columns); `false` for
+   * the row-title column, which resizes on its own. Drives the messaging. */
+  allowResizeAll?: boolean
   /** True while this column is part of the active resize — its own drag, or any
    * column during a Shift-drag — so its divider stays highlighted. */
   active?: boolean
@@ -82,7 +86,8 @@ const measureCell = (handle: HTMLButtonElement) =>
  */
 export const ColumnResizeHandle: ComponentType<ColumnResizeHandleProps> = ({
   columnKey,
-  columnIndex,
+  label,
+  allowResizeAll = true,
   active,
   onResize,
   onResizeEnd,
@@ -157,7 +162,11 @@ export const ColumnResizeHandle: ComponentType<ColumnResizeHandleProps> = ({
     <Tooltip
       content={
         <Box padding={2}>
-          <Text size={1}>Drag to resize. Hold Shift to resize all columns.</Text>
+          <Text size={1}>
+            {allowResizeAll
+              ? 'Drag to resize. Hold Shift to resize all columns.'
+              : 'Drag to resize.'}
+          </Text>
         </Box>
       }
       portal
@@ -165,7 +174,7 @@ export const ColumnResizeHandle: ComponentType<ColumnResizeHandleProps> = ({
       <Handle
         type="button"
         data-active={active ? 'true' : undefined}
-        aria-label={`Resize column ${columnIndex + 1} (hold Shift to resize all columns)`}
+        aria-label={allowResizeAll ? `${label} (hold Shift to resize all columns)` : label}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

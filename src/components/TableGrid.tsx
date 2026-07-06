@@ -12,6 +12,9 @@ export default styled(Card)<{
   $rowCount: number
   $isInDialog: boolean
   $hasRowTitles?: boolean
+  /** Row-title column width in px (drag-handle sized); applies only when
+   * `$hasRowTitles`. */
+  $rowTitleWidth?: number
   /** Per content-column width in px (drag-handle sized); `undefined` entries fall
    * back to the default track. Index-aligned with the column headers. */
   $columnWidths?: Array<number | undefined>
@@ -22,6 +25,7 @@ export default styled(Card)<{
     buildGridColumnTemplate({
       columnCount: props.$columnCount,
       hasRowTitles: props.$hasRowTitles,
+      rowTitleWidth: props.$rowTitleWidth,
       columnWidths: props.$columnWidths,
     })};
 

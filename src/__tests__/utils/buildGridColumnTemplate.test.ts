@@ -42,6 +42,24 @@ describe('buildGridColumnTemplate', () => {
     ).toBe(`1fr ${CONTENT_COLUMN_DEFAULT_TRACK} ${CONTENT_COLUMN_DEFAULT_TRACK}`)
   })
 
+  it('emits a fixed px track for a sized row-title column', () => {
+    expect(buildGridColumnTemplate({columnCount: 3, hasRowTitles: true, rowTitleWidth: 160})).toBe(
+      `160px ${CONTENT_COLUMN_DEFAULT_TRACK} ${CONTENT_COLUMN_DEFAULT_TRACK}`,
+    )
+  })
+
+  it('ignores rowTitleWidth when row titles are hidden', () => {
+    expect(buildGridColumnTemplate({columnCount: 2, hasRowTitles: false, rowTitleWidth: 160})).toBe(
+      `2rem ${CONTENT_COLUMN_DEFAULT_TRACK}`,
+    )
+  })
+
+  it('falls back to the flexible first column for a non-positive rowTitleWidth', () => {
+    expect(buildGridColumnTemplate({columnCount: 2, hasRowTitles: true, rowTitleWidth: -5})).toBe(
+      `1fr ${CONTENT_COLUMN_DEFAULT_TRACK}`,
+    )
+  })
+
   it('pads missing width entries with the default track', () => {
     expect(buildGridColumnTemplate({columnCount: 3, hasRowTitles: true, columnWidths: [150]})).toBe(
       `1fr 150px ${CONTENT_COLUMN_DEFAULT_TRACK}`,
