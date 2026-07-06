@@ -31,6 +31,7 @@ import StyleSelector from '../StyleSelector'
 import AnnotationButton from './AnnotationButton'
 import BlockButton from './BlockButton'
 import DecoratorButton from './DecoratorButton'
+import InlineObjectButton from './InlineObjectButton'
 import FloatingButton from './FloatingButton'
 import ListButton from './ListButton'
 
@@ -339,6 +340,9 @@ const ButtonToolbar: ComponentType<{
               ))}
               {toolbarSchema.blockObjects?.map((blockObject) => (
                 <BlockButton key={blockObject.name} blockObject={blockObject} />
+              ))}
+              {toolbarSchema.inlineObjects?.map((inlineObject) => (
+                <InlineObjectButton key={inlineObject.name} inlineObject={inlineObject} />
               ))}
             </Flex>
           </Box>
