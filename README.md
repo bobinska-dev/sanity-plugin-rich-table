@@ -20,6 +20,7 @@ Please be aware, that this plugin is still growing - so while this first version
 - Expandable table dialog
 - Advanced row and column menus (move, delete, add new inline)
 - Option to show table headers
+- **Promote a row or column to headers** — turn the first row into column titles, or the first column into row titles, straight from the context menu (see [Promote a row or column to headers](README.md#promote-a-row-or-column-to-headers))
 - Unset table data with a button & confirmation dialog
 - **Readable diffs** in the Studio "Review changes" pane — a per-cell before→after view with inline highlights, plus inline changes right in the cells when Studio's inline-changes mode is on (see [Reviewing changes](README.md#reviewing-changes))
 - Dark and light mode support 😎
@@ -311,6 +312,23 @@ import {
   createTablePasteBehaviors,
 } from 'sanity-plugin-rich-table'
 ```
+
+## Promote a row or column to headers
+
+Already typed a header row or column into the table body? You can turn it into real titles in one step from the row / column context menu — no retyping.
+
+- **First row → column titles:** open the first row's **⋮** menu and choose **"Use as column titles"**. Each cell in row 1 becomes the title of the column above it, then row 1 is removed.
+- **First column → row titles:** open the first column's menu and choose **"Use as row titles"**. Each cell in column A becomes its row's title, then column A is removed.
+
+The action:
+
+- Only appears on the **first** row / column, and is disabled when it would empty the table (a table needs at least one row and column).
+- Runs behind a **confirmation dialog**, because it is **lossy** — cell content is rich Portable Text while titles are plain strings, so formatting is flattened to plain text — and it removes a row / column. It applies as a single step you can undo, or revert from the **Review changes** panel.
+- Switches on the matching titles (**Show row titles** / **Show column titles**) so the promoted headers are visible.
+
+The confirmation is registered in the pane's URL params (like the expanded editor), so it is deep-linkable, survives a refresh, and the browser back button closes it.
+
+> Tip: importing a table lets you mark the first row / column as headers up front — see [Importing tables](README.md#importing-tables). Use this promote action when a table is already in place.
 
 ## Render tables
 
