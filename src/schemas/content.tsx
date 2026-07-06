@@ -1,8 +1,9 @@
-import {defineArrayMember, defineType, ObjectDefinition, ObjectInputProps} from 'sanity'
-import {RichTablePluginOptions} from '../index'
 import {CloseIcon} from '@sanity/icons'
 import {Button, Flex, Stack} from '@sanity/ui'
+import {defineArrayMember, defineType, ObjectDefinition, ObjectInputProps} from 'sanity'
 import {useDocumentPane} from 'sanity/structure'
+
+import {RichTablePluginOptions} from '../index'
 
 /**
  * Sanity schema type for table cell content.
@@ -26,6 +27,35 @@ export default defineType({
   ],
 })
 
+/**
+ * Wraps a custom block's default input with a "Close" button that returns focus
+ * to the parent rich table. Defined as a named component (not a lowercase
+ * `input` factory) so React's rules-of-hooks recognises the `useDocumentPane` call.
+ */
+function CustomBlockInput(props: ObjectInputProps) {
+  const documentPane = useDocumentPane()
+  const getRichTablePath = () => {
+    const currentPath = props.path
+    const rowsIndex = currentPath.findIndex((segment) => segment === 'rows')
+    // remove all segments after and including rows, which will never be the first or last item
+    return currentPath.slice(0, rowsIndex)
+  }
+
+  return (
+    <Stack space={3}>
+      {props.renderDefault(props)}
+      <Flex justify={'flex-end'} padding={2}>
+        <Button
+          onClick={() => documentPane.onPathOpen(getRichTablePath())}
+          icon={CloseIcon}
+          text={'Close'}
+          mode={'default'}
+        />
+      </Flex>
+    </Stack>
+  )
+}
+
 export const defineContentArrayMember = ({
   customBlockTypes,
   customInlineBlockTypes,
@@ -45,29 +75,7 @@ export const defineContentArrayMember = ({
       icon: blockType.icon,
       components: {
         ...blockDefinition.components,
-        input: (props: ObjectInputProps) => {
-          const documentPane = useDocumentPane()
-          const getRichTablePath = () => {
-            const currentPath = props.path
-            const rowsIndex = currentPath.findIndex((segment) => segment === 'rows')
-            // remove all segments after and including rows, which will never be the first or last item
-            return currentPath.slice(0, rowsIndex)
-          }
-
-          return (
-            <Stack space={3}>
-              {props.renderDefault(props)}
-              <Flex justify={'flex-end'} padding={2}>
-                <Button
-                  onClick={() => documentPane.onPathOpen(getRichTablePath())}
-                  icon={CloseIcon}
-                  text={'Close'}
-                  mode={'default'}
-                />
-              </Flex>
-            </Stack>
-          )
-        },
+        input: CustomBlockInput,
       },
     })
   })

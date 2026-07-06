@@ -64,12 +64,9 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
     : undefined
 
   // * INITIAL CONFIG FOR EDITOR PROVIDER
-  const pteSchemaType = configSchema
-    ? configSchema
-    : props.schemaType
-      ? // @ts-ignore
-        props.schemaType.type.type // TODO change type in props to remove Boolean schemaType etc.
-      : content
+  // @ts-expect-error - props.schemaType.type.type isn't reflected in the public types; TODO refine the props type
+  const fallbackSchemaType = props.schemaType ? props.schemaType.type.type : content
+  const pteSchemaType = configSchema ?? fallbackSchemaType
 
   const initialConfig = useRef<EditorConfig>({
     initialValue: props.value,

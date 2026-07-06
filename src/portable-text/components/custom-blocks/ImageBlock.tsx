@@ -1,20 +1,18 @@
-import {ComponentType} from 'react'
 import {BlockRenderProps} from '@portabletext/editor'
-import {Box, Card, Flex, Stack, Text} from '@sanity/ui'
-import {useClient} from 'sanity'
 import {createImageUrlBuilder} from '@sanity/image-url'
+import {Box, Card, Flex, Stack, Text} from '@sanity/ui'
+import {ComponentType} from 'react'
+import {useClient} from 'sanity'
 
-const ImageBlock:ComponentType<BlockRenderProps> = (props) => {
-
-  const client = useClient({apiVersion:'2026-02-01'}).withConfig({requestTagPrefix: `ImageBlock-${props.value._key}`})
+const ImageBlock: ComponentType<BlockRenderProps> = (props) => {
+  const client = useClient({apiVersion: '2026-02-01'}).withConfig({
+    requestTagPrefix: `ImageBlock-${props.value._key}`,
+  })
   const imageBuilder = createImageUrlBuilder(client).image(props.value)
   const imageUrl = imageBuilder.width(30).height(30).url()
 
-  // @ts-ignore
+  // @ts-expect-error - props.value is typed as a base image without the optional `alt` field
   const altText = props.value.alt || 'Image does not have alt text'
-  const fields = props.schemaType.fields.filter((field) =>
-    !['asset' , 'crop' , 'hotspot' , '_key' , '_type', 'media'].includes(field.name),
-  )
   // TODO: Add support for other fields in the block, such as caption or credit
   return (
     <Card
@@ -64,4 +62,3 @@ const ImageBlock:ComponentType<BlockRenderProps> = (props) => {
   )
 }
 export default ImageBlock
-

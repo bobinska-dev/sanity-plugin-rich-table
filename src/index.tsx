@@ -63,9 +63,13 @@ export {
 // Augment @sanity/types so array members can specify components.tableBlock (ImageComponents/ObjectComponents live there).
 declare module '@sanity/types' {
   interface ImageComponents {
+    // Generic component slot — `any` is the correct escape hatch so any block
+    // component can be assigned.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tableBlock?: ComponentType<any>
   }
   interface ObjectComponents {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tableBlock?: ComponentType<any>
   }
 }
