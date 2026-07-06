@@ -1,5 +1,6 @@
+import {PatchOperations} from '@sanity/types'
 import {Card, Flex, Inline, Switch, Text} from '@sanity/ui'
-import {ChangeEvent, ComponentType, Fragment} from 'react'
+import {ChangeEvent, ComponentType, Fragment, useState} from 'react'
 import {
   ArrayOfObjectsFormNode,
   ArrayOfObjectsItemMember,
@@ -13,6 +14,7 @@ import {
   pathToString,
   PortableTextBlock,
 } from 'sanity'
+import {styled} from 'styled-components'
 
 import {useToggleTitles} from '../hooks/useToggleTitles'
 import ContentPortableTextInput from '../portable-text/ContentPortableTextEditor'
@@ -22,11 +24,20 @@ import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
 import ColumnContextMenu from './ColumnContextMenu'
 import ColumnHeaderWithInput from './ColumnHeaderWithInput'
+import ColumnResizeHandle from './ColumnResizeHandle'
 import RowContextMenu from './RowContextMenu'
 import RowHeaderWithInput from './RowHeaderWithInput'
 import TableButtons from './TableButtons'
 import TableGrid from './TableGrid'
 import TableScrollWrapper from './TableScrollWrapper'
+
+// Wraps a column header so the resize handle can sit absolutely in a right-hand
+// gutter without overlapping the header's context-menu button.
+const ColumnHeaderCell = styled.div`
+  position: relative;
+  min-width: 0;
+  padding-inline-end: 8px;
+`
 
 // TODO: make row title / context menu sticky to the left side when scrolling horizontally?
 const Table: ComponentType<
@@ -91,6 +102,66 @@ const Table: ComponentType<
     path,
   )
 
+  // Column widths are stored per header; while dragging we keep an optimistic
+  // draft keyed by column so the grid resizes live before the patch lands.
+  const [draftWidths, setDraftWidths] = useState<Record<string, number>>({})
+
+  // Reconcile drafts against persisted widths during render (React's "adjust
+  // state when a prop changes" pattern — not an effect, so no cascading render)
+  // so a committed drag doesn't flash back and later external edits (undo,
+  // collaboration) take over instead of being masked by a stale draft.
+  const [reconciledMembers, setReconciledMembers] = useState(columnHeaderMembers)
+  if (columnHeaderMembers !== reconciledMembers) {
+    setReconciledMembers(columnHeaderMembers)
+    setDraftWidths((prev) => {
+      if (Object.keys(prev).length === 0) return prev
+      const next = {...prev}
+      let changed = false
+      columnHeaderMembers?.forEach((member) => {
+        const {_key, width} = member.item.value
+        if (_key in next && next[_key] === width) {
+          delete next[_key]
+          changed = true
+        }
+      })
+      return changed ? next : prev
+    })
+  }
+
+  const columnWidths = columnHeaderMembers?.map(
+    (colHeaderMember) =>
+      draftWidths[colHeaderMember.item.value._key] ?? colHeaderMember.item.value.width,
+  )
+
+  // Plain handlers (not `useCallback`) so the React Compiler memoizes them — a
+  // manual `useCallback` closing over `columnHeaderMembers` can't be preserved.
+  const handleColumnResize = (columnKey: string, width: number, applyToAll: boolean) => {
+    setDraftWidths((prev) => {
+      if (!applyToAll) {
+        return {...prev, [columnKey]: width}
+      }
+      // Shift-drag sizes every column to the dragged width ("widen all").
+      const next: Record<string, number> = {}
+      columnHeaderMembers?.forEach((member) => {
+        next[member.item.value._key] = width
+      })
+      return next
+    })
+  }
+
+  const handleColumnResizeEnd = (columnKey: string, width: number, applyToAll: boolean) => {
+    if (props.readOnly) return
+    const keysToSet = applyToAll
+      ? (columnHeaderMembers?.map((member) => member.item.value._key) ?? [])
+      : [columnKey]
+    const setPatch: PatchOperations = {
+      set: Object.fromEntries(
+        keysToSet.map((key) => [`${path}.columnHeaders[_key=="${key}"].width`, width]),
+      ),
+    }
+    patch.execute([setPatch])
+  }
+
   return (
     <Card
       padding={3}
@@ -113,6 +184,7 @@ const Table: ComponentType<
             $rowCount={value?.rows?.length || 0}
             // we need to add one extra column for the row titles / context menu
             $columnCount={value?.columnHeaders?.length ? value?.columnHeaders?.length + 1 : 0}
+            $columnWidths={columnWidths}
             $isInDialog={false}
             $hasRowTitles={hasRowTitles}
             role="table"
@@ -125,24 +197,21 @@ const Table: ComponentType<
               const colHeaderItem = colHeaderMember.item.value
               // TODO: force remount when columnHeader value has changed in dialog but not in inline table input -> this is maybe caused by missing blur event in the input👇
               return (
-                <Fragment key={colHeaderItem._key}>
+                <ColumnHeaderCell key={colHeaderItem._key} role="columnheader">
                   {hasColumnTitles && (
                     <ColumnHeaderWithInput
                       columnHeader={colHeaderItem}
                       patch={patch}
                       value={value!}
                       path={path}
-                      key={colHeaderItem._key}
                       columnIndex={columnIndex}
                       rowCount={value?.rows?.length || 0}
                       columnCount={value?.columnHeaders?.length || 0}
                       readOnly={props.readOnly}
-                      role="columnheader"
                     />
                   )}
                   {!hasColumnTitles && (
                     <ColumnContextMenu
-                      key={colHeaderItem._key}
                       columnIndex={columnIndex}
                       columnHeaderKey={colHeaderItem._key}
                       patch={patch}
@@ -152,10 +221,17 @@ const Table: ComponentType<
                       columnCount={value?.columnHeaders?.length || 0}
                       iconHorizontal
                       readOnly={props.readOnly}
-                      role="columnheader"
                     />
                   )}
-                </Fragment>
+                  {!props.readOnly && (
+                    <ColumnResizeHandle
+                      columnKey={colHeaderItem._key}
+                      columnIndex={columnIndex}
+                      onResize={handleColumnResize}
+                      onResizeEnd={handleColumnResizeEnd}
+                    />
+                  )}
+                </ColumnHeaderCell>
               )
             })}
 
