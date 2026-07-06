@@ -118,7 +118,16 @@ export default defineConfig({
                   name: 'link',
                   type: 'object',
                   icon: LinkIcon,
-                  fields: [{name: 'href', type: 'url', title: 'URL'}],
+                  fields: [
+                    defineField({
+                      name: 'href',
+                      type: 'url',
+                      title: 'URL',
+                      // Allow email and telephone links in addition to web URLs.
+                      validation: (Rule) =>
+                        Rule.uri({scheme: ['http', 'https', 'mailto', 'tel']}),
+                    }),
+                  ],
                   // Annotations use Sanity's native `components.annotation` slot.
                   components: {annotation: LinkAnnotation},
                 },
