@@ -14,16 +14,17 @@ const MIN_COLUMN_WIDTH = 48
 // Nudge per arrow-key press, for keyboard-driven resizing.
 const KEYBOARD_STEP = 16
 
-// A persistent faint divider marks the draggable boundary between columns so the
-// affordance is discoverable; it thickens to the focus-ring colour on hover /
-// focus and while the resize is active — the dragged column, or every column
+// A persistent divider marks the draggable column boundary so the affordance is
+// discoverable. Its guide line is pinned to the cell's right edge so it lines up
+// with the cell separators below, and thickens to the focus-ring colour on hover
+// / focus and while the resize is active — the dragged column, or every column
 // during a Shift-drag (see the `active` prop), so "resize all" is visible.
 const Handle = styled.button`
   position: absolute;
   top: 0;
   bottom: 0;
   right: 0;
-  width: 9px;
+  width: 8px;
   padding: 0;
   border: none;
   background: transparent;
@@ -35,14 +36,12 @@ const Handle = styled.button`
   &::after {
     content: '';
     position: absolute;
-    top: 10%;
-    bottom: 10%;
-    left: 50%;
+    top: 0;
+    bottom: 0;
+    right: 0;
     width: 2px;
-    transform: translateX(-50%);
-    border-radius: 2px;
     background: var(--card-border-color);
-    opacity: 0.6;
+    opacity: 0.75;
     transition:
       opacity 100ms,
       width 100ms,
@@ -52,7 +51,7 @@ const Handle = styled.button`
   &:hover::after,
   &:focus::after,
   &[data-active='true']::after {
-    width: 3px;
+    width: 4px;
     opacity: 1;
     background: var(--card-focus-ring-color);
   }
