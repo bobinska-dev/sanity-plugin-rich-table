@@ -57,6 +57,10 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
   const [isFocused, setIsFocused] = useState(false)
 
   const inputId = `row-header-input-${row._key}`
+  // Remount when the external title changes (undo, collaboration) so the input
+  // reflects it instead of keeping a stale local value — mirrors ColumnHeaderWithInput.
+  const remountKey = `${row._key}-${(row.title ?? '').replace(/[^a-zA-Z0-9-_:.]/g, '-')}`
+
   const handleChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const newTitle = event.target.value
     setTitle(newTitle)
@@ -64,13 +68,19 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
 
   const handleBlur = useCallback(() => {
     setIsFocused(false)
-    const setPatch: PatchOperations = {
-      set: {
-        [`${path}.rows[_key=="${row._key}"].title`]: title,
-      },
+    if (readOnly) return
+    // Only patch when the title actually changed, so tabbing through — or
+    // re-focusing after an external edit — doesn't emit a redundant patch that
+    // would clobber undo/redo.
+    if (title !== row.title) {
+      const setPatch: PatchOperations = {
+        set: {
+          [`${path}.rows[_key=="${row._key}"].title`]: title,
+        },
+      }
+      patch.execute([setPatch])
     }
-    return patch.execute([setPatch])
-  }, [path, row._key, title, patch])
+  }, [path, row._key, row.title, title, patch, readOnly])
 
   const newRowTitle = `${rowIndex ? rowIndex + 1 : 1}`
   return (
@@ -90,6 +100,7 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
       >
         <TextInput
           id={inputId}
+          key={remountKey}
           onChange={handleChange}
           onBlur={handleBlur}
           onKeyDown={(e) => {

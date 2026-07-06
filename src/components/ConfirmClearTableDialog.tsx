@@ -64,7 +64,7 @@ const ConfirmClearTableDialog: ComponentType<ConfirmClearTableDialogProps> = ({
             text={'Cancel'}
             mode={'ghost'}
             onClick={onClose}
-            tone={'critical'}
+            tone={'default'}
             aria-label={'Cancel clear table'}
             disabled={isProcessing || readOnly}
           />
@@ -72,7 +72,7 @@ const ConfirmClearTableDialog: ComponentType<ConfirmClearTableDialogProps> = ({
             text={'Confirm'}
             mode={'ghost'}
             onClick={handleConfirm}
-            tone={'positive'}
+            tone={'critical'}
             aria-label={'Confirm clear table'}
             disabled={isProcessing || readOnly}
           />
