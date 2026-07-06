@@ -32,16 +32,18 @@ Please be aware, that this plugin is still growing - so while this first version
 
 | Plugin version | Sanity | React | Node   |
 | -------------- | ------ | ----- | ------ |
-| **≥ 1.1.0**   | **5.x** (≥ 5.11.0) | 19    | ≥ 18   |
-| 1.0.5          | 3.x / 4.x / 5.x (< 5.13) | 18–19 | ≥ 18   |
+| **≥ 1.1.0**   | **5.x** (≥ 5.13.0) | 19    | ≥ 18   |
+| ≥ 1.0.6        | 4.x / 5.x (< 5.13) | 19    | ≥ 18   |
 
-> **Why the change?** Starting with Sanity **5.13.0**, the internal `@portabletext/sanity-bridge` package was upgraded to v3, which requires `@portabletext/editor` v6 and `@portabletext/toolbar` v7. These packages in turn require **React 19**. Plugin versions **≥ 1.1.0** ship the updated `@portabletext/*` stack so that studio builds (`sanity build`, `sanity deploy`, etc.) work correctly.
+> **Why the change?** Starting with Sanity **5.13.0**, the internal `@portabletext/sanity-bridge` package was upgraded to v3, which requires `@portabletext/editor` v6 and `@portabletext/toolbar` v7. Plugin versions **≥ 1.1.0** ship the updated `@portabletext/*` stack so that studio builds (`sanity build`, `sanity deploy`, etc.) work correctly on Sanity **≥ 5.13**.
 >
-> If you are on **Sanity 3 or 4** (React 18), pin the plugin to the last compatible release:
+> If you are on **Sanity 4** (or **Sanity 5 < 5.13**), install the latest **`1.0.x`** release, which ships the matching `@portabletext/editor` v5 stack:
 >
 > ```sh
-> npm install sanity-plugin-rich-table@1.0.5
+> npm install sanity-plugin-rich-table@^1.0.6
 > ```
+>
+> Both lines require **React 19**. Sanity 3 (React 18) is not supported.
 
 ## Installation
 
