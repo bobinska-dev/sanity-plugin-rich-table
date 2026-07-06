@@ -5,6 +5,81 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.0.0](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.2.2...v2.0.0) (2026-07-06)
+
+### ⚠ BREAKING CHANGES
+
+- **pt:** table slots on all block types; drop customBlockTypes options
+
+### Features
+
+- add reference block support and update dependencies ([df958df](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/df958dfd61694e7be54b5533a7e7e68de5ba19f5))
+- custom plugin config and component updates ([6595e86](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/6595e86a1374994b308710ccd6763e33aff0bb3b))
+- **diff:** port rich table Review-changes diff to the v6 cell-PT line ([a4a4228](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/a4a4228e7c1ba35dff76f05f51f8b65434b855dd))
+- **diff:** show inline before→after diff for rich table cells ([40cb69e](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/40cb69eb5c35de399c1beb20552330acb34a326d))
+- enhance custom block rendering with improved media display and new image field ([b320a0a](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/b320a0a54096ac8164644f0a04ef7ae4373c2fb2))
+- enhance rich table plugin with custom block support and UI improvements ([7e171af](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/7e171af8b68d9bb5610e66c91189743690af4386))
+- **import:** native table import (field action, inline button, paste) ([c79b653](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/c79b653cebbdbf286f56624685cbbeaec1aaf295))
+- make resize handles discoverable and show "resize all" on Shift-drag ([2e2d86a](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/2e2d86af8e0d746c059adbe090dd0f94c4bcfbe0))
+- **pt:** add inline-object insert buttons to the cell toolbar ([24215f4](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/24215f4d341780479dbea785b9f8e1bf3c38a05e))
+- **pt:** default inline-object renderer, overridable via tableInlineBlock ([3da4ff4](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/3da4ff41bbf97ce8c5d01e4d5eb3d834e2231ff9))
+- **pt:** edit annotations & inline objects via the native document form ([36c9d29](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/36c9d29ed7d6c02476b931bd6f688a45c6e48b64))
+- **pt:** fully customisable cell PTE — schema-driven marks + render components ([eb65db1](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/eb65db10289bee792161ef1c453624936ad80eaf))
+- **pt:** make styles/decorators/annotations/lists schema-driven ([a238aa6](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/a238aa6fa987b43b964f09076314a414aca11fc4))
+- **pt:** make the slash-command picker schema-driven and vertical ([60c89b6](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/60c89b650ce16f7bdeda5008ef360ad939205479))
+- **pt:** render cell annotations via a tableAnnotation sibling slot ([a1efd5e](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/a1efd5ed210309d61c7a3799c12b6fffaccea21b))
+- **pt:** render custom inline objects in cells via components.inlineBlock ([b4649ef](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/b4649efaa8b78b3782a397f79c1d3087316317ea))
+- **pt:** table slots on all block types; drop customBlockTypes options ([940352c](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/940352c242ed96c74163626e1f493f63d93c39c5))
+- resize table columns via header drag handles ([37ab3d1](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/37ab3d10b33b6012849dec89e8f18f10f6846512))
+- resize the row-title column too ([adb8d6b](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/adb8d6bc74b28367eba41f82799335e2a9dfe5fe))
+- **studio:** allow mailto and tel schemes on customPT link annotation ([907529e](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/907529e9688d79421a37ea7ea0e3ca465142ea0c))
+- **table:** drive expanded editor modal state via Structure URL params ([3903e2e](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/3903e2e2509ee00c6fe773a7f61147849f5cfc68))
+- **table:** promote first row/column to headers from the context menu ([70ccec0](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/70ccec0d5bf6a69d7240cf592e38a9d85146e7e8))
+- **table:** schema-defined per-table validation via richTableRules ([0eaa462](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/0eaa462496f5b2e6d1aa8770a177da51c9bea91a))
+- update ReferenceBlock and renderBlock for improved image handling and clean up TODO comments ([80beb70](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/80beb708b2eead85d3dbe3849c35dd8fdfd06b95))
+
+### Bug Fixes
+
+- **a11y:** make selection popovers keyboard-accessible ([42b9327](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/42b932707e6077c52d314cb02e31d59194b036f3))
+- **a11y:** make table ARIA-navigable and fix control accessibility ([45b6f54](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/45b6f54e6b9f7ec22caafa9f037f70073b13c789))
+- **a11y:** move focus into the selection popover on Tab ([6cdb7e8](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/6cdb7e83fc593a05c362bd51a525a00266d62157))
+- **a11y:** namespace context-menu ids, drop unused cell id (review) ([3c8c06c](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/3c8c06ce21206c161c07a0e7ecc46c500118e989))
+- address PR review — guard column widths and harden reconciliation ([487e0f8](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/487e0f87ed467772d94aa55efc28d79ee4efd093))
+- align resize handle to the column separator and make it clearer ([5aee299](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/5aee299818c0890aac1d85ad80cf14b05e3e5305))
+- **ci:** move pnpm overrides to pnpm-workspace.yaml for pnpm 11 ([283f2ad](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/283f2ad86d6e8acdbf0e943fff24d5bd32470eed))
+- CSV/markdown parser edge cases + tests for v2 surfaces ([7f65845](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/7f658451f1a463d2028aadb7a58495df5e40e2b0))
+- **deps:** dedupe React to one version to stop useMemoCache errors ([4030acc](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/4030accab35d34a12b54c3065e3e7576b486ad78))
+- **deps:** pin vitest to 4.1.9 to pass the pnpm 11 release-age gate ([1d2e879](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/1d2e8794396ebef86b368320ab19ac8ea09e066e))
+- **deps:** require React 19 peer to align with Sanity v6 and PT toolbar ([868a15f](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/868a15ffe530c17d55ad4f03e1cb4baaad1da202))
+- diff column key fallback + centralize diff/critical tint colors ([4dcb22d](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/4dcb22de46a07e83bce36b01d789a9c7e5c7cb99))
+- focus the resize handle on click so arrow-key resizing works ([d189358](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/d1893581de28bb1a48b35a57915daac7e677d9cb))
+- give the row-title column a min width so titles aren't hidden ([0078bbf](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/0078bbf93b30156407efb67f0bc694645b8d80f3))
+- **import:** address review — richTableBlock PT type + no eager xlsx load ([0ac8fb3](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/0ac8fb3327d9b646b05329862e11b29772006a84))
+- **import:** detect plain column headers in a labeled-matrix HTML table ([a7c4ce5](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/a7c4ce5c4bbd010907a383adaa975c33303967e6))
+- **import:** use npm-registry xlsx@0.18.5 for lockfile integrity ([39148a7](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/39148a7a63fa504a5f9a418a541c6957351cbc5f))
+- **pickers:** keep arrow-key scrolling inside the picker, not the viewport ([6941e90](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/6941e90fb75ceb0c80abf6811ef934c5672ed037))
+- **pickers:** reveal the last/first option fully when arrowing to an edge ([d10ba6e](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/d10ba6e20b7ea2f80a71767c5a162e3782c45d8a))
+- **pt:** align slash-command picker icons with the toolbar ([a194cf4](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/a194cf4839f24f4654e2266928171cca7c249c14))
+- **pt:** align slash-command rows with a fixed icon gutter ([1215abe](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/1215abeb0ce7b2649a0544eba61218b408377ced))
+- **pt:** built-in cell fallbacks render real previews and open on double-click ([01ac7c2](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/01ac7c268f5cf9da40b6b6c59b33c445f435ee61))
+- **pt:** collapse the native member-edit dialog stack to the innermost ([eef8bd0](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/eef8bd09ca22c632db07f3dfa53f9c5f2abfcb0f))
+- **pt:** edit inline objects via a tableInlineBlock sibling slot ([7e73651](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/7e736515b4207eff47336c6af9743c39c47c5292))
+- **pt:** make custom inline objects selectable and show their toolbar icon ([0a07e96](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/0a07e9604147ecd8f089f3cf5d0f947453012043))
+- **pt:** wrap slash-command row labels in Box so lines stack ([8ab28f5](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/8ab28f5f9198b4acf5f12f186ad16cd211fe394b))
+- QA a11y + schema hygiene, rename DefaultCustomBlock ([db45c0b](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/db45c0b37bed055349bc013739810edd21fb9266))
+- QA high/medium — readOnly sync, HTML span/nesting/href, leaks, dup keys ([2521ed6](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/2521ed6d45a86312d5fb602d400b26314953d9b2))
+- review — autoFocus safe dialog action + consolidate key generation ([c1c72d5](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/c1c72d5a6bb2e823d6bbb0d331ee76193be485f1))
+- **studio:** remove invalid nested-array member from customPT dev schema ([49d3658](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/49d36583ec8168cc0a1e567a40480a825d59d796))
+- **table:** detect array-member context by path, not schema walk ([11862a2](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/11862a2893ed4d85f261ea602c344d5247337de2))
+- **table:** give initial cells fully-keyed Portable Text values ([1068547](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/106854726a78eddf18fc6f5fbf8b66d4c9d0c253))
+- **table:** preserve \_type/\_key when initialising a table in PT or an array ([ca095a6](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/ca095a6322cdc251839067183b3e6f6560aefdfd))
+- **table:** preserve array-item \_key when initializing a renamed richTable member ([5584e53](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/5584e5376c844cfbfd39c1ee32c0f54c3cfdfd15))
+- **table:** QA polish — row-title undo/redo, clear-dialog tones, schema hygiene ([0b6cea7](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/0b6cea7a955f511c43e3804cf83c3d194e604fa3))
+
+### Performance Improvements
+
+- **pt:** adopt native PT plugins + v6 APIs, drop hand-rolled code ([dc6835c](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/dc6835c19a9b911fc78ddffb702e0f7920656ef7)), closes [#2](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/2) [#3](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/3)
+
 ## [1.2.2](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.2.1...v1.2.2) (2026-07-06)
 
 ### Bug Fixes
