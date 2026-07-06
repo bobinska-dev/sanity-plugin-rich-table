@@ -14,6 +14,7 @@ Please be aware, that this plugin is still growing - so while this first version
 - Rich table schema type `richTable` with Portable Text based cells
 - Portable Text block type `richTableBlock`
 - Portable Text editor goodies like Slash commands, Markdown shortcuts, LinkPlugin and emoji picker - thanks to the amazing work of Christian Groengaard!
+- **Fully customizable cell content** — bring your own Portable Text schema (styles, decorators, annotations, block objects, inline objects) with in-cell render components (see [Customizing cell content](README.md#customizing-cell-content))
 - Optional row and column titles
 - **Per-table validation** (min rows / columns, required row / column titles) that surfaces inline on the offending cell, header or field marker (see [Validation](README.md#validation))
 - Expandable table dialog
@@ -33,16 +34,22 @@ Please be aware, that this plugin is still growing - so while this first version
 
 ## Compatibility
 
-| Plugin version | Sanity                   | React | Node |
-| -------------- | ------------------------ | ----- | ---- |
-| **≥ 1.1.0**    | **5.x** (≥ 5.11.0)       | 19    | ≥ 18 |
-| 1.0.5          | 3.x / 4.x / 5.x (< 5.13) | 18–19 | ≥ 18 |
+The plugin ships two lines. **2.x** targets Sanity 6 and is the `latest` release; **1.x** stays on Sanity 5 as a maintenance line.
 
-> **Why the change?** Starting with Sanity **5.13.0**, the internal `@portabletext/sanity-bridge` package was upgraded to v3, which requires `@portabletext/editor` v6 and `@portabletext/toolbar` v7. These packages in turn require **React 19**. Plugin versions **≥ 1.1.0** ship the updated `@portabletext/*` stack so that studio builds (`sanity build`, `sanity deploy`, etc.) work correctly.
->
-> If you are on **Sanity 3 or 4** (React 18), pin the plugin to the last compatible release:
+| Plugin version | Sanity                   | React | Node    |
+| -------------- | ------------------------ | ----- | ------- |
+| **≥ 2.0.0**    | **6.x**                  | 19    | ≥ 22.12 |
+| 1.1.x          | 5.x (≥ 5.11.0)           | 19    | ≥ 18    |
+| 1.0.5          | 3.x / 4.x / 5.x (< 5.13) | 18–19 | ≥ 18    |
+
+> **Why the split?** Sanity 6 bundles `@portabletext/editor` v7 / `@portabletext/toolbar` v8 and requires **Node ≥ 22.12**. Because the plugin's Portable Text editor/toolbar are version-coupled to the Studio's, a Sanity major means a plugin major. Pin the line that matches your Studio:
 >
 > ```sh
+> # Sanity 6
+> npm install sanity-plugin-rich-table       # latest (≥ 2.0.0)
+> # Sanity 5
+> npm install sanity-plugin-rich-table@^1.1
+> # Sanity 3 / 4 (React 18)
 > npm install sanity-plugin-rich-table@1.0.5
 > ```
 
@@ -66,7 +73,14 @@ import {richTablePlugin} from 'sanity-plugin-rich-table'
 
 export default defineConfig({
   //...
-  plugins: [richTablePlugin({})],
+  plugins: [
+    richTablePlugin({
+      // Optional. Name of a Portable Text array type in your schema, used for the
+      // content of every table cell. Omit it and cells use the built-in default
+      // (bold, italic, headings, lists, links, …). See "Customizing cell content".
+      portableTextSchemaTypeName: 'tableCellContent',
+    }),
+  ],
 })
 ```
 
@@ -92,6 +106,71 @@ defineArrayMember({
   type: 'richTableBlock', // Use the rich table block type
 })
 ```
+
+## Customizing cell content
+
+Every cell is a Portable Text editor. By default it offers the standard marks (bold, italic, headings, lists, links). To control exactly what editors can do in a cell — your own styles, decorators, annotations, block objects and inline objects — define a Portable Text **array type** in your schema and pass its name as `portableTextSchemaTypeName` (omit it and cells use the default).
+
+```ts
+// schemas/tableCellContent.ts — a normal Portable Text array
+import {defineArrayMember, defineType} from 'sanity'
+
+export const tableCellContent = defineType({
+  name: 'tableCellContent',
+  type: 'array',
+  of: [
+    defineArrayMember({
+      type: 'block',
+      styles: [
+        {title: 'Normal', value: 'normal'},
+        {title: 'Heading', value: 'h2'},
+      ],
+      lists: [{title: 'Bullet', value: 'bullet'}],
+      marks: {
+        decorators: [
+          {title: 'Strong', value: 'strong'},
+          {title: 'Emphasis', value: 'em'},
+        ],
+        annotations: [{name: 'link', type: 'object', fields: [{name: 'href', type: 'url'}]}],
+      },
+    }),
+  ],
+})
+```
+
+Register `tableCellContent` in your schema `types`, then point the plugin at it:
+
+```ts
+plugins: [richTablePlugin({portableTextSchemaTypeName: 'tableCellContent'})]
+```
+
+The cell toolbar, slash-command picker and markdown shortcuts all follow this schema.
+
+### Custom render components
+
+To render your own marks and objects **inside the cells**, attach a component. Styles and decorators use Sanity's native `component` field; annotations, block objects and inline objects use a **table-specific sibling slot**:
+
+| What          | Slot                          | Component props        |
+| ------------- | ----------------------------- | ---------------------- |
+| Style         | `component` (native)          | `BlockStyleProps`      |
+| Decorator     | `component` (native)          | `BlockDecoratorProps`  |
+| Annotation    | `components.tableAnnotation`  | `BlockAnnotationProps` |
+| Block object  | `components.tableBlock`       | `BlockProps`           |
+| Inline object | `components.tableInlineBlock` | `BlockProps`           |
+
+The `table*` slots are siblings of Sanity's native `annotation` / `block` / `inlineBlock`: the plugin renders them in the cell, while the native slot is left for Sanity's default rendering so the built-in edit form (opened from the cell's edit button) keeps working. If you don't supply a component, cells fall back to a sensible default (image / reference preview, a titled chip for inline objects, and so on).
+
+```ts
+// a footnote annotation with a custom in-cell renderer
+{
+  name: 'footnote',
+  type: 'object',
+  fields: [{name: 'text', type: 'string'}],
+  components: {tableAnnotation: FootnoteAnnotation},
+}
+```
+
+See **[Using a custom Portable Text schema](./docs/README.md#using-a-custom-portable-text-schema)** for copy-paste minimal and advanced examples covering every slot.
 
 ## Validation
 
@@ -251,7 +330,6 @@ See [Reviewing changes](./docs/README.md#reviewing-changes) in the docs for deta
 
 ## Features coming
 
-- More customization options for table styles and behaviors
 - Additional cell types and content options
 - Improved performance for large tables
 - Enhanced accessibility features
