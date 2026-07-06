@@ -150,6 +150,7 @@ const Table: ComponentType<
                         readOnly={props.readOnly}
                         role="columnheader"
                         validationTone={colValidation.tone}
+                        tableId={tableId}
                       />
                     )}
                     {!hasColumnTitles && (
@@ -165,6 +166,7 @@ const Table: ComponentType<
                         iconHorizontal
                         readOnly={props.readOnly}
                         role="columnheader"
+                        tableId={tableId}
                       />
                     )}
                   </Fragment>
@@ -206,6 +208,7 @@ const Table: ComponentType<
                           readOnly={props.readOnly}
                           role="rowheader"
                           validationTone={rowTitleTone}
+                          tableId={tableId}
                         />
                       )}
                       {cellIndex === 0 && !hasRowTitles && (
@@ -217,6 +220,7 @@ const Table: ComponentType<
                           path={path}
                           readOnly={props.readOnly}
                           role="rowheader"
+                          tableId={tableId}
                         />
                       )}
                       {/* PTE CELL CONTENT */}

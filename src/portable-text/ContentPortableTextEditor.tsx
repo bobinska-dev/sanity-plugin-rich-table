@@ -8,7 +8,6 @@ import {
   ArrayDefinition,
   ArraySchemaType,
   InputProps,
-  pathToString,
   PortableTextBlock,
   useFormValue,
   useSchema,
@@ -156,7 +155,6 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
       <Card
         role={props.role}
         tone={props.validationTone ?? 'default'}
-        id={`portable-text-${pathToString(props.path)}`}
         border
         style={{position: 'relative'}}
       >

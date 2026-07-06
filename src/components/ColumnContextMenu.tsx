@@ -43,10 +43,12 @@ const ColumnContextMenu: ComponentType<ColumnMenuButtonProps> = (props) => {
     iconHorizontal,
     readOnly,
     role,
-    // tableId is available for future use
+    tableId,
   } = props
   const columnHeaderPathString = `${path}.columnHeaders[_key=="${columnHeaderKey}"]`
-  const menuId = `column-menu-${columnHeaderKey}`
+  // Namespace the menu/button ids per table instance so the inline table and the
+  // expanded-table dialog don't emit duplicate DOM ids when both are mounted.
+  const menuId = `${tableId ? `${tableId}-` : ''}column-menu-${columnHeaderKey}`
   const buttonId = `${menuId}-button`
 
   const handleDeleteColumn = useCallback(() => {

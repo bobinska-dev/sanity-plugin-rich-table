@@ -24,6 +24,9 @@ interface RowContextMenuProps {
   path: string
   readOnly: boolean | undefined
   role?: string
+  /** Namespaces the menu/button ids per table instance so the inline table and
+   * the expanded-table dialog don't emit duplicate DOM ids when both are mounted. */
+  tableId?: string
 }
 
 /** # Menu button for each row in the table
@@ -45,8 +48,9 @@ const RowContextMenu: ComponentType<RowContextMenuProps> = ({
   rowCount,
   readOnly,
   role,
+  tableId,
 }) => {
-  const menuId = `row-menu-${rowIndex}`
+  const menuId = `${tableId ? `${tableId}-` : ''}row-menu-${rowIndex}`
   // * Handle delete row
   const handleDeleteRow = useCallback(() => {
     const rowUnsetPatch = {
