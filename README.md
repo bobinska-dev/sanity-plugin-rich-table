@@ -363,6 +363,19 @@ with default configuration for build & watch scripts.
 See [Testing a plugin in Sanity Studio](https://github.com/sanity-io/plugin-kit#testing-a-plugin-in-sanity-studio)
 on how to run this plugin with hotreload in the studio.
 
+### Package manager
+
+The repo pins its pnpm version through the `packageManager` field in `package.json`,
+so local development and CI run the exact same pnpm. Enable [Corepack](https://nodejs.org/api/corepack.html)
+once and your `pnpm` will match automatically:
+
+```sh
+corepack enable
+```
+
+> Node ships Corepack; if `pnpm` doesn't pick up the pinned version, run `corepack prepare --activate`.
+> Bump the version in the `packageManager` field to upgrade — nothing else needs changing.
+
 ### Running tests
 
 ```sh
