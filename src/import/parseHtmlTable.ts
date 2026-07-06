@@ -57,7 +57,21 @@ export function parseHtmlTable(html: string): ParseResult {
   const firstRowCells = Array.from(htmlRows[0].children)
   const hasThHeader = firstRowCells.length > 0 && firstRowCells.every((c) => c.tagName === 'TH')
   const hasBoldHeader = !hasThHeader && isFirstRowAllBold(htmlRows[0])
-  const hasHeader = (hasThHeader || hasBoldHeader) && htmlRows.length >= 2
+
+  // Labeled-matrix header: a table with bold row titles down the first column
+  // AND an empty top-left corner almost always carries a column-header row
+  // across the top — even when those header cells are plain text (not bold, not
+  // <th>). This is the classic spreadsheet "matrix" layout (empty corner,
+  // labels on both axes) that Google Sheets / Excel paste with plain top cells.
+  const hasMatrixHeader =
+    !hasThHeader &&
+    !hasBoldHeader &&
+    firstRowCells.length >= 2 &&
+    isCellEmpty(firstRowCells[0]) &&
+    firstRowCells.slice(1).some((c) => !isCellEmpty(c)) &&
+    isFirstColumnAllBold(htmlRows)
+
+  const hasHeader = (hasThHeader || hasBoldHeader || hasMatrixHeader) && htmlRows.length >= 2
 
   const headers = hasHeader ? firstRowCells.map((c) => c.textContent?.trim() ?? '') : null
 
@@ -100,6 +114,11 @@ function isFirstRowAllBold(row: Element): boolean {
   if (nonEmptyCells.length === 0) return false
 
   return nonEmptyCells.every((cell) => isCellEntirelyBold(cell))
+}
+
+/** Returns `true` when a cell has no non-whitespace text content. */
+function isCellEmpty(cell: Element | undefined): boolean {
+  return !cell || (cell.textContent?.trim() ?? '').length === 0
 }
 
 /**

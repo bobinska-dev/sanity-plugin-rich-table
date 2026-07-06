@@ -454,6 +454,35 @@ describe('parseHtmlTable', () => {
     expect(result.table.hasRowTitles).toBe(true)
   })
 
+  it('detects plain top row as headers in a labeled matrix (empty corner + bold row titles)', () => {
+    // Classic spreadsheet layout: empty top-left corner, plain column headers
+    // across the top, bold row titles down the side. The plain header row must
+    // still be lifted into `headers` rather than kept as data row 1.
+    const html = `<table>
+      <tr><td></td><td>Name</td><td>Phone</td></tr>
+      <tr><td><b>Office Manager</b></td><td>Øyvind</td><td>+47</td></tr>
+      <tr><td><b>Cleaner</b></td><td>Billy</td><td>+44</td></tr>
+    </table>`
+
+    const result = parseHtmlTable(html)
+    expect(result.table.headers).toEqual(['', 'Name', 'Phone'])
+    expect(result.table.hasRowTitles).toBe(true)
+    expect(result.table.rows).toHaveLength(2)
+  })
+
+  it('does NOT treat a non-empty corner as a matrix header', () => {
+    // Corner cell has content → ambiguous, so do not lift the first row.
+    const html = `<table>
+      <tr><td>Region</td><td>Name</td></tr>
+      <tr><td><b>North</b></td><td>Alice</td></tr>
+      <tr><td><b>South</b></td><td>Bob</td></tr>
+    </table>`
+
+    const result = parseHtmlTable(html)
+    expect(result.table.headers).toBeNull()
+    expect(result.table.rows).toHaveLength(3)
+  })
+
   // --- totalRows truncation ---
 
   it('sets totalRows when rows exceed MAX_IMPORT_ROWS', () => {
