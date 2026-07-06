@@ -12,6 +12,8 @@ import type {BlockProps} from 'sanity'
  * NOTE: this editor is built on `@portabletext/editor`, which supplies the child
  * render props (value/schemaType/selected/focused + the rendered `children`) but
  * not Sanity's full form-interaction props — those are passed through as-is.
+ * Editing is handled separately: the toolbar's InlineObjectPopover opens the
+ * inline object in Sanity's native document form via `useDocumentPane().onPathOpen`.
  */
 export type InlineObjectComponent = ComponentType<BlockProps>
 

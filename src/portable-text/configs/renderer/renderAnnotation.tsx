@@ -9,9 +9,9 @@ import type {BlockAnnotationProps} from 'sanity'
  *
  * NOTE: this editor is built on `@portabletext/editor`, which supplies the
  * annotated text (as `children`) but not Sanity's full form-interaction props
- * (`onOpen`/`renderInput`/`textElement`/…). Those are passed through as-is and
- * are not yet wired to a default editing modal — see the `useDocumentPane`
- * follow-up in AnnotationDialog.
+ * (`onOpen`/`renderInput`/`textElement`/…). Editing is handled separately: the
+ * toolbar's AnnotationPopover opens the annotation in Sanity's native document
+ * form via `useDocumentPane().onPathOpen`.
  */
 export type AnnotationComponent = ComponentType<BlockAnnotationProps>
 

@@ -26,6 +26,7 @@ import {createExtendStyles} from '../../configs/extendStyles'
 import {extractBlockConfig} from '../../configs/extractBlockConfig'
 import AnnotationPopover from '../annotation/AnnotationPopover'
 import BlockPopover from '../custom-blocks/BlockPopover'
+import InlineObjectPopover from '../custom-blocks/InlineObjectPopover'
 import StyleSelector from '../StyleSelector'
 import AnnotationButton from './AnnotationButton'
 import BlockButton from './BlockButton'
@@ -364,11 +365,17 @@ const ButtonToolbar: ComponentType<{
           aria-controls={popoverId}
         />
       </Popover>
-      {toolbarSchema.annotations && <AnnotationPopover schemaTypes={toolbarSchema.annotations} />}
-      {/* Only render the block popover while this editor is focused, so a selected
-          block's popover doesn't persist when focus moves to another PT editor. */}
+      {toolbarSchema.annotations && (
+        <AnnotationPopover schemaTypes={toolbarSchema.annotations} path={path} />
+      )}
+      {/* Only render the block/inline-object popovers while this editor is focused,
+          so a selected member's popover doesn't persist when focus moves to another
+          PT editor. Both edit via the native document form (onPathOpen). */}
       {focused && toolbarSchema.blockObjects && (
         <BlockPopover schemaTypes={toolbarSchema.blockObjects} path={path} />
+      )}
+      {focused && toolbarSchema.inlineObjects && (
+        <InlineObjectPopover schemaTypes={toolbarSchema.inlineObjects} path={path} />
       )}
     </>
   )
