@@ -60,6 +60,8 @@ interface ContentPortableTextInputProps {
   validation?: ValidationMarker[]
   /** Cell tone derived from the most severe marker (`critical` / `caution`). */
   validationTone?: 'critical' | 'caution'
+  /** ARIA role for the rendered root (e.g. `"cell"` when used as a table cell). */
+  role?: string
 }
 
 /** # ContentPortableTextInput
@@ -152,6 +154,7 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
   return (
     <Suspense fallback={<LoadingIndicator />}>
       <Card
+        role={props.role}
         tone={props.validationTone ?? 'default'}
         id={`portable-text-${pathToString(props.path)}`}
         border

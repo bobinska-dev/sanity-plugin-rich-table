@@ -42,6 +42,7 @@ const ColumnContextMenu: ComponentType<ColumnMenuButtonProps> = (props) => {
     value,
     iconHorizontal,
     readOnly,
+    role,
     // tableId is available for future use
   } = props
   const columnHeaderPathString = `${path}.columnHeaders[_key=="${columnHeaderKey}"]`
@@ -245,7 +246,7 @@ const ColumnContextMenu: ComponentType<ColumnMenuButtonProps> = (props) => {
     [columnIndex, path, value, patch],
   )
 
-  return (
+  const menuButton = (
     <MenuButton
       button={
         <Button
@@ -307,6 +308,17 @@ const ColumnContextMenu: ComponentType<ColumnMenuButtonProps> = (props) => {
       }
       popover={{placement: 'right', portal: true}}
     />
+  )
+
+  // When rendered directly as a grid header cell (role provided), wrap so the
+  // ARIA `columnheader` lands on the cell that contains the menu button rather
+  // than on the button itself (which must keep its own button role).
+  return role ? (
+    <div role={role} style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+      {menuButton}
+    </div>
+  ) : (
+    menuButton
   )
 }
 export default ColumnContextMenu

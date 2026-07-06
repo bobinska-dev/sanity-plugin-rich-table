@@ -43,6 +43,7 @@ export const ColumnHeaderWithInput: ComponentType<ColumnHeaderWithInputProps> = 
   value,
   readOnly,
   validationTone,
+  role,
 }) => {
   const [title, setTitle] = useState(columnHeader.title || '')
   const [isFocused, setIsFocused] = useState(false)
@@ -73,6 +74,7 @@ export const ColumnHeaderWithInput: ComponentType<ColumnHeaderWithInputProps> = 
 
   return (
     <StyledCard
+      role={role}
       shadow={isFocused ? 1 : undefined}
       tone={isFocused ? 'primary' : validationTone}
       paddingX={1}

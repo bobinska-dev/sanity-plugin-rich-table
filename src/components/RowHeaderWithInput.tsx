@@ -41,6 +41,7 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
   rowCount,
   readOnly,
   validationTone,
+  role,
 }) => {
   const [title, setTitle] = useState(row.title || '')
   const [isFocused, setIsFocused] = useState(false)
@@ -64,6 +65,7 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
   const newRowTitle = `${rowIndex ? rowIndex + 1 : 1}`
   return (
     <Flex
+      role={role}
       direction="row"
       gap={1}
       justify="flex-start"

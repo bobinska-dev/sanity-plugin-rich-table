@@ -371,15 +371,15 @@ const RichTableInput: ComponentType<
             checked={debug}
             onChange={handleDebugChange}
             label={'Open field to debug'}
-            id={'debug-toggle'}
+            id={`${tableId}-debug-toggle`}
           />
-          <Text as={'label'} htmlFor={'debug-toggle'} size={0} muted>
+          <Text as={'label'} htmlFor={`${tableId}-debug-toggle`} size={0} muted>
             Debug mode
           </Text>
         </Inline>
         <Flex gap={3} justify={'flex-end'} align={'center'}>
           <Inline space={2}>
-            <Text as={'label'} htmlFor={'row-title-toggle'} size={0} muted>
+            <Text as={'label'} htmlFor={`${tableId}-row-title-toggle`} size={0} muted>
               Show row titles
             </Text>
             <Switch
@@ -390,11 +390,11 @@ const RichTableInput: ComponentType<
               }
               disabled={props.readOnly}
               label={'Show row titles'}
-              id={'row-title-toggle'}
+              id={`${tableId}-row-title-toggle`}
             />
           </Inline>
           <Inline space={2}>
-            <Text as={'label'} htmlFor={'column-title-toggle'} size={0} muted>
+            <Text as={'label'} htmlFor={`${tableId}-column-title-toggle`} size={0} muted>
               Show column titles
             </Text>
             <Switch
@@ -404,7 +404,7 @@ const RichTableInput: ComponentType<
               }
               disabled={props.readOnly}
               label={'Show column titles'}
-              id={'column-title-toggle'}
+              id={`${tableId}-column-title-toggle`}
             />
           </Inline>
         </Flex>

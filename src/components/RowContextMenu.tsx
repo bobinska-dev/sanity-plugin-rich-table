@@ -44,6 +44,7 @@ const RowContextMenu: ComponentType<RowContextMenuProps> = ({
   path,
   rowCount,
   readOnly,
+  role,
 }) => {
   const menuId = `row-menu-${rowIndex}`
   // * Handle delete row
@@ -116,7 +117,7 @@ const RowContextMenu: ComponentType<RowContextMenuProps> = ({
     },
     [patch, path, row, rowIndex],
   )
-  return (
+  const menuButton = (
     <MenuButton
       button={
         <Button
@@ -167,6 +168,17 @@ const RowContextMenu: ComponentType<RowContextMenuProps> = ({
       }
       popover={{placement: 'right', portal: true}}
     />
+  )
+
+  // When rendered directly as a grid header cell (role provided), wrap so the
+  // ARIA `rowheader` lands on the cell that contains the menu button rather than
+  // on the button itself (which must keep its own button role).
+  return role ? (
+    <div role={role} style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+      {menuButton}
+    </div>
+  ) : (
+    menuButton
   )
 }
 export default RowContextMenu
