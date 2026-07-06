@@ -31,6 +31,79 @@ const PLACEHOLDER_TAGS: Record<string, string> = {
   SVG: 'complex content',
 }
 
+/** Safe URL schemes for pasted links. */
+const ALLOWED_HREF_SCHEMES = ['http', 'https', 'mailto', 'tel']
+
+/**
+ * A table's OWN rows (direct, or via thead/tbody/tfoot) — NOT rows from a table
+ * nested inside a cell. `querySelectorAll('tr')` is recursive and would pull a
+ * nested table's rows into the outer table, corrupting the row structure.
+ */
+function getTableRows(table: Element): Element[] {
+  return Array.from(
+    table.querySelectorAll(
+      ':scope > tr, :scope > thead > tr, :scope > tbody > tr, :scope > tfoot > tr',
+    ),
+  )
+}
+
+/** A row's OWN cells (direct children), so a nested table's cells don't leak in. */
+function getRowCells(row: Element): Element[] {
+  return Array.from(row.querySelectorAll(':scope > td, :scope > th'))
+}
+
+/** Parse a colspan/rowspan attribute to a positive integer (default 1). */
+function parseSpan(value: string | null): number {
+  const n = parseInt(value ?? '', 10)
+  return Number.isFinite(n) && n > 0 ? n : 1
+}
+
+/**
+ * Expand `<tr>` rows into a rectangular occupancy grid honouring colspan/rowspan:
+ * a merged cell fills its top-left slot with the cell element and the remaining
+ * covered slots with `null` (rendered as empty cells), so every column stays
+ * aligned instead of shifting left after a merge. Ragged rows are padded to the
+ * widest row so the result is rectangular.
+ */
+function buildCellGrid(rowEls: Element[]): (Element | null)[][] {
+  const grid: (Element | null)[][] = rowEls.map(() => [])
+  rowEls.forEach((tr, r) => {
+    let col = 0
+    for (const cell of getRowCells(tr)) {
+      // Skip columns already occupied by a rowspan carried down from above.
+      while (grid[r][col] !== undefined) col++
+      const colspan = parseSpan(cell.getAttribute('colspan'))
+      const rowspan = parseSpan(cell.getAttribute('rowspan'))
+      for (let dr = 0; dr < rowspan && r + dr < rowEls.length; dr++) {
+        for (let dc = 0; dc < colspan; dc++) {
+          grid[r + dr][col + dc] = dr === 0 && dc === 0 ? cell : null
+        }
+      }
+      col += colspan
+    }
+  })
+  const maxCols = grid.reduce((max, row) => Math.max(max, row.length), 0)
+  return grid.map((row) => {
+    const padded = row.slice()
+    for (let c = 0; c < maxCols; c++) if (padded[c] === undefined) padded[c] = null
+    return padded
+  })
+}
+
+/**
+ * Allow only safe URL schemes for a pasted link; drop `javascript:` / `data:` /
+ * etc. so an imported href can't smuggle a script or data URL. Relative, anchor
+ * and protocol-relative links pass through.
+ */
+function sanitizeHref(href: string | null): string | undefined {
+  const trimmed = href?.trim()
+  if (!trimmed) return undefined
+  if (/^(#|\/|\.{1,2}\/)/.test(trimmed)) return trimmed
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(trimmed)?.[1]?.toLowerCase()
+  if (!scheme) return trimmed // no scheme → relative path
+  return ALLOWED_HREF_SCHEMES.includes(scheme) ? trimmed : undefined
+}
+
 /**
  * Parses an HTML string containing a `<table>` into a {@link ParseResult},
  * preserving rich formatting (decorators, links, lists) as Portable Text.
@@ -47,14 +120,14 @@ export function parseHtmlTable(html: string): ParseResult {
     return {table: {headers: null, rows: []}, warnings}
   }
 
-  const htmlRows = Array.from(table.querySelectorAll('tr'))
+  const htmlRows = getTableRows(table)
 
   if (htmlRows.length === 0) {
     return {table: {headers: null, rows: []}, warnings}
   }
 
   // Detect header row: <th> cells, or all-bold first row (common in Google Sheets / web tables)
-  const firstRowCells = Array.from(htmlRows[0].children)
+  const firstRowCells = getRowCells(htmlRows[0])
   const hasThHeader = firstRowCells.length > 0 && firstRowCells.every((c) => c.tagName === 'TH')
   const hasBoldHeader = !hasThHeader && isFirstRowAllBold(htmlRows[0])
 
@@ -73,20 +146,32 @@ export function parseHtmlTable(html: string): ParseResult {
 
   const hasHeader = (hasThHeader || hasBoldHeader || hasMatrixHeader) && htmlRows.length >= 2
 
-  const headers = hasHeader ? firstRowCells.map((c) => c.textContent?.trim() ?? '') : null
-
+  // Cap body rows before expanding (bounds work + memory on very large pastes).
   const bodyHtmlRows = hasHeader ? htmlRows.slice(1) : htmlRows
   const truncated = bodyHtmlRows.length > MAX_IMPORT_ROWS
   const limitedRows = bodyHtmlRows.slice(0, MAX_IMPORT_ROWS)
 
-  const rows: CellValue[][] = limitedRows.map((tr, rowIdx) => {
-    const cells = Array.from(tr.querySelectorAll('td, th'))
-    return cells.map((td, colIdx) => {
-      const {blocks, cellWarnings} = parseCellContent(td, rowIdx, colIdx)
+  // Expand colspan/rowspan into a rectangular grid (header + capped body) so cells
+  // stay column-aligned even when the source merges cells.
+  const gridRowEls = hasHeader ? [htmlRows[0], ...limitedRows] : limitedRows
+  const grid = buildCellGrid(gridRowEls)
+  const maxCols = grid.reduce((max, row) => Math.max(max, row.length), 0)
+
+  const headerGridRow = hasHeader ? grid[0] : null
+  const headers = headerGridRow
+    ? Array.from({length: maxCols}, (_, c) => headerGridRow[c]?.textContent?.trim() ?? '')
+    : null
+
+  const bodyGrid = hasHeader ? grid.slice(1) : grid
+  const rows: CellValue[][] = bodyGrid.map((gridRow, rowIdx) =>
+    Array.from({length: maxCols}, (_, colIdx) => {
+      const cell = gridRow[colIdx]
+      if (!cell) return [] // empty cell, or a slot covered by a colspan/rowspan
+      const {blocks, cellWarnings} = parseCellContent(cell, rowIdx, colIdx)
       warnings.push(...cellWarnings)
       return blocks
-    })
-  })
+    }),
+  )
 
   // Detect bold first column as row titles
   const hasRowTitles = isFirstColumnAllBold(limitedRows)
@@ -107,7 +192,7 @@ export function parseHtmlTable(html: string): ParseResult {
  * `<th>` tags (common in Google Sheets and many web tables).
  */
 function isFirstRowAllBold(row: Element): boolean {
-  const cells = Array.from(row.querySelectorAll('td, th'))
+  const cells = getRowCells(row)
   if (cells.length === 0) return false
 
   const nonEmptyCells = cells.filter((c) => (c.textContent?.trim() ?? '').length > 0)
@@ -130,7 +215,7 @@ function isFirstColumnAllBold(dataRows: Element[]): boolean {
 
   const firstCells = dataRows
     .map((tr) => {
-      const cells = tr.querySelectorAll('td, th')
+      const cells = getRowCells(tr)
       return cells.length > 0 ? cells[0] : null
     })
     .filter((c): c is Element => c !== null)
@@ -380,9 +465,9 @@ function extractSpans(
     // CSS inline style fallbacks
     addStyleBasedMarks(childEl, marks)
 
-    // Link annotation
+    // Link annotation (href sanitized: only safe schemes, no javascript:/data:)
     if (tag === 'A') {
-      const href = childEl.getAttribute('href')
+      const href = sanitizeHref(childEl.getAttribute('href'))
       if (href) {
         const markKey = generateKey()
         markDefs.push({_type: 'link', _key: markKey, href})

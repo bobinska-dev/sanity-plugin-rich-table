@@ -509,3 +509,54 @@ describe('parseHtmlTable', () => {
     expect(result.totalRows).toBeUndefined()
   })
 })
+
+describe('parseHtmlTable — spans, nesting, and link sanitization', () => {
+  const cellText = (cell: unknown): string => {
+    if (!Array.isArray(cell) || cell.length === 0) return ''
+    return ((cell[0] as any).children ?? []).map((c: any) => c.text ?? '').join('')
+  }
+
+  it('expands colspan into empty aligned cells', () => {
+    const html = `<table>
+      <tr><td colspan="2">Wide</td><td>C</td></tr>
+      <tr><td>A</td><td>B</td><td>D</td></tr>
+    </table>`
+    const {table} = parseHtmlTable(html)
+    expect(table.rows[0]).toHaveLength(3)
+    expect(cellText(table.rows[0][0])).toBe('Wide')
+    expect(table.rows[0][1]).toEqual([]) // slot covered by the colspan → empty
+    expect(cellText(table.rows[0][2])).toBe('C')
+    expect(table.rows[1].map(cellText)).toEqual(['A', 'B', 'D'])
+  })
+
+  it('expands rowspan into the row below', () => {
+    const html = `<table>
+      <tr><td rowspan="2">Tall</td><td>B1</td></tr>
+      <tr><td>B2</td></tr>
+    </table>`
+    const {table} = parseHtmlTable(html)
+    expect(table.rows).toHaveLength(2)
+    expect(table.rows[1]).toHaveLength(2)
+    expect(table.rows[1][0]).toEqual([]) // covered by the rowspan above
+    expect(cellText(table.rows[1][1])).toBe('B2')
+  })
+
+  it('ignores rows from a table nested inside a cell', () => {
+    const html = `<table>
+      <tr><td>Outer<table><tr><td>Inner1</td></tr><tr><td>Inner2</td></tr></table></td><td>B</td></tr>
+    </table>`
+    const {table} = parseHtmlTable(html)
+    expect(table.rows).toHaveLength(1) // nested <tr>s must not become outer rows
+    expect(table.rows[0]).toHaveLength(2)
+  })
+
+  it('drops unsafe link schemes but keeps http(s)', () => {
+    const html = `<table><tr><td><a href="javascript:alert(1)">x</a></td><td><a href="https://ok.example">y</a></td></tr></table>`
+    const {table} = parseHtmlTable(html)
+    const markDefs = (cell: unknown) => ((cell as any)?.[0]?.markDefs ?? []) as any[]
+    expect(markDefs(table.rows[0][0])).toHaveLength(0) // javascript: stripped
+    const safe = markDefs(table.rows[0][1])
+    expect(safe).toHaveLength(1)
+    expect(safe[0].href).toBe('https://ok.example')
+  })
+})

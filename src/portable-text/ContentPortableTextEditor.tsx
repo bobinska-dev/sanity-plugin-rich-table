@@ -1,9 +1,9 @@
-import {EditorConfig, EditorProvider} from '@portabletext/editor'
+import {EditorConfig, EditorProvider, useEditor} from '@portabletext/editor'
 import {ListIndexProvider} from '@portabletext/plugin-list-index'
 import {MarkdownShortcutsPlugin} from '@portabletext/plugin-markdown-shortcuts'
 import {PasteLinkPlugin} from '@portabletext/plugin-paste-link'
 import {Card} from '@sanity/ui'
-import {ComponentType, Suspense, useCallback, useMemo, useRef, useState} from 'react'
+import {ComponentType, Suspense, useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {
   ArrayDefinition,
   ArraySchemaType,
@@ -61,6 +61,21 @@ interface ContentPortableTextInputProps {
   validationTone?: 'critical' | 'caution'
   /** ARIA role for the rendered root (e.g. `"cell"` when used as a table cell). */
   role?: string
+}
+
+/**
+ * Keeps the editor's `readOnly` in sync with the prop after mount. `initialConfig`
+ * only seeds `readOnly` once, so a field that flips read-only later (conditional
+ * `readOnly`, publish lock, release scheduling) would otherwise stay
+ * keyboard-editable and write through the mutation→patch bridge even though the
+ * toolbar is hidden. `update readOnly` is the editor's public external event.
+ */
+const SyncReadOnly: ComponentType<{readOnly: boolean}> = ({readOnly}) => {
+  const editor = useEditor()
+  useEffect(() => {
+    editor.send({type: 'update readOnly', readOnly})
+  }, [editor, readOnly])
+  return null
 }
 
 /** # ContentPortableTextInput
@@ -160,6 +175,7 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
       >
         {/* eslint-disable-next-line react-hooks/refs */}
         <EditorProvider initialConfig={initialConfig.current}>
+          <SyncReadOnly readOnly={props.readOnly ?? false} />
           <CustomListenerPlugin
             _id={_id}
             _type={_type}

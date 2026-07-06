@@ -128,10 +128,15 @@ const ReferenceBlock: ComponentType<BlockRenderProps> = (props) => {
   useEffect(() => {
     // Scoped inside the effect so the cleanup closes over this run's subscription
     // (a component-scope `let` reassigned from within the effect is reset every
-    // render and would be lost — react-hooks/exhaustive-deps).
+    // render and would be lost — react-hooks/exhaustive-deps). `cancelled` guards
+    // against a fast unmount / `_ref` change resolving the async fetch chain after
+    // teardown: it prevents setState-after-unmount and stops `listen()` from
+    // opening a subscription the (already-run) cleanup could never unsubscribe.
+    let cancelled = false
     let subscription: Subscription | undefined
     if (value._ref) {
       const listen = () => {
+        if (cancelled) return
         subscription = client
           .listen(query, params, {
             visibility: 'query',
@@ -140,7 +145,7 @@ const ReferenceBlock: ComponentType<BlockRenderProps> = (props) => {
           })
           .subscribe(() =>
             client.fetch(query, params).then((data) => {
-              setRefDoc(data)
+              if (!cancelled) setRefDoc(data)
             }),
           )
       }
@@ -148,14 +153,17 @@ const ReferenceBlock: ComponentType<BlockRenderProps> = (props) => {
       client
         .fetch(query, params)
         .then((data) => {
-          setRefDoc(data)
+          if (!cancelled) setRefDoc(data)
         })
         .then(listen)
-        .catch(console.error)
+        .catch((error) => {
+          if (!cancelled) console.error(error)
+        })
 
       // * Cleanup
       // Never forget to unsubscribe from the listener
       return function cleanup() {
+        cancelled = true
         if (subscription) {
           subscription.unsubscribe()
         }
