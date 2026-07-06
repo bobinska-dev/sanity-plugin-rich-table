@@ -64,7 +64,10 @@ export function usePopoverA11y() {
       if (event.key !== 'Tab' || event.shiftKey) return
       if (contentEl.contains(document.activeElement)) return // already inside — let it cycle
       const active = document.activeElement as HTMLElement | null
-      if (!active?.isContentEditable) return // only when the caret is in an editable
+      // Only when focus is in the editor's editable. A selected block object is a
+      // void node (`contenteditable="false"`), so check the editable ancestor too,
+      // not just `isContentEditable` on the active element itself.
+      if (!active?.isContentEditable && !active?.closest('[contenteditable="true"]')) return
       const first = contentEl.querySelector<HTMLElement>(FOCUSABLE)
       if (first) {
         event.preventDefault()
