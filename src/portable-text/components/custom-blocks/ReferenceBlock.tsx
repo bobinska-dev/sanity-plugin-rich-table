@@ -105,8 +105,11 @@ const ReferenceBlock: ComponentType<BlockRenderProps> = (props) => {
   const params = {refId: value._ref}
 
   // listen to changes in the reference and update the preview accordingly
-  let subscription: Subscription
   useEffect(() => {
+    // Scoped inside the effect so the cleanup closes over this run's subscription
+    // (a component-scope `let` reassigned from within the effect is reset every
+    // render and would be lost — react-hooks/exhaustive-deps).
+    let subscription: Subscription | undefined
     if (value._ref) {
       const listen = () => {
         subscription = client
@@ -139,6 +142,10 @@ const ReferenceBlock: ComponentType<BlockRenderProps> = (props) => {
       }
     }
     return undefined
+    // Intentionally keyed on the reference id only: `query` is schema-derived
+    // (stable), `params`/`value._key` derive from `value._ref`, and `client` is
+    // stable — listing them would re-subscribe on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value._ref])
 
   const renderMedia = () => {
