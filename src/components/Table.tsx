@@ -51,6 +51,8 @@ const Table: ComponentType<
   ObjectInputProps<RichTableType> & {
     handleOpen?: () => void
     isInDialog?: boolean
+    /** Whether the expanded-editor dialog is currently open for this table. */
+    isExpanded?: boolean
     isInPortableText?: boolean
     /** Patch function from Sanity document operations for optimistic changes */
     patch: OperationsAPI['patch']
@@ -59,6 +61,7 @@ const Table: ComponentType<
   }
 > = ({
   isInDialog = false,
+  isExpanded = false,
   handleOpen,
   value,
   onChange,
@@ -100,6 +103,12 @@ const Table: ComponentType<
   const columnHeaderMembers = columnHeaderFieldMember?.field.members as ArrayOfObjectsItemMember<
     ObjectArrayFormNode<ColumnHeader & ObjectItem>
   >[]
+
+  // The inline table and the expanded dialog are mounted at the same time and
+  // share the URL-param-driven promote confirmation. Only the active surface
+  // (the dialog when open, else the inline table) renders it, so we don't get
+  // two stacked modals fighting for focus.
+  const ownsRouteDialog = isInDialog || !isExpanded
 
   const {hasColumnTitles, hasRowTitles} = value!
   const {toggleColumnTitles, toggleRowTitles} = useToggleTitles(
@@ -280,6 +289,7 @@ const Table: ComponentType<
                         readOnly={props.readOnly}
                         validationTone={colValidation.tone}
                         tableId={tableId}
+                        ownsRouteDialog={ownsRouteDialog}
                       />
                     )}
                     {!hasColumnTitles && (
@@ -294,6 +304,7 @@ const Table: ComponentType<
                         iconHorizontal
                         readOnly={props.readOnly}
                         tableId={tableId}
+                        ownsRouteDialog={ownsRouteDialog}
                       />
                     )}
                     {!props.readOnly && (
@@ -348,6 +359,8 @@ const Table: ComponentType<
                           role="rowheader"
                           validationTone={rowTitleTone}
                           tableId={tableId}
+                          value={value!}
+                          ownsRouteDialog={ownsRouteDialog}
                         />
                       )}
                       {cellIndex === 0 && !hasRowTitles && (
@@ -360,6 +373,8 @@ const Table: ComponentType<
                           readOnly={props.readOnly}
                           role="rowheader"
                           tableId={tableId}
+                          value={value!}
+                          ownsRouteDialog={ownsRouteDialog}
                         />
                       )}
                       {/* PTE CELL CONTENT */}

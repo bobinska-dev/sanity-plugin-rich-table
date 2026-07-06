@@ -4,6 +4,7 @@ import {ChangeEvent, ComponentType, useCallback, useState} from 'react'
 import {OperationsAPI} from 'sanity'
 import {styled} from 'styled-components'
 
+import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
 import RowContextMenu from './RowContextMenu'
 
@@ -32,6 +33,10 @@ interface RowHeaderWithInputProps {
   validationTone?: 'critical' | 'caution'
   /** Table-instance namespace forwarded to the row context menu's ids. */
   tableId?: string
+  /** Full table value — forwarded to the row context menu for the promote action. */
+  value: RichTableType
+  /** Forwarded to the row context menu; see {@link RowContextMenu}. */
+  ownsRouteDialog?: boolean
 }
 
 /** Row header component with input field for editing the row title */
@@ -45,6 +50,8 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
   validationTone,
   role,
   tableId,
+  value,
+  ownsRouteDialog,
 }) => {
   const [title, setTitle] = useState(row.title || '')
   const [isFocused, setIsFocused] = useState(false)
@@ -116,6 +123,8 @@ const RowHeaderWithInput: ComponentType<RowHeaderWithInputProps> = ({
           rowCount={rowCount}
           readOnly={readOnly}
           tableId={tableId}
+          value={value}
+          ownsRouteDialog={ownsRouteDialog}
         />
       </Box>
     </Flex>

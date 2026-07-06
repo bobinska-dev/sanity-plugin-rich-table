@@ -33,6 +33,8 @@ interface ColumnHeaderWithInputProps {
   validationTone?: 'critical' | 'caution'
   /** Table-instance namespace forwarded to the column context menu's ids. */
   tableId?: string
+  /** Forwarded to the column context menu; see {@link ColumnContextMenu}. */
+  ownsRouteDialog?: boolean
 }
 
 export const ColumnHeaderWithInput: ComponentType<ColumnHeaderWithInputProps> = ({
@@ -47,6 +49,7 @@ export const ColumnHeaderWithInput: ComponentType<ColumnHeaderWithInputProps> = 
   validationTone,
   role,
   tableId,
+  ownsRouteDialog,
 }) => {
   const [title, setTitle] = useState(columnHeader.title || '')
   const [isFocused, setIsFocused] = useState(false)
@@ -122,6 +125,7 @@ export const ColumnHeaderWithInput: ComponentType<ColumnHeaderWithInputProps> = 
           columnCount={columnCount}
           readOnly={readOnly}
           tableId={tableId}
+          ownsRouteDialog={ownsRouteDialog}
         />
       </Flex>
     </StyledCard>

@@ -336,6 +336,10 @@ const RichTableInput: ComponentType<
               <Table
                 {...props}
                 isInDialog={false}
+                // When the expanded dialog is open both tables are mounted; let the
+                // dialog's table own the URL-param promote confirmation (avoids a
+                // duplicate modal behind the dialog).
+                isExpanded={openDialog}
                 handleOpen={handleOpen}
                 patch={patch}
                 isInPortableText={props.isInPortableText}
