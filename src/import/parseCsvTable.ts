@@ -7,7 +7,7 @@ import {MAX_IMPORT_ROWS} from './types'
  * Handles:
  * - Quoted fields (fields containing commas, double-quotes, or newlines)
  * - Escaped double-quotes (`""` inside quoted fields)
- * - Both `\r\n` and `\n` line endings
+ * - `\r\n`, `\n`, and lone `\r` (classic-Mac) line endings
  *
  * @see https://www.rfc-editor.org/rfc/rfc4180
  */
@@ -69,6 +69,13 @@ function parseCsvRows(input: string): string[][] {
       rows.push(row)
       row = []
       i += 2
+    } else if (ch === '\r') {
+      // Lone CR (classic-Mac line ending, or a stray carriage return)
+      row.push(field)
+      field = ''
+      rows.push(row)
+      row = []
+      i++
     } else if (ch === '\n') {
       row.push(field)
       field = ''

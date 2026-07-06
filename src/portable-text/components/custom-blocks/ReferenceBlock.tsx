@@ -35,7 +35,7 @@ const ReferenceBlock: ComponentType<BlockRenderProps> = (props) => {
   // * PREP
   const schemaType = props.schemaType as unknown as ReferenceSchemaType
   const value = props.value as PortableTextBlock & ReferenceValue
-  const refSchemaTypes = schemaType.to
+  const refSchemaTypes = schemaType.to ?? []
 
   // * STATES
   const [refDoc, setRefDoc] = useState<{

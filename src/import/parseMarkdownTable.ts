@@ -67,8 +67,12 @@ export function parseMarkdownTable(text: string): ParseResult {
   const truncated = allRawRows.length > MAX_IMPORT_ROWS
   const rawRows = truncated ? allRawRows.slice(0, MAX_IMPORT_ROWS) : allRawRows
 
+  // Row titles only when the first column actually has bold-wrapped labels. An
+  // all-empty first column must NOT be misread as titles — `every()` is vacuously
+  // true when every first cell is empty — so require at least one non-empty label.
+  const firstColumnCells = rawRows.map((row) => row[0] ?? '').filter((cell) => cell !== '')
   const hasRowTitles =
-    rawRows.length > 0 && rawRows.every((row) => !row[0] || BOLD_WRAP_RE.test(row[0]))
+    firstColumnCells.length > 0 && firstColumnCells.every((cell) => BOLD_WRAP_RE.test(cell))
 
   const rows: CellValue[][] = rawRows.map((row, rowIdx) =>
     row.map((cell, colIdx) => parseMarkdownCell(cell, rowIdx, colIdx, warnings)),

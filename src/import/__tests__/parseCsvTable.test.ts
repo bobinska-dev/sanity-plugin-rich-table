@@ -86,4 +86,13 @@ describe('parseCsvTable', () => {
     expect(result.table.rows[0]).toEqual(['1', '2', '3'])
     expect(result.table.rows[1]).toEqual(['4', '5'])
   })
+
+  it('splits on lone CR (classic-Mac) line endings', () => {
+    const result = parseCsvTable('A,B\r1,2\r3,4')
+    expect(result.table.headers).toEqual(['A', 'B'])
+    expect(result.table.rows).toEqual([
+      ['1', '2'],
+      ['3', '4'],
+    ])
+  })
 })

@@ -210,4 +210,20 @@ describe('parseMarkdownTable', () => {
     const result = parseMarkdownTable(md)
     expect(result.totalRows).toBeUndefined()
   })
+
+  it('does not treat an all-empty first column as row titles', () => {
+    const md = `| | Name |
+| - | - |
+| | Alice |
+| | Bob |`
+    expect(parseMarkdownTable(md).table.hasRowTitles).toBeUndefined()
+  })
+
+  it('detects a bold-wrapped first column as row titles', () => {
+    const md = `| | Name |
+| - | - |
+| **Row 1** | Alice |
+| **Row 2** | Bob |`
+    expect(parseMarkdownTable(md).table.hasRowTitles).toBe(true)
+  })
 })

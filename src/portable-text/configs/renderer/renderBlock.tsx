@@ -61,7 +61,11 @@ export const renderBlock = (options?: RenderBlockOptions): RenderBlockFunction =
     // A reference type carries `to` (its allowed targets) even when it's a *named*
     // array member (e.g. `fallbackReference`); detect it on the original schema so
     // named references still get the document preview instead of the generic card.
-    if (original?.name === 'reference' || Array.isArray(original?.to)) {
+    if (
+      props.schemaType.name === 'reference' ||
+      original?.name === 'reference' ||
+      Array.isArray(original?.to)
+    ) {
       return withEdit(<ReferenceBlock {...withSchema} />)
     }
 
