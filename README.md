@@ -10,7 +10,8 @@ Please be aware, that this plugin is still growing - so while this first version
 
 - 100% Typescript
 - Initialise a table with intuitive table selection by click or drag
-- **Import tables** from CSV, TSV, Excel (`.xlsx`), HTML or Markdown — via the field-actions menu, an inline button, or by pasting (see [Importing tables](README.md#importing-tables))
+- **Import tables** from CSV, TSV, Excel (`.xlsx`), HTML or Markdown — via the field-actions menu, an inline button, or by pasting into the import dialog (see [Importing tables](README.md#importing-tables))
+- **Paste tables straight into Portable Text** — a spreadsheet / HTML / Markdown table pasted into a document body becomes a `richTableBlock` (surrounding prose is kept). Opt in by adding the exported `RichTablePastePlugin` to your Studio config at the Portable Text editor level (see [Paste-to-import](README.md#paste-to-import-opt-in))
 - Rich table schema type `richTable` with Portable Text based cells
 - Portable Text block type `richTableBlock`
 - Portable Text editor goodies like Slash commands, Markdown shortcuts, LinkPlugin and emoji picker - thanks to the amazing work of Christian Groengaard!
