@@ -1,4 +1,13 @@
-import {AsteriskIcon, HighlightIcon, IceCreamIcon, ImageIcon, LinkIcon} from '@sanity/icons'
+import {
+  AsteriskIcon,
+  BulbOutlineIcon,
+  HighlightIcon,
+  IceCreamIcon,
+  ImageIcon,
+  LinkIcon,
+  TagIcon,
+  TokenIcon,
+} from '@sanity/icons'
 import {visionTool} from '@sanity/vision'
 import {defineArrayMember, defineConfig, defineField, defineType} from 'sanity'
 import {structureTool} from 'sanity/structure'
@@ -193,6 +202,16 @@ export default defineConfig({
                 // the object (onPathOpen), while the cell editor renders MentionInline.
                 components: {tableInlineBlock: MentionInline},
               }),
+              // FALLBACK DEMO — inline object with NO tableInlineBlock, so the
+              // cell renders the built-in DefaultInlineBlock title chip.
+              defineArrayMember({
+                name: 'fallbackInline',
+                title: 'Token (fallback demo)',
+                type: 'object',
+                icon: TokenIcon,
+                fields: [defineField({name: 'label', type: 'string'})],
+                preview: {select: {title: 'label'}},
+              }),
             ],
             // Demo of a fully customisable cell PTE: the standard marks plus a
             // custom style, decorator and annotation (each with its own icon).
@@ -249,6 +268,15 @@ export default defineConfig({
                   fields: [{name: 'text', type: 'string', title: 'Note'}],
                   components: {tableAnnotation: FootnoteAnnotation},
                 },
+                // FALLBACK DEMO — annotation with NO tableAnnotation, so the cell
+                // renders the built-in dotted-underline default (data-annotation="keyword").
+                {
+                  name: 'keyword',
+                  type: 'object',
+                  title: 'Keyword (fallback demo)',
+                  icon: TagIcon,
+                  fields: [defineField({name: 'term', type: 'string', title: 'Term'})],
+                },
               ],
             },
           }),
@@ -275,6 +303,32 @@ export default defineConfig({
                 type: 'string',
               }),
             ],
+            preview: {
+              select: {
+                title: 'title',
+              },
+            },
+          }),
+          // FALLBACK DEMO — reference with NO tableBlock, so the cell renders the
+          // built-in ReferenceBlock (fetches & previews the referenced document).
+          defineArrayMember({
+            type: 'reference',
+            name: 'fallbackReference',
+            title: 'Reference (fallback demo)',
+            to: [{type: 'myRichTableDocument'}],
+          }),
+          // FALLBACK DEMO — plain object with NO tableBlock, so the cell renders
+          // the built-in DefaultCustomBlock (schema preview select/prepare + icon).
+          defineArrayMember({
+            type: 'object',
+            name: 'fallbackCallout',
+            title: 'Callout (fallback demo)',
+            icon: BulbOutlineIcon,
+            fields: [
+              defineField({name: 'title', type: 'string'}),
+              defineField({name: 'body', type: 'text'}),
+            ],
+            preview: {select: {title: 'title', subtitle: 'body'}},
           }),
         ],
       }),
