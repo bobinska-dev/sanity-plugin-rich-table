@@ -385,14 +385,20 @@ const ButtonToolbar: ComponentType<{
       {toolbarSchema.annotations && (
         <AnnotationPopover schemaTypes={toolbarSchema.annotations} path={path} />
       )}
-      {/* Only render the block/inline-object popovers while this editor is focused,
-          so a selected member's popover doesn't persist when focus moves to another
-          PT editor. Both edit via the native document form (onPathOpen). */}
-      {focused && toolbarSchema.blockObjects && (
-        <BlockPopover schemaTypes={toolbarSchema.blockObjects} path={path} />
+      {/* Pass `focused` rather than gating the mount on it: the popovers stay
+          mounted while focus is within their own content (see usePopoverA11y), so a
+          keyboard user can Tab to the edit/remove actions. They still collapse when
+          focus leaves both the editable and the popover. Both edit via the native
+          document form (onPathOpen). */}
+      {toolbarSchema.blockObjects && (
+        <BlockPopover schemaTypes={toolbarSchema.blockObjects} path={path} focused={focused} />
       )}
-      {focused && toolbarSchema.inlineObjects && (
-        <InlineObjectPopover schemaTypes={toolbarSchema.inlineObjects} path={path} />
+      {toolbarSchema.inlineObjects && (
+        <InlineObjectPopover
+          schemaTypes={toolbarSchema.inlineObjects}
+          path={path}
+          focused={focused}
+        />
       )}
     </>
   )

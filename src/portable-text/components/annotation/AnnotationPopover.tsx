@@ -5,6 +5,8 @@ import {ComponentType} from 'react'
 import {Path} from 'sanity'
 import {useDocumentPane} from 'sanity/structure'
 
+import {usePopoverA11y} from '../usePopoverA11y'
+
 /** Popover listing the annotations on the current selection, with edit/remove.
  *
  * @param props - `schemaTypes`: {@link ToolbarAnnotationSchemaType} the annotation
@@ -29,10 +31,14 @@ const AnnotationPopover: ComponentType<{
 }> = (props) => {
   const annotationPopover = useAnnotationPopover(props)
   const documentPane = useDocumentPane()
+  const {focusWithin, contentProps} = usePopoverA11y()
 
+  // Stay mounted while focus is inside the popover, so a keyboard user can Tab to
+  // the edit/remove actions without the machine's blur collapsing it.
   if (
-    annotationPopover.snapshot.matches('disabled') ||
-    annotationPopover.snapshot.matches({enabled: 'inactive'})
+    !focusWithin &&
+    (annotationPopover.snapshot.matches('disabled') ||
+      annotationPopover.snapshot.matches({enabled: 'inactive'}))
   ) {
     return null
   }
@@ -50,7 +56,13 @@ const AnnotationPopover: ComponentType<{
       content={
         // Keep the editor focused when interacting with the popover, otherwise the
         // focused-gate in ButtonToolbar would unmount it before the buttons fire.
-        <Box padding={3} onMouseDown={(e) => e.preventDefault()}>
+        <Box
+          {...contentProps}
+          padding={3}
+          role="dialog"
+          aria-label="Annotation actions"
+          onMouseDown={(e) => e.preventDefault()}
+        >
           <Stack space={3}>
             {annotationPopover.snapshot.context.annotations.map((annotation) => (
               <Flex key={annotation.value._key} justify={'space-between'} align={'center'} gap={3}>
@@ -62,6 +74,7 @@ const AnnotationPopover: ComponentType<{
                     fontSize={0}
                     padding={2}
                     title={`Edit ${annotation.schemaType.title}`}
+                    aria-label={`Edit ${annotation.schemaType.title}`}
                     onClick={() => documentPane.onPathOpen(props.path.concat(annotation.at))}
                   />
                   <Button
@@ -71,6 +84,7 @@ const AnnotationPopover: ComponentType<{
                     padding={2}
                     tone={'critical'}
                     title={`Remove ${annotation.schemaType.title}`}
+                    aria-label={`Remove ${annotation.schemaType.title}`}
                     onClick={() =>
                       annotationPopover.send({
                         type: 'remove',

@@ -5,16 +5,23 @@ import {ComponentType} from 'react'
 import {Path} from 'sanity'
 import {useDocumentPane} from 'sanity/structure'
 
+import {usePopoverA11y} from '../usePopoverA11y'
+
 const BlockPopover: ComponentType<{
   schemaTypes: readonly ToolbarBlockObjectSchemaType[]
   path: Path
+  /** Editor focus state; the popover stays mounted while focus is within it. */
+  focused: boolean
 }> = (props) => {
   const blockObjectPopover = useBlockObjectPopover(props)
 
   const documentPane = useDocumentPane()
+  const {focusWithin, contentProps} = usePopoverA11y()
   if (
-    blockObjectPopover.snapshot.matches('disabled') ||
-    blockObjectPopover.snapshot.matches({enabled: 'inactive'})
+    !focusWithin &&
+    (!props.focused ||
+      blockObjectPopover.snapshot.matches('disabled') ||
+      blockObjectPopover.snapshot.matches({enabled: 'inactive'}))
   ) {
     return null
   }
@@ -40,7 +47,13 @@ const BlockPopover: ComponentType<{
       content={
         // Keep the editor focused when interacting with the popover, otherwise the
         // focused-gate in ButtonToolbar would unmount it before the buttons fire.
-        <Box padding={3} onMouseDown={(e) => e.preventDefault()}>
+        <Box
+          {...contentProps}
+          padding={3}
+          role="dialog"
+          aria-label="Block actions"
+          onMouseDown={(e) => e.preventDefault()}
+        >
           <Stack>
             <Flex justify={'space-between'} align={'center'} gap={3}>
               <Text size={1}>{blockObject?.schemaType.title}</Text>
@@ -49,6 +62,8 @@ const BlockPopover: ComponentType<{
                 mode={'bleed'}
                 fontSize={0}
                 padding={0}
+                title={`Edit ${blockObject.schemaType.title ?? 'block'}`}
+                aria-label={`Edit ${blockObject.schemaType.title ?? 'block'}`}
                 onClick={() => {
                   documentPane.onPathOpen(blockPath)
                 }}
@@ -58,6 +73,9 @@ const BlockPopover: ComponentType<{
                 mode={'bleed'}
                 padding={0}
                 fontSize={0}
+                tone={'critical'}
+                title={`Remove ${blockObject.schemaType.title ?? 'block'}`}
+                aria-label={`Remove ${blockObject.schemaType.title ?? 'block'}`}
                 onClick={() => {
                   blockObjectPopover.send({type: 'remove', at: blockObject.at})
                 }}

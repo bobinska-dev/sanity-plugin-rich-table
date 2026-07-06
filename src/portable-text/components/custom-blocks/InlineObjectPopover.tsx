@@ -5,6 +5,8 @@ import {ComponentType} from 'react'
 import {Path} from 'sanity'
 import {useDocumentPane} from 'sanity/structure'
 
+import {usePopoverA11y} from '../usePopoverA11y'
+
 /**
  * Popover for the selected inline object, with edit/remove. Editing opens the
  * inline object in Sanity's NATIVE document form via
@@ -15,13 +17,18 @@ import {useDocumentPane} from 'sanity/structure'
 const InlineObjectPopover: ComponentType<{
   schemaTypes: readonly ToolbarInlineObjectSchemaType[]
   path: Path
+  /** Editor focus state; the popover stays mounted while focus is within it. */
+  focused: boolean
 }> = (props) => {
   const inlineObjectPopover = useInlineObjectPopover(props)
   const documentPane = useDocumentPane()
+  const {focusWithin, contentProps} = usePopoverA11y()
 
   if (
-    inlineObjectPopover.snapshot.matches('disabled') ||
-    inlineObjectPopover.snapshot.matches({enabled: 'inactive'})
+    !focusWithin &&
+    (!props.focused ||
+      inlineObjectPopover.snapshot.matches('disabled') ||
+      inlineObjectPopover.snapshot.matches({enabled: 'inactive'}))
   ) {
     return null
   }
@@ -45,7 +52,13 @@ const InlineObjectPopover: ComponentType<{
       content={
         // Keep the editor focused when interacting with the popover, otherwise the
         // focused-gate in ButtonToolbar would unmount it before the buttons fire.
-        <Box padding={3} onMouseDown={(e) => e.preventDefault()}>
+        <Box
+          {...contentProps}
+          padding={3}
+          role="dialog"
+          aria-label="Inline object actions"
+          onMouseDown={(e) => e.preventDefault()}
+        >
           <Stack>
             <Flex justify={'space-between'} align={'center'} gap={3}>
               <Text size={1}>{inlineObject.schemaType.title}</Text>
@@ -55,6 +68,7 @@ const InlineObjectPopover: ComponentType<{
                 fontSize={0}
                 padding={2}
                 title={`Edit ${inlineObject.schemaType.title}`}
+                aria-label={`Edit ${inlineObject.schemaType.title}`}
                 onClick={() => documentPane.onPathOpen(props.path.concat(inlineObject.at))}
               />
               <Button
@@ -64,6 +78,7 @@ const InlineObjectPopover: ComponentType<{
                 padding={2}
                 tone={'critical'}
                 title={`Remove ${inlineObject.schemaType.title}`}
+                aria-label={`Remove ${inlineObject.schemaType.title}`}
                 onClick={() => inlineObjectPopover.send({type: 'remove', at: inlineObject.at})}
               />
             </Flex>
