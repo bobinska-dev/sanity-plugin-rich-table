@@ -7,3 +7,14 @@ packages:
 # the old `onlyBuiltDependencies` list with this `allowBuilds` map.
 allowBuilds:
   esbuild: true
+
+# Dependency overrides live here (NOT package.json's `pnpm.overrides`): pnpm 11
+# in CI reads workspace settings from pnpm-workspace.yaml, so overrides in
+# package.json were applied by local pnpm 10 but ignored by CI's pnpm 11 →
+# `--frozen-lockfile` mismatch. Dedupe to a single copy: React (transitive Sanity
+# deps pulled 19.2.4 alongside the app's 19.2.7 → useMemoCache errors) and vite
+# (Sanity bundles 8; the test toolchain would otherwise drift to a second major).
+overrides:
+  react: ^19.2.7
+  react-dom: ^19.2.7
+  vite: ^8.1.3

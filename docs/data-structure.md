@@ -46,9 +46,9 @@ This means that an "empty" cell will still have a `content` field with an empty 
 
 ## Cell Portable Text: `content`
 
-- Type: `array` of portable text `block` members.
-- Options: editor options configured for cell usage.
-- Additional block or inline types (images, custom annotations) will be added later.
+- Type: `array` of Portable Text `block` members.
+- By default it offers the standard marks (bold, italic, headings, lists, links).
+- **Customizable:** point the plugin at your own Portable Text array type via `portableTextSchemaTypeName` to add custom styles, decorators, annotations, block objects and inline objects (with optional in-cell render components). See [Using a custom Portable Text schema](./README.md#using-a-custom-portable-text-schema).
 
 ## Column header object: `columnHeader`
 
