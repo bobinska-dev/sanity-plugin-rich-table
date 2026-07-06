@@ -22,6 +22,9 @@ export interface RichTableType {
   columnHeaders?: Array<ColumnHeader & ObjectItem>
   hasColumnTitles?: boolean
   hasRowTitles?: boolean
+  /** Row-title column width in pixels, set via the drag handle. Unset lets it
+   * fill the remaining width. */
+  rowTitleWidth?: number
 }
 
 export default defineType({
@@ -72,6 +75,14 @@ export default defineType({
       title: 'Has Row Titles',
       type: 'boolean',
       initialValue: true,
+    }),
+    defineField({
+      name: 'rowTitleWidth',
+      title: 'Row title column width',
+      type: 'number',
+      description:
+        'Width of the row-title column in pixels. Unset lets it fill the remaining width.',
+      validation: (Rule) => Rule.positive(),
     }),
   ],
   preview: {
@@ -141,6 +152,14 @@ export const defineRichTableObject = ({
         title: 'Has Row Titles',
         type: 'boolean',
         initialValue: true,
+      }),
+      defineField({
+        name: 'rowTitleWidth',
+        title: 'Row title column width',
+        type: 'number',
+        description:
+          'Width of the row-title column in pixels. Unset lets it fill the remaining width.',
+        validation: (Rule) => Rule.positive(),
       }),
     ],
     preview: {
