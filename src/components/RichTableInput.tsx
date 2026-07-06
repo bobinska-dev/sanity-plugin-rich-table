@@ -12,6 +12,7 @@ import {
 } from 'sanity'
 import styled from 'styled-components'
 
+import {useDialogRouteState} from '../hooks/useDialogRouteState'
 import {useToggleTitles} from '../hooks/useToggleTitles'
 import {RichTableType} from '../schemas/richTable.object'
 import {isRichTableArrayMemberContext} from '../utils/isRichTableArrayMemberContext'
@@ -74,10 +75,10 @@ const RichTableInput: ComponentType<
   // * Debug mode
   const [debug, setDebug] = useState(false)
   const handleDebugChange = useCallback(() => setDebug(!debug), [debug])
-  // * Expand table dialog
-  const [openDialog, setOpenDialog] = useState(false)
-  const handleOpen = useCallback(() => setOpenDialog(true), [])
-  const handleClose = useCallback(() => setOpenDialog(false), [])
+  // * Expand table dialog — open/closed state lives in the Structure tool URL params
+  // (deep-linkable, refresh-persistent, back-button closes), keyed by field path so
+  // only the matching table opens. Falls back to local state outside Structure.
+  const {open: openDialog, handleOpen, handleClose} = useDialogRouteState(pathString)
   // * Confirm clear table dialog
   const [openConfirmClearDialog, setOpenConfirmClearDialog] = useState(false)
   const handleOpenConfirmClearDialog = useCallback(() => setOpenConfirmClearDialog(true), [])
