@@ -21,6 +21,7 @@ import {createExtendAnnotation} from '../../configs/extendAnnotation'
 import type {SanityBlockSchemaLike} from '../../configs/extendBlockObject'
 import {createExtendBlockObject} from '../../configs/extendBlockObject'
 import {createExtendDecorators} from '../../configs/extendDecorators'
+import {createExtendInlineObject} from '../../configs/extendInlineObject'
 import {createExtendList} from '../../configs/extendList'
 import {createExtendStyles} from '../../configs/extendStyles'
 import {extractBlockConfig} from '../../configs/extractBlockConfig'
@@ -81,6 +82,12 @@ const ButtonToolbar: ComponentType<{
     () => createExtendAnnotation(blockConfig?.annotations),
     [blockConfig],
   )
+  // Restore the schema-defined icon onto toolbar inline objects (the editor
+  // strips it), mirroring extendBlockObject.
+  const extendInlineObject = useMemo(
+    () => createExtendInlineObject(blockConfig?.inlineObjects),
+    [blockConfig],
+  )
 
   const toolbarSchema = useToolbarSchema({
     extendDecorator,
@@ -88,6 +95,7 @@ const ButtonToolbar: ComponentType<{
     extendStyle,
     extendList,
     extendBlockObject,
+    extendInlineObject,
   })
 
   // STATES

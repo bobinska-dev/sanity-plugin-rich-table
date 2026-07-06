@@ -42,9 +42,23 @@ export const createRenderChild = (
     if (props.schemaType.name === 'span') return props.children
     const Custom = components?.get(props.schemaType.name)
     if (!Custom) return renderBuiltinChild(props)
-    // The editor supplies BlockChildRenderProps; the consumer's component is typed
-    // for Sanity's BlockProps. Pass through (same adaptation as renderAnnotation).
-    return <Custom {...(props as unknown as BlockProps)} />
+    // Inline objects are VOID nodes. The editor renders our return value with no
+    // wrapper of its own (RenderChild just calls this), and its built-in default
+    // sets `user-select: none` — without that the custom visual's text captures
+    // the caret, so a click lands *inside* it instead of selecting the object.
+    // That breaks selection, the inline-object popover, and thus editing. Wrap
+    // the consumer's component so it always behaves as a void node, regardless of
+    // its own styling. The editor supplies BlockChildRenderProps; the consumer's
+    // component is typed for Sanity's BlockProps (same adaptation as renderAnnotation).
+    return (
+      <span
+        data-inline-object={props.schemaType.name}
+        contentEditable={false}
+        style={{userSelect: 'none', whiteSpace: 'nowrap'}}
+      >
+        <Custom {...(props as unknown as BlockProps)} />
+      </span>
+    )
   }
 }
 
