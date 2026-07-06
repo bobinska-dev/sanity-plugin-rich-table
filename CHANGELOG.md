@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.1](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.2.0...v1.2.1) (2026-07-06)
+
+### Bug Fixes
+
+- keep diff grid valid when a table has no columns ([388161d](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/388161dddde50548425b989627765df897c569b5))
+
 ## [1.2.0](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.1.5...v1.2.0) (2026-07-03)
 
 ### Features
