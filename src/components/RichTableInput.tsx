@@ -16,7 +16,6 @@ import {
   pathToString,
   useDocumentOperation,
   useFormValue,
-  useSchema,
 } from 'sanity'
 import {useDocumentPane} from 'sanity/structure'
 import styled, {createGlobalStyle} from 'styled-components'
@@ -83,7 +82,6 @@ const RichTableInput: ComponentType<
 > = (props) => {
   const _id = useFormValue(['_id']) as string
   const _type = useFormValue(['_type']) as string
-  const schema = useSchema()
 
   // Document operations -> with optimistic changes
   // Pass the version/release id so patches target the edited perspective
@@ -95,13 +93,10 @@ const RichTableInput: ComponentType<
   const isInArray = useMemo(
     () =>
       isRichTableArrayMemberContext({
-        schema,
-        documentTypeName: _type,
         path: props.path,
-        objectSchemaTypeName: props.schemaType.name,
         isInPortableText: props.isInPortableText,
       }),
-    [_type, props.isInPortableText, props.path, props.schemaType.name, schema],
+    [props.isInPortableText, props.path],
   )
 
   // Whether this table is an array item or Portable Text block (vs. a plain

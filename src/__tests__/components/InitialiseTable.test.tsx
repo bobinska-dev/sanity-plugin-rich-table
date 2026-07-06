@@ -15,15 +15,17 @@ const renderPicker = (
 ): {onChange: ReturnType<typeof vi.fn>; execute: ReturnType<typeof vi.fn>; path: string} => {
   const onChange = vi.fn()
   const execute = vi.fn()
-  const path = 'body[_key=="blockKey"]'
+  // Tests may override `path` to exercise deeply nested fields; keep the
+  // returned path in sync with whatever the component actually rendered with.
+  const path = overrides.path ?? 'body[_key=="blockKey"]'
 
   render(
     <InitialiseTable
-      path={path}
       patch={{execute} as never}
       readOnly={false}
       onChange={onChange}
       {...overrides}
+      path={path}
     />,
     {wrapper},
   )
@@ -110,5 +112,74 @@ describe('InitialiseTable – handleCommit (plain object field)', () => {
     expect(value.rows).toHaveLength(2)
     expect(value.columnHeaders).toHaveLength(3)
     expect(value.hasColumnTitles).toBe(true)
+  })
+})
+
+// SAPP-3812: initialising a richTable field nested inside an array item threw
+// "Cannot apply deep operations on primitive values" because the size picker
+// sent a `set` at the field's ABSOLUTE document path through `onChange` — the
+// form's relative-path API. The materialise patch must always target the empty
+// (relative) path, no matter how deep the field is.
+describe('InitialiseTable – deeply nested object field (SAPP-3812 regression)', () => {
+  const deepFieldPaths = [
+    'pageBuilder[_key=="abc"].tableContent', // table field on a page-builder block
+    'pageBuilder[_key=="abc"].group.tableContent', // wrapped one object level deeper
+    'sections[_key=="s1"].columns[_key=="c1"].tableContent', // array → item → array → item → field
+  ]
+
+  it.each(deepFieldPaths)(
+    'materialises %s with a relative empty-path patch, never the absolute path',
+    (path) => {
+      const {onChange, execute} = renderPicker({isInPortableText: false, isInArray: false, path})
+
+      commit(2, 3)
+
+      // The crux of the fix: the onChange patch is at the EMPTY path (relative to
+      // this input), not the absolute document path that caused the crash.
+      expect(onChange).toHaveBeenCalledTimes(1)
+      const {patches} = onChange.mock.calls[0][0]
+      expect(patches).toHaveLength(1)
+      expect(patches[0]).toMatchObject({type: 'set', path: [], value: {}})
+      expect(path.length).toBeGreaterThan(0) // guard: these really are nested paths
+
+      // The full value is written by the absolute-path document-operations patch.
+      expect(execute).toHaveBeenCalledTimes(1)
+      const [ops] = execute.mock.calls[0]
+      expect(ops[0].set[path].rows).toHaveLength(2)
+      expect(ops[0].set[path].columnHeaders).toHaveLength(3)
+    },
+  )
+})
+
+// A richTable used as an array MEMBER (not a field) can also be deeply nested.
+// There the object already owns its `_key`/`_type`, so init must go through the
+// relative `onChange` only — never the document-operations `set` at the keyed
+// path, which would replace the item wholesale and strip `_key`/`_type`.
+describe('InitialiseTable – deeply nested array member (preserves _key/_type)', () => {
+  it('patches only the table fields via onChange for a deeply nested keyed member', () => {
+    const {onChange, execute} = renderPicker({
+      isInArray: true,
+      path: 'pageBuilder[_key=="abc"].tables[_key=="t1"]',
+    })
+
+    commit(2, 3)
+
+    // Never the document-operations set that would drop the item's _key/_type.
+    expect(execute).not.toHaveBeenCalled()
+    expect(onChange).toHaveBeenCalledTimes(1)
+    const {patches} = onChange.mock.calls[0][0]
+
+    // setIfMissing [] {} keeps the existing keyed item; no destructive set at [].
+    expect(patches.some((p: {type: string}) => p.type === 'setIfMissing')).toBe(true)
+    const destructiveClear = patches.find(
+      (p: {type: string; path: unknown[]}) => p.type === 'set' && p.path.length === 0,
+    )
+    expect(destructiveClear).toBeUndefined()
+
+    // Fields are set with RELATIVE paths (rows/columnHeaders/…), not the absolute path.
+    const byField = (field: string) =>
+      patches.find((p: {type: string; path: unknown[]}) => p.type === 'set' && p.path[0] === field)
+    expect(byField('rows').value).toHaveLength(2)
+    expect(byField('columnHeaders').value).toHaveLength(3)
   })
 })
