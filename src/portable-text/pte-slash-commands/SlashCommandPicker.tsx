@@ -1,220 +1,107 @@
-import {type EditorSelection, useEditor} from '@portabletext/editor'
-import {defineBehavior, effect, raise} from '@portabletext/editor/behaviors'
+import {useEditor} from '@portabletext/editor'
+import {effect, raise} from '@portabletext/editor/behaviors'
 import {defineTypeaheadPicker, useTypeaheadPicker} from '@portabletext/plugin-typeahead-picker'
-import type {ToolbarBlockObjectSchemaType} from '@portabletext/toolbar'
-import {Box, Dialog, Text} from '@sanity/ui'
+import {Box, Text} from '@sanity/ui'
 import Fuse from 'fuse.js'
-import {useEffect, useState} from 'react'
+import {useMemo} from 'react'
 
 import {FloatingPanel} from '../components/FloatingPanel'
-//import { InsertBlockObjectForm } from './toolbar/form.insert-block-object'
-import {extendBlockObject} from '../configs/extendBlockObject'
 import CommandListBox from './CommandListBox'
-import {CommandMatch, slashCommands} from './commands'
-
-type BlockObjectDialogState = {
-  patternSelection: NonNullable<EditorSelection>
-  schema: ToolbarBlockObjectSchemaType
-}
-
-type OpenBlockObjectDialogEvent = {
-  type: 'custom.slash-command.open-block-object-dialog'
-} & BlockObjectDialogState
-
-const commandsFuse = new Fuse(slashCommands, {
-  keys: [
-    {name: 'label', weight: 1.0},
-    {name: 'keywords', weight: 0.8},
-  ],
-  threshold: 0.4,
-  ignoreLocation: true,
-})
-
-function matchCommands({keyword}: {keyword: string}): CommandMatch[] {
-  if (keyword === '') {
-    return slashCommands
-  }
-
-  return commandsFuse.search(keyword).map((result) => result.item)
-}
-
-const slashCommandPicker = defineTypeaheadPicker<CommandMatch>({
-  trigger: /^\//,
-  keyword: /\w*/,
-  getMatches: matchCommands,
-  onSelect: [
-    ({event, snapshot}) => {
-      const deletePattern = [raise({type: 'delete', at: event.patternSelection})]
-
-      if (event.match.action.type === 'insert.block') {
-        const blockType = event.match.action.block._type
-        const blockObjectSchema = snapshot.context.schema.blockObjects.find(
-          (blockObject) => blockObject.name === blockType,
-        )
-
-        if (blockObjectSchema && blockObjectSchema.fields.length > 0) {
-          const extendedSchema = extendBlockObject(blockObjectSchema)
-
-          return [
-            effect(({send}) => {
-              send({
-                type: 'custom.slash-command.open-block-object-dialog',
-                patternSelection: event.patternSelection,
-                schema: extendedSchema,
-              })
-            }),
-          ]
-        }
-
-        return [
-          ...deletePattern,
-          raise({
-            type: 'insert.block',
-            placement: 'auto',
-            block: {
-              ...event.match.action.block,
-              _key: snapshot.context.keyGenerator(),
-            },
-          }),
-        ]
-      }
-
-      if (event.match.action.type === 'style.toggle') {
-        return [...deletePattern, raise({type: 'style.toggle', style: event.match.action.style})]
-      }
-
-      if (event.match.action.type === 'list item.toggle') {
-        return [
-          ...deletePattern,
-          raise({
-            type: 'list item.toggle',
-            listItem: event.match.action.listItem,
-          }),
-        ]
-      }
-
-      return deletePattern
-    },
-    () => [
-      effect(({send}) => {
-        send({type: 'focus'})
-      }),
-    ],
-  ],
-})
+import {buildSlashCommands, CommandMatch} from './commands'
 
 export function SlashCommandPickerPlugin() {
   const editor = useEditor()
-  const picker = useTypeaheadPicker(slashCommandPicker)
-  const {keyword, matches, selectedIndex} = picker.snapshot.context
 
-  const [blockObjectDialogState, setBlockObjectDialogState] =
-    useState<BlockObjectDialogState | null>(null)
-  const [open, setOpen] = useState(false)
+  // Build the command list from the cell's compiled PT schema so the picker
+  // offers exactly what the schema allows — styles, decorators, lists, block
+  // objects and inline objects, including any custom entries. The schema is
+  // fixed for an editor instance, so this is computed once per editor.
+  const commands = useMemo(() => buildSlashCommands(editor.getSnapshot().context.schema), [editor])
 
-  useEffect(() => {
-    return editor.registerBehavior({
-      behavior: defineBehavior<OpenBlockObjectDialogEvent, OpenBlockObjectDialogEvent['type']>({
-        on: 'custom.slash-command.open-block-object-dialog',
-        actions: [
-          ({event}) => [
-            effect(() => {
-              setBlockObjectDialogState({
-                patternSelection: event.patternSelection,
-                schema: event.schema,
-              })
-            }),
-          ],
-        ],
-      }),
+  const picker = useMemo(() => {
+    const fuse = new Fuse(commands, {
+      keys: [
+        {name: 'label', weight: 1.0},
+        {name: 'keywords', weight: 0.8},
+      ],
+      threshold: 0.4,
+      ignoreLocation: true,
     })
-  }, [editor])
 
-  const onDismiss = () => picker.send({type: 'dismiss'})
-  const onNavigateTo = (index: number) => picker.send({type: 'navigate to', index})
-  const onSelect = () => picker.send({type: 'select'})
+    return defineTypeaheadPicker<CommandMatch>({
+      trigger: /^\//,
+      keyword: /\w*/,
+      getMatches: ({keyword}) =>
+        keyword === '' ? commands : fuse.search(keyword).map((result) => result.item),
+      onSelect: [
+        ({event, snapshot}) => {
+          // Every command first removes the typed `/keyword` trigger text.
+          const deletePattern = [raise({type: 'delete', at: event.patternSelection})]
+          const {action} = event.match
 
-  const isActive = picker.snapshot.matches('active')
+          switch (action.type) {
+            case 'style.toggle':
+              return [...deletePattern, raise({type: 'style.toggle', style: action.style})]
+            case 'decorator.toggle':
+              return [
+                ...deletePattern,
+                raise({type: 'decorator.toggle', decorator: action.decorator}),
+              ]
+            case 'list item.toggle':
+              return [
+                ...deletePattern,
+                raise({type: 'list item.toggle', listItem: action.listItem}),
+              ]
+            case 'insert.inline object':
+              return [
+                ...deletePattern,
+                raise({
+                  type: 'insert.inline object',
+                  inlineObject: {name: action.inlineObject.name},
+                }),
+              ]
+            case 'insert.block':
+              return [
+                ...deletePattern,
+                raise({
+                  type: 'insert.block',
+                  placement: 'auto',
+                  block: {...action.block, _key: snapshot.context.keyGenerator()},
+                }),
+              ]
+            default:
+              return deletePattern
+          }
+        },
+        // Keep focus in the editor after acting on the selection.
+        () => [effect(({send}) => send({type: 'focus'}))],
+      ],
+    })
+  }, [commands])
+
+  const pickerState = useTypeaheadPicker(picker)
+  const {keyword, matches, selectedIndex} = pickerState.snapshot.context
+  const isActive = pickerState.snapshot.matches('active')
 
   const getAnchorRect = () => editor.dom.getSelectionRect(editor.getSnapshot())
 
-  const handleDialogCancel = () => {
-    setOpen(false)
-    if (blockObjectDialogState) {
-      const {focus} = blockObjectDialogState.patternSelection
-      editor.send({type: 'select', at: {anchor: focus, focus}})
-      editor.send({type: 'focus'})
-      setBlockObjectDialogState(null)
-    }
-  }
-
-  /*  const handleDialogSubmit = ({
-    value,
-    placement,
-  }: {
-    value: { [key: string]: unknown }
-    placement?: 'auto' | 'before' | 'after'
-  }) => {
-    if (blockObjectDialogState) {
-      editor.send({
-        type: 'delete',
-        at: blockObjectDialogState.patternSelection,
-      })
-      editor.send({
-        type: 'insert.block',
-        block: {
-          _type: blockObjectDialogState.schema.name,
-          _key: editor.getSnapshot().context.keyGenerator(),
-          ...value,
-        },
-        placement: placement ?? 'auto',
-        select: 'end',
-      })
-      editor.send({ type: 'focus' })
-      setBlockObjectDialogState(null)
-    }
-  }*/
-
-  const blockObjectDialog = (
-    <Dialog
-      id={'slash-command-insert-block-object-dialog'}
-      title={blockObjectDialogState?.schema.title ?? 'Insert Block'}
-      onClose={handleDialogCancel}
-      open={open}
-    >
-      {blockObjectDialogState && (
-        <Box>
-          <Text>hello</Text>
-        </Box>
-        /*<InsertBlockObjectForm
-          fields={blockObjectDialogState.schema.fields}
-          defaultValues={blockObjectDialogState.schema.defaultValues ?? {}}
-          onSubmit={handleDialogSubmit}
-        />*/
-      )}
-    </Dialog>
-  )
+  if (!isActive) return null
 
   return (
-    <>
-      {open && blockObjectDialog}
-      {isActive && (
-        <FloatingPanel getAnchorRect={getAnchorRect} offset={4}>
-          <Box paddingBottom={2}>
-            <Text size={0} muted style={{fontStyle: 'italic'}}>
-              Select your style, list or custom block (navigate with ↑ ↓ and Enter)
-            </Text>
-          </Box>
-          <CommandListBox
-            keyword={keyword}
-            matches={matches}
-            selectedIndex={selectedIndex}
-            onDismiss={onDismiss}
-            onNavigateTo={onNavigateTo}
-            onSelect={onSelect}
-          />
-        </FloatingPanel>
-      )}
-    </>
+    <FloatingPanel getAnchorRect={getAnchorRect} offset={4}>
+      <Box paddingBottom={2}>
+        <Text size={0} muted style={{fontStyle: 'italic'}}>
+          Insert a style, mark, list or block (navigate with ↑ ↓ and Enter)
+        </Text>
+      </Box>
+      <CommandListBox
+        keyword={keyword}
+        matches={matches}
+        selectedIndex={selectedIndex}
+        onDismiss={() => pickerState.send({type: 'dismiss'})}
+        onNavigateTo={(index) => pickerState.send({type: 'navigate to', index})}
+        onSelect={() => pickerState.send({type: 'select'})}
+      />
+    </FloatingPanel>
   )
 }

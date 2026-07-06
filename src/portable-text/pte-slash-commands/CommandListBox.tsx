@@ -27,11 +27,12 @@ const CommandListBox: ComponentType<CommandListBoxProps> = (props) => {
 
   return (
     <Flex
+      direction={'column'}
       gap={1}
       as={'ol'}
       padding={1}
-      style={{maxHeight: 300, overflowY: 'auto', listStyle: 'none'}}
-      aria-orientation={'horizontal'}
+      style={{maxHeight: 300, minWidth: 220, overflowY: 'auto', listStyle: 'none'}}
+      aria-orientation={'vertical'}
       role="listbox"
       aria-label="Available commands"
     >
