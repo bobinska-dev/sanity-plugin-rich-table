@@ -103,7 +103,7 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
       // rebuilt when the set of invalid annotations changes, without recreating
       // the other renderers.
       annotationComponents,
-      renderChild: createRenderChild(inlineObjectComponents),
+      renderChild: createRenderChild(inlineObjectComponents, configSchema),
     }
   }, [configSchema])
 
@@ -136,7 +136,7 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
     () => ({
       renderStyle: markRenderers.renderStyle,
       renderDecorator: markRenderers.renderDecorator,
-      renderBlock: renderBlock({configSchema}),
+      renderBlock: renderBlock({configSchema, path: props.path}),
       renderListItem,
       renderAnnotation: createRenderAnnotation(
         markRenderers.annotationComponents,

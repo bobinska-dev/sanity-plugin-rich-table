@@ -33,7 +33,14 @@ const renderBuiltinAnnotation = (
   const invalidStyle = isInvalid
     ? {color: CRITICAL_COLOR, textDecorationColor: CRITICAL_COLOR}
     : undefined
-  if (props.schemaType.name === 'link') {
+  // Treat an annotation as a link — solid underline — by name OR by a URL-ish
+  // field, so links stay solid even if the type isn't literally named `link`;
+  // every other custom annotation gets the dotted-underline default below.
+  const fields = props.schemaType.fields
+  const isLink =
+    props.schemaType.name === 'link' ||
+    (Array.isArray(fields) && fields.some((field) => field.name === 'href' || field.name === 'url'))
+  if (isLink) {
     return (
       <span
         style={{textDecoration: 'underline', ...invalidStyle}}
@@ -46,14 +53,20 @@ const renderBuiltinAnnotation = (
     )
   }
 
-  // Custom annotation: render a styleable span tagged with its name so consumers
-  // can target it via CSS (e.g. [data-annotation="footnote"]) instead of it
-  // rendering with no affordance.
+  // Custom annotation: give it a subtle dotted underline so it's visible out of
+  // the box (distinct from a link's solid underline), and tag it with its name so
+  // consumers can restyle it via CSS (e.g. [data-annotation="footnote"]) or
+  // override it entirely with a `components.tableAnnotation` component.
   return (
     <span
       data-annotation={props.schemaType.name}
       id={`annotation-${props.value._key}`}
-      style={invalidStyle}
+      style={{
+        textDecoration: 'underline',
+        textDecorationStyle: 'dotted',
+        textUnderlineOffset: '2px',
+        ...invalidStyle,
+      }}
       data-invalid={isInvalid || undefined}
     >
       {props.children}

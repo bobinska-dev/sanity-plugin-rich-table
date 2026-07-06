@@ -164,4 +164,34 @@ describe('render factories — prefer custom components, fall back to built-ins'
     )
     expect(screen.getByTestId('footnote')).toHaveTextContent('Noted')
   })
+
+  it('renders a dotted-underline fallback for a custom annotation with no component', () => {
+    // No custom components → non-link annotations get the built-in *visible*
+    // default (dotted underline + data-annotation tag) rather than plain text.
+    const renderAnnotation = createRenderAnnotation()
+    render(
+      renderAnnotation({
+        schemaType: {name: 'keyword'},
+        value: {_key: 'c'},
+        children: 'Term',
+      } as never),
+    )
+    const span = screen.getByText('Term')
+    expect(span).toHaveAttribute('data-annotation', 'keyword')
+    expect(span).toHaveStyle({textDecorationStyle: 'dotted'})
+  })
+
+  it('renders the built-in link annotation with a solid (not dotted) underline', () => {
+    const renderAnnotation = createRenderAnnotation()
+    render(
+      renderAnnotation({
+        schemaType: {name: 'link', fields: [{name: 'href', type: 'url'}]},
+        value: {_key: 'l'},
+        children: 'Linked',
+      } as never),
+    )
+    const span = screen.getByText('Linked')
+    expect(span).toHaveStyle({textDecoration: 'underline'})
+    expect(span).not.toHaveStyle({textDecorationStyle: 'dotted'})
+  })
 })

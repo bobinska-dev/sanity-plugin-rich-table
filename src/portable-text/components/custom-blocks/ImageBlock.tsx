@@ -8,8 +8,13 @@ const ImageBlock: ComponentType<BlockRenderProps> = (props) => {
   const client = useClient({apiVersion: '2026-02-01'}).withConfig({
     requestTagPrefix: `ImageBlock-${props.value._key}`,
   })
-  const imageBuilder = createImageUrlBuilder(client).image(props.value)
-  const imageUrl = imageBuilder.width(30).height(30).url()
+  // An image block can exist before an asset is uploaded; @sanity/image-url
+  // throws "Unable to resolve image URL from source" for an asset-less value, so
+  // only build the preview URL once there's an asset reference.
+  const asset = (props.value as {asset?: {_ref?: string}}).asset
+  const imageUrl = asset?._ref
+    ? createImageUrlBuilder(client).image(props.value).width(30).height(30).url()
+    : undefined
 
   // @ts-expect-error - props.value is typed as a base image without the optional `alt` field
   const altText = props.value.alt || 'Image does not have alt text'
@@ -31,7 +36,7 @@ const ImageBlock: ComponentType<BlockRenderProps> = (props) => {
       }
     >
       <Flex gap={2} align={'center'}>
-        {imageUrl && (
+        {imageUrl ? (
           <img
             src={imageUrl}
             alt={altText}
@@ -41,6 +46,15 @@ const ImageBlock: ComponentType<BlockRenderProps> = (props) => {
               objectFit: 'cover',
               borderRadius: '4px',
               border: '1px solid var(--card-border-color)',
+            }}
+          />
+        ) : (
+          <Box
+            style={{
+              width: '30px',
+              height: '30px',
+              borderRadius: '4px',
+              border: '1px dashed var(--card-border-color)',
             }}
           />
         )}
@@ -53,7 +67,7 @@ const ImageBlock: ComponentType<BlockRenderProps> = (props) => {
           </Box>
           <Box>
             <Text muted size={0} textOverflow={'ellipsis'}>
-              Image block
+              {imageUrl ? 'Image block' : 'No image selected'}
             </Text>
           </Box>
         </Stack>

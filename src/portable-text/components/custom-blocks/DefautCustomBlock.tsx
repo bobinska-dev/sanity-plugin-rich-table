@@ -5,49 +5,69 @@ import {ComponentType, CSSProperties, ReactNode} from 'react'
 
 import {PREVIEW_SIZE} from '../../configs/renderer/renderBlock'
 
+// A muted icon glyph, smaller than the PREVIEW_SIZE box, so an icon-only preview
+// reads like the image fallback's thumbnail rather than a big filled square.
+const ICON_GLYPH_SIZE = 18
+
 // TODO: file bug for props.value not updating (Christian)
 const DefaultCustomBlock: ComponentType<BlockRenderProps> = (props) => {
   // The editor's BlockRenderProps.schemaType is a stripped BlockObjectSchemaType;
   // read Sanity's `preview`/`icon`/`title` through the object schema shape.
   const schemaType = props.schemaType as unknown as ObjectSchemaType
 
-  const getPreviewSelection = () => {
-    // we use the schemaType.preview select to get the field values from props.value, and then use the preview prepare function to format the title for the block preview
-    const previewSelect = schemaType.preview?.select || {}
+  const getPreviewSelection = (): PreviewValue => {
+    // Use the schema's `preview` (select + optional prepare) to build the preview
+    // from the value's fields, like a normal Sanity preview.
+    const previewSelect = schemaType.preview?.select
     const previewPrepare = schemaType.preview?.prepare
-    const selection = Object.keys(previewSelect).reduce(
-      (acc, key) => {
-        // Preview field values are arbitrary/dynamic, so `any` is the pragmatic type here.
+    if (previewSelect) {
+      const selection = Object.keys(previewSelect).reduce(
+        (acc, key) => {
+          // Preview field values are arbitrary/dynamic, so `any` is pragmatic here.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          acc[key] = (props.value as Record<string, any>)[previewSelect[key]]
+          return acc
+        },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        acc[key] = (props.value as Record<string, any>)[previewSelect[key]]
-        return acc
-      },
+        {} as Record<string, any>,
+      )
+      const prepared = (previewPrepare ? previewPrepare(selection) : selection) as PreviewValue
+      if (prepared?.title || prepared?.subtitle || prepared?.media) return prepared
+    }
+    // No usable preview config: derive a title from the first string field (as
+    // Sanity's default preview does), then fall back to the type title / name.
+    const firstString = Object.entries(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      {} as Record<string, any>,
-    )
-
-    if (previewPrepare) return previewPrepare(selection) as PreviewValue
-    if (selection) return selection
-    return {title: schemaType.title}
+      (props.value as Record<string, any>) ?? {},
+    ).find(([key, v]) => !key.startsWith('_') && typeof v === 'string' && v.trim() !== '')?.[1]
+    return {
+      title: (firstString as string | undefined) ?? (schemaType.title as string) ?? schemaType.name,
+    }
   }
 
   const preview = getPreviewSelection()
 
   const renderMedia = (): ReactNode => {
     if (!preview.media && !schemaType.icon) return null
-    if (!preview.media && schemaType.icon)
+    if (!preview.media && schemaType.icon) {
+      const Icon = schemaType.icon as unknown as ComponentType<{style?: CSSProperties}>
       return (
-        <schemaType.icon
-          // @ts-expect-error - the icon property on the schema type can be a React component but the type definitions don't reflect that, so we need to ignore the type check here
+        <Flex
+          align="center"
+          justify="center"
           style={{
             width: `${PREVIEW_SIZE}px`,
             height: `${PREVIEW_SIZE}px`,
-            objectFit: 'cover',
             borderRadius: '4px',
             border: '1px solid var(--card-border-color)',
+            color: 'var(--card-muted-fg-color)',
+            flexShrink: 0,
           }}
-        />
+        >
+          <Icon style={{width: ICON_GLYPH_SIZE, height: ICON_GLYPH_SIZE}} />
+        </Flex>
       )
+    }
     // If media is a component type (function/class), instantiate it
     if (typeof preview.media === 'function') {
       const Media = preview.media as ComponentType<{style?: CSSProperties}>

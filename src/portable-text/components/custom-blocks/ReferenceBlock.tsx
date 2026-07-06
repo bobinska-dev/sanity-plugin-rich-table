@@ -4,11 +4,22 @@ import {createImageUrlBuilder} from '@sanity/image-url'
 import {Image, ReferenceSchemaType, ReferenceValue} from '@sanity/types'
 import {Box, Card, Flex, Stack, Text} from '@sanity/ui'
 import groq, {defineQuery} from 'groq'
-import {ComponentType, useEffect, useState} from 'react'
+import {ComponentType, CSSProperties, useEffect, useState} from 'react'
 import {Subscription} from 'rxjs'
-import {PortableTextBlock, useClient, usePerspective} from 'sanity'
+import {
+  DocumentStatusIndicator,
+  getPublishedId,
+  PortableTextBlock,
+  useClient,
+  useEditState,
+  usePerspective,
+} from 'sanity'
 
 import {PREVIEW_SIZE} from '../../configs/renderer/renderBlock'
+
+// A muted icon glyph, smaller than the PREVIEW_SIZE box, so an icon-only preview
+// reads like the image fallback's thumbnail rather than a big filled square.
+const ICON_GLYPH_SIZE = 18
 
 const ReferenceBlock: ComponentType<BlockRenderProps> = (props) => {
   // * CLIENT & IMAGE
@@ -33,6 +44,15 @@ const ReferenceBlock: ComponentType<BlockRenderProps> = (props) => {
     subtitle: string
     image: Image
   } | null>(null)
+
+  // Document status (draft / published / edited) of the referenced document, so
+  // the preview mirrors Sanity's native reference status dot. A reference stores
+  // the published id; the type comes from the resolved doc or the first allowed
+  // target type.
+  const publishedId = value._ref ? getPublishedId(value._ref) : ''
+  const refTypeName =
+    (refDoc?._type as string | undefined) ?? (refSchemaTypes?.[0]?.name as string | undefined) ?? ''
+  const editState = useEditState(publishedId, refTypeName)
 
   const getPreviewConfigs = () => {
     // since a reference will only show the preview of the referenced document we need to check the ref schemaTypes for the preview select and prepare functions
@@ -148,34 +168,31 @@ const ReferenceBlock: ComponentType<BlockRenderProps> = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value._ref])
 
+  // A small muted icon centered in a PREVIEW_SIZE box, matching the image
+  // fallback's thumbnail footprint (used when the doc has no preview image).
+  const iconBox = (Icon: ComponentType<{style?: CSSProperties}>) => (
+    <Flex
+      align="center"
+      justify="center"
+      style={{
+        width: `${PREVIEW_SIZE}px`,
+        height: `${PREVIEW_SIZE}px`,
+        borderRadius: '4px',
+        border: '1px solid var(--card-border-color)',
+        color: 'var(--card-muted-fg-color)',
+        flexShrink: 0,
+      }}
+    >
+      <Icon style={{width: ICON_GLYPH_SIZE, height: ICON_GLYPH_SIZE}} />
+    </Flex>
+  )
+
   const renderMedia = () => {
     if (!refDoc?.image) {
-      // if there is no image we will return the schema icon and if not the document icon from Sanity Icons
+      // No preview image: show the schema icon, else Sanity's document icon.
       if (schemaType.icon)
-        return (
-          <schemaType.icon
-            // @ts-expect-error - the icon property on the schema type can be a React component but the type definitions don't reflect that, so we need to ignore the type check here
-            style={{
-              width: `${PREVIEW_SIZE}px`,
-              height: `${PREVIEW_SIZE}px`,
-              objectFit: 'cover',
-
-              borderRadius: '4px',
-              border: '1px solid var(--card-border-color)',
-            }}
-          />
-        )
-      return (
-        <DocumentIcon
-          style={{
-            width: `${PREVIEW_SIZE}px`,
-            height: `${PREVIEW_SIZE}px`,
-            objectFit: 'cover',
-            borderRadius: '4px',
-            border: '1px solid var(--card-border-color)',
-          }}
-        />
-      )
+        return iconBox(schemaType.icon as unknown as ComponentType<{style?: CSSProperties}>)
+      return iconBox(DocumentIcon)
     }
     const imageUrl = imageBuilder.image(refDoc.image).width(PREVIEW_SIZE).height(PREVIEW_SIZE).url()
     return (
@@ -211,14 +228,14 @@ const ReferenceBlock: ComponentType<BlockRenderProps> = (props) => {
     >
       <Flex align={'center'} gap={2}>
         {renderMedia()}
-        <Stack space={2}>
-          {refDoc?.title && (
-            <Box>
-              <Text size={1} textOverflow={'ellipsis'}>
-                {refDoc.title}
-              </Text>
-            </Box>
-          )}
+        <Stack flex={1} gap={2} style={{minWidth: 0}}>
+          {/* Always render a title so an empty or not-yet-resolved reference
+              isn't blank: the fetched title, else a state-appropriate hint. */}
+          <Box>
+            <Text size={1} textOverflow={'ellipsis'} muted={!refDoc?.title}>
+              {refDoc?.title ?? (value._ref ? 'Referenced document' : 'No document selected')}
+            </Text>
+          </Box>
           {refDoc?.subtitle && (
             <Box paddingTop={1}>
               <Text size={0} muted textOverflow={'ellipsis'}>
@@ -227,6 +244,16 @@ const ReferenceBlock: ComponentType<BlockRenderProps> = (props) => {
             </Box>
           )}
         </Stack>
+        {/* Status dot (draft / published / edited) right-aligned, like Sanity's
+            default reference preview. */}
+        {value._ref && (editState.draft || editState.published) && (
+          <Box flex="none">
+            <DocumentStatusIndicator
+              draft={editState.draft ?? undefined}
+              published={editState.published ?? undefined}
+            />
+          </Box>
+        )}
       </Flex>
     </Card>
   )

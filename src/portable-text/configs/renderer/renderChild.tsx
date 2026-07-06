@@ -1,8 +1,41 @@
 import {RenderChildFunction} from '@portabletext/editor'
 import type {ComponentType} from 'react'
-import type {BlockProps} from 'sanity'
+import type {ArraySchemaType, BlockProps, PortableTextBlock} from 'sanity'
 
 import DefaultInlineBlock from '../../components/custom-blocks/DefaultInlineBlock'
+
+// The compiled schema is loosely typed; navigate it permissively.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Loose = Record<string, any>
+
+/**
+ * Map each inline object's name to its ORIGINAL compiled schema type. The editor's
+ * runtime `schemaType` is minimal (name/title/fields — see resolveSchemaDefinition),
+ * so the built-in fallback needs the original to render an icon + preview like
+ * Sanity's default inline pill. Inline objects live on the text block's `children`.
+ */
+function buildInlineSchemaMap(
+  configSchema?: ArraySchemaType<PortableTextBlock>,
+): ReadonlyMap<string, Loose> {
+  const map = new Map<string, Loose>()
+  const s = configSchema as Loose | undefined
+  const members: Loose[] | undefined = s?.of?.length ? s.of : s?.type?.of
+  const block = members?.find(
+    (m) =>
+      m.name === 'block' ||
+      (Array.isArray(m.fields) && m.fields.some((f: Loose) => f.name === 'children')),
+  )
+  const childrenField = Array.isArray(block?.fields)
+    ? (block!.fields as Loose[]).find((f) => f.name === 'children')
+    : undefined
+  const childrenOf = childrenField?.type?.of
+  if (Array.isArray(childrenOf)) {
+    for (const member of childrenOf as Loose[]) {
+      if (member?.name && member.name !== 'span') map.set(member.name, member)
+    }
+  }
+  return map
+}
 
 /**
  * A consumer-supplied custom inline-object component, keyed by inline object name.
@@ -29,10 +62,16 @@ export type InlineObjectComponent = ComponentType<BlockProps>
  */
 export const createRenderChild = (
   components?: ReadonlyMap<string, InlineObjectComponent>,
+  configSchema?: ArraySchemaType<PortableTextBlock>,
 ): RenderChildFunction => {
+  const inlineSchemas = buildInlineSchemaMap(configSchema)
   return function RenderChild(props) {
     if (props.schemaType.name === 'span') return props.children
     const Custom = components?.get(props.schemaType.name) ?? DefaultInlineBlock
+    // The editor's runtime schemaType is minimal; prefer the original schema type
+    // (icon/preview) so the fallback pill matches Sanity's default inline object.
+    const original = inlineSchemas.get(props.schemaType.name)
+    const childProps = original ? {...props, schemaType: original} : props
     // Inline objects are VOID nodes. The editor renders our return value with no
     // wrapper of its own (RenderChild just calls this), and its built-in default
     // sets `user-select: none` — without that the visual's text captures the
@@ -47,7 +86,7 @@ export const createRenderChild = (
         contentEditable={false}
         style={{userSelect: 'none', whiteSpace: 'nowrap'}}
       >
-        <Custom {...(props as unknown as BlockProps)} />
+        <Custom {...(childProps as unknown as BlockProps)} />
       </span>
     )
   }
