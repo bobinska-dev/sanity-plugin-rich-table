@@ -39,6 +39,27 @@ const articleWithNested = {
   fields: [{name: 'nested', type: nestedObject}],
 } as ObjectSchemaType
 
+// A richTable used as an array member with its own member name — the real
+// `defineArrayMember({name: 'richTableItem', type: 'richTable'})` shape, whose
+// compiled schemaType.name is the member name, NOT 'richTable'.
+const richTableItemMember = {
+  name: 'richTableItem',
+  jsonType: 'object' as const,
+  fields: [],
+} as ObjectSchemaType
+
+const namedTablesArrayType = {
+  name: 'namedTables',
+  jsonType: 'array' as const,
+  of: [richTableItemMember],
+} as ArraySchemaType
+
+const articleWithNamedArray = {
+  name: 'article',
+  jsonType: 'object' as const,
+  fields: [{name: 'namedTables', type: namedTablesArrayType}],
+} as ObjectSchemaType
+
 const createSchema = (root: ObjectSchemaType): Schema =>
   ({
     get: (name: string) => {
@@ -60,6 +81,17 @@ describe('isRichTableArrayMemberContext', () => {
         documentTypeName: 'article',
         path: ['tables', {_key: 'abc'}],
         objectSchemaTypeName: 'richTable',
+      }),
+    ).toBe(true)
+  })
+
+  it('returns true for a renamed array member (member name is not "richTable")', () => {
+    expect(
+      isRichTableArrayMemberContext({
+        schema: createSchema(articleWithNamedArray),
+        documentTypeName: 'article',
+        path: ['namedTables', {_key: 'abc'}],
+        objectSchemaTypeName: 'richTableItem',
       }),
     ).toBe(true)
   })
