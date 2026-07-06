@@ -182,12 +182,23 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
         userSelect: 'none',
       }}
     >
-      {/* Screen reader announcements */}
+      {/* Screen reader announcements. Visually hidden via inline styles because the
+          plugin ships no global `.sr-only` utility and Studio doesn't provide one. */}
       <div
         role="status"
         aria-live="polite"
         aria-atomic="true"
-        className="sr-only" // visually hidden
+        style={{
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          border: 0,
+        }}
       >
         {hover.rows > 0 && hover.cols > 0
           ? `Selected: ${hover.rows} rows by ${hover.cols} columns`
