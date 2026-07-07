@@ -1,5 +1,7 @@
 import type {ArraySchemaType, PortableTextBlock} from 'sanity'
 
+import {findInTypeChain} from './schemaTypeChain'
+
 /**
  * Resolve the compiled Portable Text **array** type for a table cell's content
  * from the cell's own `content` field schema — the first node in the schema's
@@ -24,12 +26,7 @@ import type {ArraySchemaType, PortableTextBlock} from 'sanity'
 export function resolveCellContentSchemaType(
   schemaType: unknown,
 ): ArraySchemaType<PortableTextBlock> | undefined {
-  let current = schemaType as {of?: unknown; type?: unknown} | undefined
-  const seen = new Set<unknown>()
-  while (current && typeof current === 'object' && !seen.has(current)) {
-    seen.add(current)
-    if (Array.isArray(current.of)) return current as ArraySchemaType<PortableTextBlock>
-    current = current.type as {of?: unknown; type?: unknown} | undefined
-  }
-  return undefined
+  return findInTypeChain(schemaType, (node) =>
+    Array.isArray(node.of) ? (node as ArraySchemaType<PortableTextBlock>) : undefined,
+  )
 }
