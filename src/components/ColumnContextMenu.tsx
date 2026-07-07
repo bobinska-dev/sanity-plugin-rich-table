@@ -188,11 +188,12 @@ const ColumnContextMenu: ComponentType<ColumnMenuButtonProps> = (props) => {
           },
         }
       })
-      // first we move the cellIndexes of the existing columns to make space for the new column
-      patch.execute(cellIndexPatches)
-
-      // then we add the new column header and the new cells
-      return patch.execute([addHeaderPatch, ...addCellPatches])
+      // One transaction, applied in order: first bump the cellIndexes of the
+      // existing columns to make space, then add the new header + cells. A single
+      // `patch.execute` keeps it atomic — two calls meant one undo could revert
+      // the insert but leave siblings' `cellIndex` incremented, corrupting the
+      // cellIndex-keyed rendering / `toMarkdownTable` columns.
+      return patch.execute([...cellIndexPatches, addHeaderPatch, ...addCellPatches])
     },
     [columnCount, rowCount, columnIndex, path, columnHeaderPathString, patch],
   )
