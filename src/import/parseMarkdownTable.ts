@@ -1,14 +1,20 @@
-import {generateKey} from '../utils/generateKey'
 import {markdownToPortableText} from '@portabletext/markdown'
 import type {PortableTextBlock} from 'sanity'
 
+import {generateKey} from '../utils/generateKey'
 import {cellToText} from './cellToText'
 import {createPlaceholderBlock} from './placeholders'
 import type {CellValue, ParseResult, ParseWarning} from './types'
 import {MAX_IMPORT_ROWS} from './types'
 
-/** Matches the separator row: `| --- | :---: | ---: |` (with optional alignment markers). */
-const SEPARATOR_RE = /^\|[\s:|-]+\|$/
+/**
+ * Matches the separator row: `| --- | :---: | ---: |` (with optional alignment
+ * markers), with OR without the outer pipes — `--- | ---` is valid
+ * GitHub-flavored markdown. Requires at least one pipe and one dash so a plain
+ * `---` thematic break isn't mistaken for a single-column separator, and a prose
+ * line (which contains letters) can never match.
+ */
+const SEPARATOR_RE = /^(?=[^|]*\|)(?=[^-]*-)[\s:|-]+$/
 
 /** Fast check: only invoke the markdown parser if the cell might contain inline syntax. */
 const MD_INLINE_RE = /[*`~[!]/
@@ -45,12 +51,16 @@ export function parseMarkdownTable(text: string): ParseResult {
     return {table: {headers: null, rows: []}, warnings}
   }
 
+  // Split on column pipes only. An escaped pipe (`\|`) is a literal `|` inside a
+  // cell, not a delimiter, so split on unescaped pipes (negative lookbehind) and
+  // un-escape the survivors. The leading/trailing pipe strips likewise leave an
+  // escaped edge pipe intact.
   const parseLine = (line: string): string[] =>
     line
       .replace(/^\|/, '')
-      .replace(/\|$/, '')
-      .split('|')
-      .map((cell) => cell.trim())
+      .replace(/(?<!\\)\|$/, '')
+      .split(/(?<!\\)\|/)
+      .map((cell) => cell.replace(/\\\|/g, '|').trim())
 
   const rawHeaders = separatorIdx > 0 ? parseLine(lines[separatorIdx - 1]) : null
   const headers = rawHeaders

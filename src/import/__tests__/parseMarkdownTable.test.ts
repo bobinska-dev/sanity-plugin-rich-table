@@ -226,4 +226,40 @@ describe('parseMarkdownTable', () => {
 | **Row 2** | Bob |`
     expect(parseMarkdownTable(md).table.hasRowTitles).toBe(true)
   })
+
+  it('parses a table with no outer pipes (valid GFM)', () => {
+    const md = `Name | Role
+---- | ----
+Alice | Engineer
+Bob | Designer`
+
+    const result = parseMarkdownTable(md)
+    expect(result.table.headers).toEqual(['Name', 'Role'])
+    expect(result.table.rows).toEqual([
+      ['Alice', 'Engineer'],
+      ['Bob', 'Designer'],
+    ])
+  })
+
+  it('does not mistake a plain --- thematic break for a separator', () => {
+    // A lone dash run has no pipe, so it must not be read as a single-column
+    // separator (which would swallow surrounding prose as a bogus table).
+    const md = `Some intro paragraph.
+---
+More prose below.`
+
+    const result = parseMarkdownTable(md)
+    expect(result.table.headers).toBeNull()
+    expect(result.table.rows).toEqual([])
+  })
+
+  it('treats an escaped pipe as a literal, not a column delimiter', () => {
+    const md = `| Expr | Note |
+| ---- | ---- |
+| a \\| b | pipe |`
+
+    const result = parseMarkdownTable(md)
+    expect(result.table.headers).toEqual(['Expr', 'Note'])
+    expect(result.table.rows).toEqual([['a | b', 'pipe']])
+  })
 })
