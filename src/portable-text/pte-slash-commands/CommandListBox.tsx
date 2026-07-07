@@ -17,10 +17,16 @@ export interface CommandListBoxProps {
  * listbox's `aria-activedescendant` so assistive tech tracks the active command. */
 const optionId = (key: string): string => `rt-command-option-${key}`
 
+// Keep mousedown inside the panel from blurring the editor — otherwise the
+// editor's `blurred` event dismisses (and unmounts) the picker before a command
+// item's `onClick` can fire, making slash-insert keyboard-only. preventDefault
+// on mousedown doesn't cancel the subsequent click, so selection still works.
+const keepEditorFocus = (event: {preventDefault: () => void}) => event.preventDefault()
+
 const CommandListBox: ComponentType<CommandListBoxProps> = (props) => {
   if (props.matches.length === 0) {
     return (
-      <Flex padding={2} align={'center'}>
+      <Flex padding={2} align={'center'} onMouseDown={keepEditorFocus}>
         <Box>
           <Text size={1}>No commands matching &quot;{props.keyword}&quot;</Text>
         </Box>
@@ -36,6 +42,7 @@ const CommandListBox: ComponentType<CommandListBoxProps> = (props) => {
       as={'ol'}
       padding={1}
       style={{maxHeight: 300, minWidth: 220, overflowY: 'auto', listStyle: 'none'}}
+      onMouseDown={keepEditorFocus}
       aria-orientation={'vertical'}
       role="listbox"
       aria-label="Available commands"
