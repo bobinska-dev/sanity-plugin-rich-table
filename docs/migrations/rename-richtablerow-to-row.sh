@@ -66,7 +66,7 @@ WORKDIR="richtablerow-migration"
 mkdir -p "$WORKDIR"
 
 echo "1/4  Exporting '$DATASET' (documents only, no assets)…"
-npx sanity dataset export "$DATASET" "$WORKDIR/export.tar.gz" --no-assets --overwrite
+pnpm dlx sanity dataset export "$DATASET" "$WORKDIR/export.tar.gz" --no-assets --overwrite
 
 echo "2/4  Unpacking the export…"
 tar -xzf "$WORKDIR/export.tar.gz" -C "$WORKDIR"
@@ -94,8 +94,8 @@ echo "    $WORKDIR/fixed.ndjson"
 echo
 echo "Then APPLY the change (this is the only step that writes to your dataset):"
 echo
-echo "    npx sanity dataset import \"$WORKDIR/fixed.ndjson\" \"$DATASET\" --replace"
+echo "    pnpm dlx sanity dataset import \"$WORKDIR/fixed.ndjson\" \"$DATASET\" --replace"
 echo
 echo "TIP — rehearse on a throwaway copy of the dataset first:"
-echo "    npx sanity dataset copy \"$DATASET\" \"${DATASET}-migration-test\""
-echo "    npx sanity dataset import \"$WORKDIR/fixed.ndjson\" \"${DATASET}-migration-test\" --replace"
+echo "    pnpm dlx sanity dataset copy \"$DATASET\" \"${DATASET}-migration-test\""
+echo "    pnpm dlx sanity dataset import \"$WORKDIR/fixed.ndjson\" \"${DATASET}-migration-test\" --replace"

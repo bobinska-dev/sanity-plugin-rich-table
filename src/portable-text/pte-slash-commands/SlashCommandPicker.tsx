@@ -1,4 +1,4 @@
-import {useEditor} from '@portabletext/editor'
+import {type EditorEmittedEvent, useEditor} from '@portabletext/editor'
 import {effect, raise} from '@portabletext/editor/behaviors'
 import {EventListenerPlugin} from '@portabletext/editor/plugins'
 import {defineTypeaheadPicker, useTypeaheadPicker} from '@portabletext/plugin-typeahead-picker'
@@ -98,27 +98,32 @@ export function SlashCommandPickerPlugin({schemaType}: SlashCommandPickerPluginP
   }, [commands])
 
   const pickerState = useTypeaheadPicker(picker)
+  const {send} = pickerState
   const {keyword, matches, selectedIndex} = pickerState.snapshot.context
   const isActive = pickerState.snapshot.matches('active')
 
   const getAnchorRect = () => editor.dom.getSelectionRect(editor.getSnapshot())
 
+  // Dismiss when focus leaves the editor entirely (clicking another cell,
+  // elsewhere in the rich-table field, or out of the Studio) — the typeahead
+  // picker handles Escape and cursor movement itself, but not blur, so it would
+  // otherwise stay pinned open. Selecting a command doesn't blur (the list items
+  // aren't focusable and FloatingPanel doesn't trap focus), so clicking a command
+  // still works; dismissing while idle is a harmless no-op.
+  //
+  // A plain function (not useCallback — see the repo's React Compiler rules) so
+  // the compiler memoizes it on the stable `send`; the component re-renders on
+  // every keystroke while active, and a fresh handler each render would make
+  // `EventListenerPlugin` unsubscribe/resubscribe the editor listener each time.
+  const handleEditorEvent = (event: EditorEmittedEvent) => {
+    if (event.type === 'blurred') {
+      send({type: 'dismiss'})
+    }
+  }
+
   return (
     <>
-      {/* The typeahead picker dismisses itself on Escape and cursor movement, but
-          NOT when focus leaves the editor entirely — clicking another cell,
-          elsewhere in the rich-table field, or out of the Studio would otherwise
-          leave it pinned open. Dismiss on `blurred`. Selecting a command doesn't
-          blur (the list items aren't focusable and FloatingPanel doesn't trap
-          focus), so clicking a command still works. Sending `dismiss` while the
-          picker is idle is a harmless no-op. */}
-      <EventListenerPlugin
-        on={(event) => {
-          if (event.type === 'blurred') {
-            pickerState.send({type: 'dismiss'})
-          }
-        }}
-      />
+      <EventListenerPlugin on={handleEditorEvent} />
       {isActive ? (
         <FloatingPanel getAnchorRect={getAnchorRect} offset={4}>
           <Box paddingBottom={2}>
@@ -130,9 +135,9 @@ export function SlashCommandPickerPlugin({schemaType}: SlashCommandPickerPluginP
             keyword={keyword}
             matches={matches}
             selectedIndex={selectedIndex}
-            onDismiss={() => pickerState.send({type: 'dismiss'})}
-            onNavigateTo={(index) => pickerState.send({type: 'navigate to', index})}
-            onSelect={() => pickerState.send({type: 'select'})}
+            onDismiss={() => send({type: 'dismiss'})}
+            onNavigateTo={(index) => send({type: 'navigate to', index})}
+            onSelect={() => send({type: 'select'})}
           />
         </FloatingPanel>
       ) : null}
