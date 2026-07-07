@@ -256,12 +256,23 @@ export function TableImportDialog({onClose, onConfirm}: TableImportDialogProps) 
 
       if (!xlsxBuffer) return
 
-      const result = await parseXlsxTable(xlsxBuffer, sheet)
-      if (result.table.rows.length === 0) {
-        setError('The selected sheet contains no data rows.')
+      // Mirror handleFileChange: parsing a sheet is async and can throw (a
+      // corrupt/unsupported sheet), so guard it and show the loading state
+      // instead of leaking an unhandled rejection with no user feedback.
+      setLoading(true)
+      try {
+        const result = await parseXlsxTable(xlsxBuffer, sheet)
+        if (result.table.rows.length === 0) {
+          setError('The selected sheet contains no data rows.')
+          applyParseResult(null)
+        } else {
+          applyParseResult(result)
+        }
+      } catch (err) {
+        setError(`Failed to read sheet: ${err instanceof Error ? err.message : String(err)}`)
         applyParseResult(null)
-      } else {
-        applyParseResult(result)
+      } finally {
+        setLoading(false)
       }
     },
     [xlsxBuffer, applyParseResult],
