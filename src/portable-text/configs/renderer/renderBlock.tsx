@@ -6,6 +6,7 @@ import BlockEditWrapper from '../../components/custom-blocks/BlockEditWrapper'
 import DefaultCustomBlock from '../../components/custom-blocks/DefaultCustomBlock'
 import ImageBlock from '../../components/custom-blocks/ImageBlock'
 import ReferenceBlock from '../../components/custom-blocks/ReferenceBlock'
+import {extendsType} from '../../schemaTypeChain'
 
 export const PREVIEW_SIZE = 30
 
@@ -55,7 +56,11 @@ export const renderBlock = (options?: RenderBlockOptions): RenderBlockFunction =
     }
     const original = currentSchema as {name?: string; to?: unknown} | undefined
 
-    if (props.schemaType.name === 'image') {
+    // Route by BASE type, not the exact member name: a *named* image member
+    // (e.g. `imageWithCaption`) must still get ImageBlock, otherwise it falls
+    // through to DefaultCustomBlock which renders the asset object and crashes
+    // with "Objects are not valid as a React child".
+    if (props.schemaType.name === 'image' || extendsType(currentSchema, 'image')) {
       return withEdit(<ImageBlock {...withSchema} />)
     }
     // A reference type carries `to` (its allowed targets) even when it's a *named*

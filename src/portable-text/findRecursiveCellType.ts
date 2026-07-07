@@ -1,3 +1,5 @@
+import {extendsType} from './schemaTypeChain'
+
 /**
  * The registered schema type name for a rich table. `richTableBlock` and any
  * custom block object the consumer declares with `type: 'richTable'` both
@@ -8,18 +10,6 @@ export const RICH_TABLE_TYPE = 'richTable'
 
 interface SchemaLike {
   get(typeName: string): unknown
-}
-
-/** Walk a compiled type's `.type` inheritance chain looking for `richTable`. */
-function extendsRichTable(type: unknown): boolean {
-  let current = type as {name?: string; type?: unknown} | undefined
-  const seen = new Set<unknown>()
-  while (current && typeof current === 'object' && !seen.has(current)) {
-    seen.add(current) // guard against a self-referential compiled chain
-    if (current.name === RICH_TABLE_TYPE) return true
-    current = current.type as {name?: string; type?: unknown} | undefined
-  }
-  return false
 }
 
 /**
@@ -48,7 +38,7 @@ export function findRecursiveCellType(
   const members = Array.isArray(arrayType?.of) ? arrayType.of : []
 
   for (const member of members) {
-    if (extendsRichTable(member)) {
+    if (extendsType(member, RICH_TABLE_TYPE)) {
       return (member as {name?: string}).name ?? RICH_TABLE_TYPE
     }
   }
