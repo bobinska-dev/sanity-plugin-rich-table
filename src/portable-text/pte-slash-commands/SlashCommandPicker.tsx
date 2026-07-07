@@ -11,6 +11,7 @@ import {FloatingPanel} from '../components/FloatingPanel'
 import {extractBlockConfig} from '../configs/extractBlockConfig'
 import CommandListBox from './CommandListBox'
 import {buildSlashCommands, CommandMatch} from './commands'
+import {handleSlashPickerBlur} from './handleSlashPickerBlur'
 
 interface SlashCommandPickerPluginProps {
   /** The cell's resolved PT array schema — supplies each command's schema-defined icon. */
@@ -113,17 +114,11 @@ export function SlashCommandPickerPlugin({schemaType}: SlashCommandPickerPluginP
   //
   // Memoized on the stable `send`: this component re-renders on every keystroke
   // while the picker is active, and `EventListenerPlugin` re-subscribes the
-  // editor listener whenever its `on` prop identity changes — so a fresh handler
-  // each render would resubscribe on every keystroke. `useCallback` is required
-  // because this package's build does NOT run the React Compiler (no
-  // babel-plugin-react-compiler in package.config.ts), so an in-body function
-  // would not be auto-memoized.
+  // editor listener whenever its `on` prop identity changes. Keeping the handler
+  // ref stable across renders lets EventListenerPlugin subscribe once instead of
+  // resubscribing every keystroke.
   const handleEditorEvent = useCallback(
-    (event: EditorEmittedEvent) => {
-      if (event.type === 'blurred') {
-        send({type: 'dismiss'})
-      }
-    },
+    (event: EditorEmittedEvent) => handleSlashPickerBlur(event, send),
     [send],
   )
 
