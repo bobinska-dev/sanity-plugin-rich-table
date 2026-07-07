@@ -98,10 +98,20 @@ function buildCellGrid(rowEls: Element[]): (Element | null)[][] {
 function sanitizeHref(href: string | null): string | undefined {
   const trimmed = href?.trim()
   if (!trimmed) return undefined
-  if (/^(#|\/|\.{1,2}\/)/.test(trimmed)) return trimmed
-  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(trimmed)?.[1]?.toLowerCase()
-  if (!scheme) return trimmed // no scheme → relative path
-  return ALLOWED_HREF_SCHEMES.includes(scheme) ? trimmed : undefined
+  // Browsers strip TAB/LF/CR (and other C0 control chars) from URLs before
+  // navigating, so `java\tscript:` becomes `javascript:` at click time. `.trim()`
+  // only removes leading/trailing whitespace, so an interior control char would
+  // otherwise defeat the scheme check (the scheme regex fails to match → treated
+  // as a "relative" URL and passed through). Strip control chars + spaces FIRST,
+  // then detect the scheme against the cleaned value, and return the cleaned URL.
+  const cleaned = Array.from(trimmed)
+    .filter((c) => c.charCodeAt(0) > 32)
+    .join('')
+  if (!cleaned) return undefined
+  if (/^(#|\/|\.{1,2}\/)/.test(cleaned)) return cleaned
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(cleaned)?.[1]?.toLowerCase()
+  if (!scheme) return cleaned // no scheme → relative path
+  return ALLOWED_HREF_SCHEMES.includes(scheme) ? cleaned : undefined
 }
 
 /**
