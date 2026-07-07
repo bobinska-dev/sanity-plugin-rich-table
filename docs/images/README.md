@@ -1,9 +1,8 @@
 # Documentation images
 
 Screenshots referenced from the root [`README.md`](../../README.md) and the docs
-[`README.md`](../README.md). Save each screenshot here with the exact filename
-below (PNG). The paths are relative to the repo, so once the files are in place
-the images resolve on GitHub and in local Markdown previews.
+[`README.md`](../README.md). Paths are relative to the repo, so they resolve both
+on GitHub and in local Markdown previews.
 
 | File                      | What it shows                                                              | Referenced from                               |
 | ------------------------- | -------------------------------------------------------------------------- | --------------------------------------------- |
