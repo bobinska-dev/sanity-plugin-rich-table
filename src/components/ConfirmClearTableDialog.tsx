@@ -25,7 +25,22 @@ const ConfirmClearTableDialog: ComponentType<ConfirmClearTableDialogProps> = ({
   const handleConfirm = useCallback(() => {
     setIsProcessing(true)
     try {
-      patch.execute([{unset: [path]}])
+      // Unset the table's FIELDS, not the whole path. Unsetting `path` works for
+      // an object field but, for a `richTableBlock` / array-item table, deletes
+      // the entire block/item — leaving nothing to re-initialise. Clearing the
+      // fields empties the table while keeping the block/item shell (its
+      // `_key`/`_type`) intact, so the empty-state re-init UI works everywhere.
+      patch.execute([
+        {
+          unset: [
+            `${path}.rows`,
+            `${path}.columnHeaders`,
+            `${path}.hasColumnTitles`,
+            `${path}.hasRowTitles`,
+            `${path}.rowTitleWidth`,
+          ],
+        },
+      ])
       onClose()
     } catch (err) {
       console.error(err)
