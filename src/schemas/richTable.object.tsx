@@ -11,6 +11,7 @@ import {
 
 import RichTableBock from '../components/RichTableBock'
 import RichTableDiff from '../components/RichTableDiff'
+import {RichTableErrorBoundary} from '../components/RichTableErrorBoundary'
 import RichTableField from '../components/RichTableField'
 import RichTableInput from '../components/RichTableInput'
 import RichTableItem from '../components/RichTableItem'
@@ -105,10 +106,12 @@ export const defineRichTableObject = ({
     icon: TbTable,
     components: {
       input: (inputProps) => (
-        <RichTableInput
-          {...(inputProps as ObjectInputProps<RichTableType>)}
-          portableTextSchemaTypeName={portableTextSchemaTypeName}
-        />
+        <RichTableErrorBoundary what="table" title="This table couldn’t be displayed">
+          <RichTableInput
+            {...(inputProps as ObjectInputProps<RichTableType>)}
+            portableTextSchemaTypeName={portableTextSchemaTypeName}
+          />
+        </RichTableErrorBoundary>
       ),
       block: RichTableBock,
       // Mirrors the table's aggregated validation onto the native field header,
