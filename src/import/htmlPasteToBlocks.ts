@@ -1,7 +1,7 @@
 import type {PortableTextBlock} from 'sanity'
 
 import {extractBlocks, parseHtmlTable} from './parseHtmlTable'
-import {toRichTableBlock} from './toRichTableValue'
+import {RICH_TABLE_BLOCK_TYPE, toRichTableBlock} from './toRichTableValue'
 import type {ParseWarning} from './types'
 
 /**
@@ -22,7 +22,10 @@ import type {ParseWarning} from './types'
  * table (e.g. a wrapping `<div>`) are recursed into so the table is lifted out
  * rather than flattened into prose.
  */
-export function htmlPasteToBlocks(html: string): PortableTextBlock[] {
+export function htmlPasteToBlocks(
+  html: string,
+  blockType: string = RICH_TABLE_BLOCK_TYPE,
+): PortableTextBlock[] {
   if (!html) return []
 
   const doc = new DOMParser().parseFromString(html, 'text/html')
@@ -30,7 +33,7 @@ export function htmlPasteToBlocks(html: string): PortableTextBlock[] {
   // Warnings (unimportable cells) are surfaced by the parser but not needed here.
   const warnings: ParseWarning[] = []
 
-  processNodes(Array.from(doc.body.childNodes), doc, warnings, out)
+  processNodes(Array.from(doc.body.childNodes), doc, warnings, out, blockType)
 
   return out
 }
@@ -40,6 +43,7 @@ function processNodes(
   doc: Document,
   warnings: ParseWarning[],
   out: PortableTextBlock[],
+  blockType: string,
 ): void {
   let proseBuffer: Node[] = []
 
@@ -58,13 +62,15 @@ function processNodes(
       flushProse()
       const parsed = parseHtmlTable(el.outerHTML)
       if (parsed.table.rows.length > 0) {
-        out.push(toRichTableBlock(parsed.table) as unknown as PortableTextBlock)
+        out.push(
+          toRichTableBlock(parsed.table, undefined, blockType) as unknown as PortableTextBlock,
+        )
       }
     } else if (el && el.querySelector('table')) {
       // A wrapper element that contains a table somewhere inside — recurse so
       // the table is lifted out instead of being flattened into prose.
       flushProse()
-      processNodes(Array.from(el.childNodes), doc, warnings, out)
+      processNodes(Array.from(el.childNodes), doc, warnings, out, blockType)
     } else {
       proseBuffer.push(node)
     }

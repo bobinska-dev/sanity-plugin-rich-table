@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
-import {toRichTableValue} from '../toRichTableValue'
+import {RICH_TABLE_BLOCK_TYPE, toRichTableBlock, toRichTableValue} from '../toRichTableValue'
 import type {ParsedTable} from '../types'
 
 describe('toRichTableValue', () => {
@@ -205,5 +205,41 @@ describe('toRichTableValue', () => {
     expect(result.rows[1].title).toBe('Q2')
     expect(result.rows[0].cells).toHaveLength(2)
     expect(result.columnHeaders).toHaveLength(2)
+  })
+})
+
+describe('toRichTableBlock', () => {
+  const parsed: ParsedTable = {headers: ['A', 'B'], rows: [['1', '2']]}
+
+  it('stamps the default block type when none is given', () => {
+    const block = toRichTableBlock(parsed)
+    expect(block._type).toBe(RICH_TABLE_BLOCK_TYPE)
+    expect(block._type).toBe('richTableBlock')
+  })
+
+  it('stamps a custom block type when provided (renamed member)', () => {
+    const block = toRichTableBlock(parsed, undefined, 'richTable')
+    expect(block._type).toBe('richTable')
+  })
+
+  it('only overrides the top-level _type, leaving the rest of the shape intact', () => {
+    const block = toRichTableBlock(parsed, undefined, 'richTable')
+    // Nested types are untouched by the block-type override.
+    expect(block.rows).toHaveLength(1)
+    expect(block.rows[0]._type).toBe('row')
+    expect(block.rows[0].cells[0]._type).toBe('richTableCell')
+    expect(block.columnHeaders).toHaveLength(2)
+    expect(block.columnHeaders[0]._type).toBe('columnHeader')
+  })
+
+  it('forwards options while applying the custom block type', () => {
+    const block = toRichTableBlock(
+      {headers: ['Label', 'Val'], rows: [['r1', '1']]},
+      {hasRowTitles: true},
+      'richTable',
+    )
+    expect(block._type).toBe('richTable')
+    expect(block.hasRowTitles).toBe(true)
+    expect(block.rows[0].title).toBe('r1')
   })
 })

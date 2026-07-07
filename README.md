@@ -326,6 +326,8 @@ export default defineConfig({
 
 This affects only Sanity's document-body Portable Text inputs — not the rich table's own cell editors.
 
+A pasted table is inserted with the `_type` of **your** rich-table block member, detected automatically from the field's schema — so if you registered it under a different name (e.g. `defineArrayMember({name: 'richTable', type: 'richTableBlock'})` to keep the stored `_type` stable), pasted blocks still match your member. No configuration needed.
+
 ### Excel (`.xlsx`) support
 
 Excel parsing uses [SheetJS](https://sheetjs.com) (`xlsx`), declared as an **optional dependency** (installed by default). If you install without optional dependencies, CSV / TSV / HTML / Markdown import still work and Excel upload simply reports that it is unavailable.

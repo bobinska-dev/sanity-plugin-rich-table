@@ -8,8 +8,9 @@ import {isPureTablePaste} from './isPureTablePaste'
 import {markdownPasteToBlocks} from './markdownPasteToBlocks'
 import {parseHtmlTable} from './parseHtmlTable'
 import {parseTsvTable} from './parseTsvTable'
+import {resolveRichTableBlockName} from './resolveRichTableBlockName'
 import {getToastForResult} from './toastMessages'
-import {RICH_TABLE_BLOCK_TYPE, toRichTableBlock} from './toRichTableValue'
+import {toRichTableBlock} from './toRichTableValue'
 import type {ParseResult, TableFormat} from './types'
 
 /**
@@ -56,8 +57,8 @@ function hasMarkdownBlockSignal(text: string): boolean {
   )
 }
 
-const isRichTableBlock = (block: unknown): boolean =>
-  (block as {_type?: string})._type === RICH_TABLE_BLOCK_TYPE
+const isRichTableBlock = (block: unknown, blockType: string): boolean =>
+  (block as {_type?: string})._type === blockType
 
 /**
  * `clipboard.paste` interceptor for HTML/TSV pastes that are *only* a table.
@@ -69,7 +70,7 @@ const isRichTableBlock = (block: unknown): boolean =>
 function createPureTablePasteBehavior(showToastRef: MutableRefObject<ShowToastFn | null>) {
   return defineBehavior({
     on: 'clipboard.paste',
-    guard: ({event}) => {
+    guard: ({event, snapshot}) => {
       const html = event.originEvent.dataTransfer.getData('text/html')
       const plain = event.originEvent.dataTransfer.getData('text/plain')
 
@@ -84,13 +85,27 @@ function createPureTablePasteBehavior(showToastRef: MutableRefObject<ShowToastFn
       const result = parser(input)
       if (!result || result.table.rows.length === 0) return false
 
-      return {result, isRichFormat: format !== 'tsv'}
+      // Auto-detect the block's `_type` from the field's schema (honours a
+      // renamed richTableBlock member) — never a hard-coded / passed-in name.
+      const blockType = resolveRichTableBlockName(snapshot.context.schema)
+      return {result, isRichFormat: format !== 'tsv', blockType}
     },
     actions: [
-      (_, {result, isRichFormat}: {result: ParseResult; isRichFormat: boolean}) => [
+      (
+        _,
+        {
+          result,
+          isRichFormat,
+          blockType,
+        }: {result: ParseResult; isRichFormat: boolean; blockType: string},
+      ) => [
         execute({
           type: 'insert.block',
-          block: toRichTableBlock(result.table) as unknown as PortableTextBlock,
+          block: toRichTableBlock(
+            result.table,
+            undefined,
+            blockType,
+          ) as unknown as PortableTextBlock,
           placement: 'after',
           select: 'none',
         }),
@@ -123,22 +138,26 @@ function createPureTablePasteBehavior(showToastRef: MutableRefObject<ShowToastFn
 function createMixedTablePasteBehavior(showToastRef: MutableRefObject<ShowToastFn | null>) {
   return defineBehavior({
     on: 'clipboard.paste',
-    guard: ({event}) => {
+    guard: ({event, snapshot}) => {
       const html = event.originEvent.dataTransfer.getData('text/html')
       const plain = event.originEvent.dataTransfer.getData('text/plain')
+
+      // Auto-detect the block's `_type` from the field's schema (honours a
+      // renamed richTableBlock member) — never a hard-coded / passed-in name.
+      const blockType = resolveRichTableBlockName(snapshot.context.schema)
 
       // HTML with a table mixed with prose. Pure HTML tables are handled by
       // createPureTablePasteBehavior (single block), so skip them here.
       if (html && /<table[\s>]/i.test(html) && !isPureTablePaste(html, plain, 'html')) {
-        const blocks = htmlPasteToBlocks(html)
-        const tableCount = blocks.filter(isRichTableBlock).length
+        const blocks = htmlPasteToBlocks(html, blockType)
+        const tableCount = blocks.filter((block) => isRichTableBlock(block, blockType)).length
         if (tableCount > 0) return {blocks, tableCount}
       }
 
       // Markdown carrying a table (with or without surrounding prose).
       if (plain && hasMarkdownBlockSignal(plain)) {
-        const blocks = markdownPasteToBlocks(plain)
-        const tableCount = blocks.filter(isRichTableBlock).length
+        const blocks = markdownPasteToBlocks(plain, blockType)
+        const tableCount = blocks.filter((block) => isRichTableBlock(block, blockType)).length
         if (tableCount > 0) return {blocks, tableCount}
       }
 
@@ -177,6 +196,10 @@ function createMixedTablePasteBehavior(showToastRef: MutableRefObject<ShowToastF
  *
  * The toast callback is passed via a React ref so each editor instance keeps
  * its own notification channel.
+ *
+ * The inserted block's `_type` is auto-detected per paste from the field's own
+ * schema (see `resolveRichTableBlockName`), so a renamed `richTableBlock` member
+ * is honoured with no configuration from the consumer.
  */
 export function createTablePasteBehaviors(showToastRef: MutableRefObject<ShowToastFn | null>) {
   return [createPureTablePasteBehavior(showToastRef), createMixedTablePasteBehavior(showToastRef)]
