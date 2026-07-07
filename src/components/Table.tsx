@@ -18,18 +18,17 @@ import {styled} from 'styled-components'
 
 import {useTableCellValidation} from '../hooks/useTableCellValidation'
 import {useToggleTitles} from '../hooks/useToggleTitles'
-import ContentPortableTextInput from '../portable-text/ContentPortableTextEditor'
 import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
-import {CellErrorBoundary} from './CellErrorBoundary'
 import ColumnContextMenu from './ColumnContextMenu'
 import ColumnHeaderWithInput from './ColumnHeaderWithInput'
 import ColumnResizeHandle from './ColumnResizeHandle'
 import RowContextMenu from './RowContextMenu'
 import RowHeaderWithInput from './RowHeaderWithInput'
 import TableButtons from './TableButtons'
+import {TableCell} from './TableCell'
 import TableGrid from './TableGrid'
 import TableScrollWrapper from './TableScrollWrapper'
 
@@ -339,7 +338,6 @@ const Table: ComponentType<
                   const cellContentSchemaType = cellItem.schemaType.fields.find(
                     (field) => field.name === 'content',
                   ) as ArraySchemaType<PortableTextBlock>
-                  const cellValidation = getCellValidation(cellItem.path)
                   // Row-header tone comes from the row's *title* markers only, so a
                   // cell error inside the row doesn't also redden the row header.
                   const rowTitleTone =
@@ -378,26 +376,23 @@ const Table: ComponentType<
                           ownsRouteDialog={ownsRouteDialog}
                         />
                       )}
-                      {/* PTE CELL CONTENT — wrapped so a render crash in one cell
-                          (malformed content, a throwing custom renderer) is
-                          contained and doesn't take down the whole table. */}
-                      <CellErrorBoundary
-                        key={cellItem.id}
-                        label={`column ${cellIndex + 1}, row ${rowIndex + 1}`}
-                      >
-                        <ContentPortableTextInput
-                          onChange={onChange}
-                          path={cellPTEPath}
-                          value={cellValue}
-                          readOnly={props.readOnly}
-                          schemaType={cellContentSchemaType}
-                          role="cell"
-                          portableTextSchemaTypeName={portableTextSchemaTypeName}
-                          displayInlineChanges={props.displayInlineChanges}
-                          validation={cellValidation.markers}
-                          validationTone={cellValidation.tone}
-                        />
-                      </CellErrorBoundary>
+                      {/* PTE CELL CONTENT — memoized so editing one cell doesn't
+                          re-render every other cell's editor (Table re-renders on
+                          every keystroke). See TableCell for the comparator. */}
+                      <TableCell
+                        pteePath={cellPTEPath}
+                        pathKey={pathToString(cellPTEPath)}
+                        cellPath={cellItem.path}
+                        value={cellValue}
+                        schemaType={cellContentSchemaType}
+                        onChange={onChange}
+                        readOnly={props.readOnly}
+                        portableTextSchemaTypeName={portableTextSchemaTypeName}
+                        displayInlineChanges={props.displayInlineChanges}
+                        getCellValidation={getCellValidation}
+                        rowIndex={rowIndex}
+                        cellIndex={cellIndex}
+                      />
                     </Fragment>
                   )
                 })}
