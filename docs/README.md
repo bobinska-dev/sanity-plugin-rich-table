@@ -10,7 +10,8 @@
 6. [Debugging data issues](#debugging-data-issues)
 7. [Reviewing changes](#reviewing-changes)
 8. [Render tables](#render-tables)
-9. [Merging cells](#merging-cells)
+9. [Export to Markdown](#export-to-markdown)
+10. [Merging cells](#merging-cells)
 
 ## Overview
 
@@ -45,7 +46,7 @@ export default defineConfig({
 })
 ```
 
-After installing the plugin, you can use the `richTable` object type in your schemas as a field (object) or the `richTableBlock` type in your Portable Text fields.
+After installing the plugin, you can use the `richTable` object type in your schemas — as a field, as a member of an array (many tables in one field), or nested inside your own object types — and the `richTableBlock` type in your Portable Text fields.
 
 ### Usage as a field
 
@@ -56,6 +57,25 @@ defineField({
   type: 'richTable', // Use the rich table object type
 })
 ```
+
+### Usage as an array item / object
+
+`richTable` is a plain object type, so it works anywhere `defineField` / `defineArrayMember` accepts a type — including as a member of an array (a field that holds many tables) or nested inside one of your own object types.
+
+```ts
+defineField({
+  name: 'tables',
+  title: 'Tables',
+  type: 'array',
+  of: [
+    defineArrayMember({
+      type: 'richTable', // one rich table per array item
+    }),
+  ],
+})
+```
+
+When a table is used as an array item, it stores a root `_type` and `_key` on the value (see [Data Structure](#data-structure)), and — because array items have no field-actions menu — the **Import table** action appears as an inline button on each table.
 
 ### Usage as a custom block in Portable Text
 
@@ -79,19 +99,22 @@ Every table cell is a Portable Text editor. Out of the box it offers the standar
 plugins: [richTablePlugin({portableTextSchemaTypeName: 'tableCellContent'})]
 ```
 
+> [!WARNING]
+> Do **not** add `richTableBlock` (or any block object of `type: 'richTable'`) to your cell-content schema. A table cell can't contain a table: it would nest the schema infinitely and crash Sanity's schema normalization with _"Maximum call stack size exceeded"_. The plugin guards against this — if the type you pass as `portableTextSchemaTypeName` includes a table, it throws a clear error at studio load naming the offending type.
+
 Because it's a normal Portable Text array, everything you already know about `styles`, `lists`, `marks.decorators`, `marks.annotations`, block objects and inline objects applies. The cell toolbar, the slash-command picker (`/`) and the markdown shortcuts all follow whatever this schema declares.
 
 ### Rendering your marks and objects in the cell
 
 To render custom output **inside a cell**, attach a component. Styles and decorators use Sanity's native `component` field. Annotations, block objects and inline objects use a **table-specific sibling slot**:
 
-| What          | Where you declare it            | Slot                          | Component props        |
-| ------------- | ------------------------------- | ----------------------------- | ---------------------- |
-| Style         | `styles[]`                      | `component` (native)          | `BlockStyleProps`      |
-| Decorator     | `marks.decorators[]`            | `component` (native)          | `BlockDecoratorProps`  |
-| Annotation    | `marks.annotations[]`           | `components.tableAnnotation`  | `BlockAnnotationProps` |
-| Block object  | top-level array member          | `components.tableBlock`       | `BlockProps`           |
-| Inline object | the block member's own `of[]`   | `components.tableInlineBlock` | `BlockProps`           |
+| What          | Where you declare it          | Slot                          | Component props        |
+| ------------- | ----------------------------- | ----------------------------- | ---------------------- |
+| Style         | `styles[]`                    | `component` (native)          | `BlockStyleProps`      |
+| Decorator     | `marks.decorators[]`          | `component` (native)          | `BlockDecoratorProps`  |
+| Annotation    | `marks.annotations[]`         | `components.tableAnnotation`  | `BlockAnnotationProps` |
+| Block object  | top-level array member        | `components.tableBlock`       | `BlockProps`           |
+| Inline object | the block member's own `of[]` | `components.tableInlineBlock` | `BlockProps`           |
 
 **Why the `table*` sibling slots?** The plugin renders each cell in its own editor, but the built-in **edit form** (the pencil in the cell's popover) is powered by Sanity's native Portable Text input behind the scenes. Sanity's native input renders annotations via `props.renderDefault` and needs its own default node to open the edit form — neither of which the cell editor provides. So the plugin reads your in-cell component from `tableBlock` / `tableInlineBlock` / `tableAnnotation`, leaving the native `block` / `inlineBlock` / `annotation` slots for Sanity's default rendering. That way your component shows in the cell **and** editing still works. Styles and decorators don't have this split — they use the native `component` field directly.
 
@@ -143,12 +166,7 @@ The same schema, now with a custom style, decorator, annotation, block object an
 
 ```tsx
 // components/cell-components.tsx
-import type {
-  BlockAnnotationProps,
-  BlockDecoratorProps,
-  BlockProps,
-  BlockStyleProps,
-} from 'sanity'
+import type {BlockAnnotationProps, BlockDecoratorProps, BlockProps, BlockStyleProps} from 'sanity'
 
 // Style — wraps the block's text
 export const LeadStyle = (props: BlockStyleProps) => (
@@ -171,7 +189,11 @@ export const FootnoteAnnotation = (props: BlockAnnotationProps) => (
 // Block object — `value` is the object; render your own preview
 export const CalloutBlock = (props: BlockProps) => {
   const {text} = props.value as {text?: string}
-  return <aside style={{borderLeft: '3px solid var(--card-focus-ring-color)', paddingLeft: 8}}>{text}</aside>
+  return (
+    <aside style={{borderLeft: '3px solid var(--card-focus-ring-color)', paddingLeft: 8}}>
+      {text}
+    </aside>
+  )
 }
 
 // Inline object — a void inline node; render from `value`
@@ -240,6 +262,10 @@ export const tableCellContent = defineType({
 
 Editing a block object, inline object or annotation opens Sanity's native edit form (the same fields you defined), so you never have to build an editing UI — only the in-cell presentation.
 
+| <img alt="The default Sanity image edit modal opened from inside a table cell" src="images/image-modal.png" width="640" /> |
+| -------------------------------------------------------------------------------------------------------------------------- |
+| Editing an image in a cell opens Sanity's native image modal — no custom editing UI required.                              |
+
 ## Data Structure
 
 The underlying data structure of the rich table is not an array directly, instead it's an object with a `rows` and a `columnHeaders` array as well as UI flags for hidding column and row titles.
@@ -286,6 +312,11 @@ What you get:
 
 - **A diff grid** summarising which rows and columns were added, removed or moved, and which cells changed. Column/row title edits and title-visibility toggles are shown too.
 - **A combined cell view.** Click a changed cell to open a detail dialog with a single **Changes** section: removed text is struck through, added text is highlighted, and unchanged text is left plain — instead of separate "Before" and "After" blocks. Each revision's raw Portable Text is still available under _Raw content_.
+
+| <img alt="Cell-detail dialog in the diff showing the changed content for a single cell" src="images/review-changes-cell.png" width="520" /> |
+| ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Click into a cell in the diff to inspect its content change on its own.                                                                     |
+
 - **Inline changes in the editor.** When Studio's inline-changes mode is enabled (the toggle that adds `?displayInlineChanges=true` to the URL), the same before→after highlights are overlaid directly on each cell's editor while it stays fully editable. This reads the compared revision from the Structure tool's document pane, so it applies when you are reviewing a revision there.
 
 The diff compares the plain text of each cell (marks and annotations are ignored), so formatting-only changes may not be highlighted — open the cell dialog's _Raw content_ to inspect those. Nothing here needs configuration; the diff is wired up automatically for the `richTable` type.
@@ -431,6 +462,42 @@ When you wire this up as a `richTableBlock` component for a Portable Text field,
 
 > [!TIP]
 > If your Studio and Astro site live in the same repo, import only the **type** (`import type`) from `sanity-plugin-rich-table` and render cells with `astro-portabletext`. Pulling the plugin's runtime or `@portabletext/react` into the front end drags a second copy of React into the bundle, which breaks Sanity Visual Editing.
+
+## Export to Markdown
+
+Rendering isn't only for the DOM. `toMarkdownTable` serializes a stored table value into a GitHub-flavored Markdown table string — the inverse of the plugin's Markdown [importer](../README.md#importing-tables). It's a pure, dependency-free function, so it runs equally well in the Studio, a build step or a server (a Node script, a webhook, an export endpoint, or piping table data to an LLM).
+
+```ts
+import {toMarkdownTable} from 'sanity-plugin-rich-table'
+
+const markdown = toMarkdownTable(tableData)
+// |  | First | Second |
+// | --- | --- | --- |
+// | **Row 1** | Cell 1-1 | Cell 1-2 |
+// | **Row 2** | Cell 2-1 | Cell 2-2 |
+```
+
+What it does:
+
+- **Column titles** (when `hasColumnTitles`) become the header row, ordered by each header's `cellIndex`. Without them a valid — but empty — header row is emitted, because a GitHub-flavored Markdown table always needs one.
+- **Row titles** (when `hasRowTitles`) become a leading column, each wrapped in `**bold**` so a round-trip back through `parseMarkdownTable` re-detects them as titles.
+- **Ragged rows** are padded to the widest row so every column lines up.
+- **Cell content** is flattened to plain text by default (marks and annotations dropped, `|` escaped, newlines folded to `<br>`).
+
+### Rendering rich cells to Markdown
+
+By default cells become plain text. To emit inline Markdown for your own schema — bold, links, or a custom block object — pass a `cellToMarkdown` serializer. Whatever you return is written verbatim into the cell, so escape `|` and newlines yourself if your output can contain them.
+
+```ts
+import {toMarkdownTable} from 'sanity-plugin-rich-table'
+import {toPlainText} from '@portabletext/toolkit'
+// or bring your own PT → Markdown converter, e.g. a @portabletext/react-to-markdown pass
+
+const markdown = toMarkdownTable(tableData, {
+  cellToMarkdown: (cell) =>
+    toPlainText(cell.content).replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>'),
+})
+```
 
 ## Merging cells
 

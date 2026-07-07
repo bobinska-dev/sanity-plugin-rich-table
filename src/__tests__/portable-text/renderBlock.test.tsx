@@ -1,3 +1,6 @@
+import {studioTheme, ThemeProvider} from '@sanity/ui'
+import {render, screen} from '@testing-library/react'
+import type {ComponentProps} from 'react'
 import {describe, expect, it} from 'vitest'
 
 import DefaultCustomBlock from '../../portable-text/components/custom-blocks/DefaultCustomBlock'
@@ -33,5 +36,69 @@ describe('renderBlock dispatch', () => {
 
   it('renders a text block as a plain div passthrough', () => {
     expect(dispatch('block').type).toBe('div')
+  })
+
+  it('routes a NAMED image member (imageWithCaption) to ImageBlock by base type', () => {
+    // A named `type: 'image'` member — its compiled `.type` chain reaches
+    // `image`, so it must get ImageBlock and not fall through to the default
+    // block (which would render the asset object and crash).
+    const configSchema = {
+      of: [{name: 'imageWithCaption', type: {name: 'image', type: {name: 'object'}}}],
+    } as never
+    const RenderNamed = renderBlock({configSchema})
+    const el = RenderNamed({
+      schemaType: {name: 'imageWithCaption'},
+      value: {_key: 'k'},
+      children: null,
+    } as never) as {type: unknown}
+    expect(el.type).toBe(ImageBlock)
+  })
+
+  it('routes a NAMED reference member (authorRef) to ReferenceBlock by base type', () => {
+    // A named `type: 'reference'` member — its compiled `.type` chain reaches
+    // `reference`, so it must get ReferenceBlock and not fall through to the
+    // default block (which would render the generic card instead of a preview).
+    const configSchema = {
+      of: [
+        {
+          name: 'authorRef',
+          type: {name: 'reference', type: {name: 'object'}},
+          to: [{type: 'author'}],
+        },
+      ],
+    } as never
+    const RenderNamed = renderBlock({configSchema})
+    const el = RenderNamed({
+      schemaType: {name: 'authorRef'},
+      value: {_key: 'k'},
+      children: null,
+    } as never) as {type: unknown}
+    expect(el.type).toBe(ReferenceBlock)
+  })
+})
+
+describe('DefaultCustomBlock media fallback', () => {
+  it('does not crash when preview media is an object (e.g. an image asset ref)', () => {
+    const props = {
+      schemaType: {
+        name: 'imageWithCaption',
+        title: 'Image with caption',
+        preview: {select: {title: 'caption', media: 'asset'}},
+      },
+      value: {_key: 'k', caption: 'A caption', asset: {_type: 'reference', _ref: 'image-abc'}},
+      selected: false,
+      children: null,
+    } as unknown as ComponentProps<typeof DefaultCustomBlock>
+
+    expect(() =>
+      render(
+        <ThemeProvider theme={studioTheme}>
+          <DefaultCustomBlock {...props} />
+        </ThemeProvider>,
+      ),
+    ).not.toThrow()
+    // The title still renders; the raw asset ref must NOT be dumped as a child.
+    expect(screen.getByText('A caption')).toBeInTheDocument()
+    expect(screen.queryByText(/image-abc/)).not.toBeInTheDocument()
   })
 })

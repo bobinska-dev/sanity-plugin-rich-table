@@ -1,15 +1,17 @@
-import {useEditor} from '@portabletext/editor'
+import {type EditorEmittedEvent, useEditor} from '@portabletext/editor'
 import {effect, raise} from '@portabletext/editor/behaviors'
+import {EventListenerPlugin} from '@portabletext/editor/plugins'
 import {defineTypeaheadPicker, useTypeaheadPicker} from '@portabletext/plugin-typeahead-picker'
 import {Box, Text} from '@sanity/ui'
 import Fuse from 'fuse.js'
-import {useMemo} from 'react'
+import {useCallback, useMemo} from 'react'
 import type {ArrayDefinition, ArraySchemaType, PortableTextBlock} from 'sanity'
 
 import {FloatingPanel} from '../components/FloatingPanel'
 import {extractBlockConfig} from '../configs/extractBlockConfig'
 import CommandListBox from './CommandListBox'
 import {buildSlashCommands, CommandMatch} from './commands'
+import {handleSlashPickerBlur} from './handleSlashPickerBlur'
 
 interface SlashCommandPickerPluginProps {
   /** The cell's resolved PT array schema — supplies each command's schema-defined icon. */
@@ -97,28 +99,49 @@ export function SlashCommandPickerPlugin({schemaType}: SlashCommandPickerPluginP
   }, [commands])
 
   const pickerState = useTypeaheadPicker(picker)
+  const {send} = pickerState
   const {keyword, matches, selectedIndex} = pickerState.snapshot.context
   const isActive = pickerState.snapshot.matches('active')
 
   const getAnchorRect = () => editor.dom.getSelectionRect(editor.getSnapshot())
 
-  if (!isActive) return null
+  // Dismiss when focus leaves the editor entirely (clicking another cell,
+  // elsewhere in the rich-table field, or out of the Studio) — the typeahead
+  // picker handles Escape and cursor movement itself, but not blur, so it would
+  // otherwise stay pinned open. Selecting a command doesn't blur (the list items
+  // aren't focusable and FloatingPanel doesn't trap focus), so clicking a command
+  // still works; dismissing while idle is a harmless no-op.
+  //
+  // Memoized on the stable `send`: this component re-renders on every keystroke
+  // while the picker is active, and `EventListenerPlugin` re-subscribes the
+  // editor listener whenever its `on` prop identity changes. Keeping the handler
+  // ref stable across renders lets EventListenerPlugin subscribe once instead of
+  // resubscribing every keystroke.
+  const handleEditorEvent = useCallback(
+    (event: EditorEmittedEvent) => handleSlashPickerBlur(event, send),
+    [send],
+  )
 
   return (
-    <FloatingPanel getAnchorRect={getAnchorRect} offset={4}>
-      <Box paddingBottom={2}>
-        <Text size={0} muted style={{fontStyle: 'italic'}}>
-          Insert a style, mark, list or block (navigate with ↑ ↓ and Enter)
-        </Text>
-      </Box>
-      <CommandListBox
-        keyword={keyword}
-        matches={matches}
-        selectedIndex={selectedIndex}
-        onDismiss={() => pickerState.send({type: 'dismiss'})}
-        onNavigateTo={(index) => pickerState.send({type: 'navigate to', index})}
-        onSelect={() => pickerState.send({type: 'select'})}
-      />
-    </FloatingPanel>
+    <>
+      <EventListenerPlugin on={handleEditorEvent} />
+      {isActive ? (
+        <FloatingPanel getAnchorRect={getAnchorRect} offset={4}>
+          <Box paddingBottom={2}>
+            <Text size={0} muted style={{fontStyle: 'italic'}}>
+              Insert a style, mark, list or block (navigate with ↑ ↓ and Enter)
+            </Text>
+          </Box>
+          <CommandListBox
+            keyword={keyword}
+            matches={matches}
+            selectedIndex={selectedIndex}
+            onDismiss={() => send({type: 'dismiss'})}
+            onNavigateTo={(index) => send({type: 'navigate to', index})}
+            onSelect={() => send({type: 'select'})}
+          />
+        </FloatingPanel>
+      ) : null}
+    </>
   )
 }

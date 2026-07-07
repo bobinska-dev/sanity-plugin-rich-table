@@ -6,6 +6,7 @@ import BlockEditWrapper from '../../components/custom-blocks/BlockEditWrapper'
 import DefaultCustomBlock from '../../components/custom-blocks/DefaultCustomBlock'
 import ImageBlock from '../../components/custom-blocks/ImageBlock'
 import ReferenceBlock from '../../components/custom-blocks/ReferenceBlock'
+import {extendsType} from '../../schemaTypeChain'
 
 export const PREVIEW_SIZE = 30
 
@@ -55,15 +56,20 @@ export const renderBlock = (options?: RenderBlockOptions): RenderBlockFunction =
     }
     const original = currentSchema as {name?: string; to?: unknown} | undefined
 
-    if (props.schemaType.name === 'image') {
+    // Route by BASE type, not the exact member name: a *named* image member
+    // (e.g. `imageWithCaption`) must still get ImageBlock, otherwise it falls
+    // through to DefaultCustomBlock which renders the asset object and crashes
+    // with "Objects are not valid as a React child".
+    if (props.schemaType.name === 'image' || extendsType(currentSchema, 'image')) {
       return withEdit(<ImageBlock {...withSchema} />)
     }
-    // A reference type carries `to` (its allowed targets) even when it's a *named*
-    // array member (e.g. `fallbackReference`); detect it on the original schema so
+    // Route by BASE type too: a reference carries `to` (its allowed targets) even
+    // when it's a *named* array member (e.g. `fallbackReference`), and its compiled
+    // `.type` chain reaches `reference`. Walk that chain (like the image branch) so
     // named references still get the document preview instead of the generic card.
     if (
       props.schemaType.name === 'reference' ||
-      original?.name === 'reference' ||
+      extendsType(currentSchema, 'reference') ||
       Array.isArray(original?.to)
     ) {
       return withEdit(<ReferenceBlock {...withSchema} />)

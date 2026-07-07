@@ -6,6 +6,15 @@ export default defineConfig({
 
   dts: 'rolldown',
 
+  // Run the React Compiler at build time (pkg-utils bundles
+  // babel-plugin-react-compiler). It memoizes components, inline JSX handlers and
+  // in-body functions/values, so the plugin's runtime stable-reference
+  // assumptions actually hold — e.g. handlers passed to @portabletext/editor's
+  // EventListenerPlugin, which re-subscribes on `on`-prop identity change. This
+  // also makes the React-Compiler lint rules the repo already enforces (via
+  // eslint-plugin-react-hooks@7) match the shipped build.
+  babel: {reactCompiler: true},
+
   // Externalize @portabletext packages to use the host's versions
   // This prevents version conflicts between the plugin and the host studio
   external: [

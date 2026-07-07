@@ -1,7 +1,7 @@
 import {BlockRenderProps} from '@portabletext/editor'
 import {ObjectSchemaType, PreviewValue} from '@sanity/types'
 import {Box, Card, Flex, Stack, Text} from '@sanity/ui'
-import {ComponentType, CSSProperties, ReactNode} from 'react'
+import {ComponentType, CSSProperties, isValidElement, ReactNode} from 'react'
 
 import {PREVIEW_SIZE} from '../../configs/renderer/renderBlock'
 
@@ -44,30 +44,32 @@ const DefaultCustomBlock: ComponentType<BlockRenderProps> = (props) => {
 
   const preview = getPreviewSelection()
 
+  const iconBox = (): ReactNode => {
+    if (!schemaType.icon) return null
+    const Icon = schemaType.icon as unknown as ComponentType<{style?: CSSProperties}>
+    return (
+      <Flex
+        align="center"
+        justify="center"
+        style={{
+          width: `${PREVIEW_SIZE}px`,
+          height: `${PREVIEW_SIZE}px`,
+          borderRadius: '4px',
+          border: '1px solid var(--card-border-color)',
+          color: 'var(--card-muted-fg-color)',
+          flexShrink: 0,
+        }}
+      >
+        <Icon style={{width: ICON_GLYPH_SIZE, height: ICON_GLYPH_SIZE}} />
+      </Flex>
+    )
+  }
+
   const renderMedia = (): ReactNode => {
-    if (!preview.media && !schemaType.icon) return null
-    if (!preview.media && schemaType.icon) {
-      const Icon = schemaType.icon as unknown as ComponentType<{style?: CSSProperties}>
-      return (
-        <Flex
-          align="center"
-          justify="center"
-          style={{
-            width: `${PREVIEW_SIZE}px`,
-            height: `${PREVIEW_SIZE}px`,
-            borderRadius: '4px',
-            border: '1px solid var(--card-border-color)',
-            color: 'var(--card-muted-fg-color)',
-            flexShrink: 0,
-          }}
-        >
-          <Icon style={{width: ICON_GLYPH_SIZE, height: ICON_GLYPH_SIZE}} />
-        </Flex>
-      )
-    }
-    // If media is a component type (function/class), instantiate it
-    if (typeof preview.media === 'function') {
-      const Media = preview.media as ComponentType<{style?: CSSProperties}>
+    const {media} = preview
+    // If media is a component type (function/class), instantiate it.
+    if (typeof media === 'function') {
+      const Media = media as ComponentType<{style?: CSSProperties}>
       return (
         <Media
           style={{
@@ -80,8 +82,14 @@ const DefaultCustomBlock: ComponentType<BlockRenderProps> = (props) => {
         />
       )
     }
-    // Otherwise assume it's already a React node (element, string, etc.)
-    return preview.media as ReactNode
+    // A React element (e.g. an <img>) or a plain string is safe to render.
+    if (isValidElement(media)) return media
+    if (typeof media === 'string') return media
+    // Anything else — most importantly an image asset object like
+    // `{_type, _ref}` from a `media: 'asset'` preview select — is NOT a valid
+    // React child and would crash ("Objects are not valid as a React child"),
+    // so fall back to the schema icon (or nothing).
+    return iconBox()
   }
   return (
     <Card

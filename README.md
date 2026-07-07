@@ -6,25 +6,25 @@ The last rich table plugin for Sanity you will need!
 
 ## Features
 
-Please be aware, that this plugin is still growing - so while this first version is doing the job, there will be [more features coming soon](README.md#features-coming)!
+Production-ready, fully typed, and actively maintained. Curious what might come next? Take a look at the [roadmap](README.md#roadmap).
 
-- 100% Typescript
-- Initialise a table with intuitive table selection by click or drag
+- **Fully customizable cell content** — bring your own Portable Text schema (styles, decorators, annotations, block objects, inline objects) with in-cell render components (see [Customizing cell content](README.md#customizing-cell-content))
+- **Full Portable Text editing in every cell, out of the box** — a slash-command picker (`/`), Markdown shortcuts, a floating toolbar, link editing and an emoji picker. Whatever your cell schema declares — styles, decorators, lists, annotations — is instantly usable across all of them, with no extra wiring. Thanks to the amazing work of Christian Groengaard!
 - **Import tables** from CSV, TSV, Excel (`.xlsx`), HTML or Markdown — via the field-actions menu, an inline button, or by pasting into the import dialog (see [Importing tables](README.md#importing-tables))
 - **Paste tables straight into Portable Text** — a spreadsheet / HTML / Markdown table pasted into a document body becomes a `richTableBlock` (surrounding prose is kept). Opt in by adding the exported `RichTablePastePlugin` to your Studio config at the Portable Text editor level (see [Paste-to-import](README.md#paste-to-import-opt-in))
+- **Per-table validation** (min rows / columns, required row / column titles) that surfaces inline on the offending cell, header or field marker (see [Validation](README.md#validation))
+- **Readable diffs** in the Studio "Review changes" pane — a per-cell before→after view with inline highlights, plus inline changes right in the cells when Studio's inline-changes mode is on (see [Reviewing changes](README.md#reviewing-changes))
+- **Promote a row or column to headers** — turn the first row into column titles, or the first column into row titles, straight from the context menu (see [Promote a row or column to headers](README.md#promote-a-row-or-column-to-headers))
 - Rich table schema type `richTable` with Portable Text based cells
 - Portable Text block type `richTableBlock`
-- Portable Text editor goodies like Slash commands, Markdown shortcuts, LinkPlugin and emoji picker - thanks to the amazing work of Christian Groengaard!
-- **Fully customizable cell content** — bring your own Portable Text schema (styles, decorators, annotations, block objects, inline objects) with in-cell render components (see [Customizing cell content](README.md#customizing-cell-content))
-- Optional row and column titles
-- **Per-table validation** (min rows / columns, required row / column titles) that surfaces inline on the offending cell, header or field marker (see [Validation](README.md#validation))
+- Initialise a table with intuitive table selection by click or drag
 - Expandable table dialog
 - Advanced row and column menus (move, delete, add new inline)
+- Optional row and column titles
 - Option to show table headers
-- **Promote a row or column to headers** — turn the first row into column titles, or the first column into row titles, straight from the context menu (see [Promote a row or column to headers](README.md#promote-a-row-or-column-to-headers))
 - Unset table data with a button & confirmation dialog
-- **Readable diffs** in the Studio "Review changes" pane — a per-cell before→after view with inline highlights, plus inline changes right in the cells when Studio's inline-changes mode is on (see [Reviewing changes](README.md#reviewing-changes))
 - Dark and light mode support 😎
+- 100% Typescript
 
 | <img width="578" height="263" alt="Preview of inline slash command" src="https://github.com/user-attachments/assets/ebef6b77-15bf-4142-833b-ed6bbd462039" /> |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -57,50 +57,9 @@ The plugin ships two lines. **2.x** targets Sanity 6 and is the `latest` release
 
 ## Migrating from 1.x
 
-**2.0.0 is a breaking release** in two ways:
+**2.0.0 is a platform bump.** It targets **Sanity 6** (React 19, Node ≥ 22.12). If you're still on Sanity 5, stay on the `^1.1` line (see [Compatibility](README.md#compatibility)). Otherwise bump Sanity, React and Node together, then install `sanity-plugin-rich-table@^2`.
 
-### 1. Platform requirements
-
-2.x targets **Sanity 6** (React 19, Node ≥ 22.12). If you're still on Sanity 5, stay on the `^1.1` line (see [Compatibility](README.md#compatibility)). Otherwise bump Sanity, React and Node together, then install `sanity-plugin-rich-table@^2`.
-
-### 2. `customBlockTypes` / `customInlineBlockTypes` are removed
-
-Cell content is now driven by a **Portable Text array type you define in your own schema** and reference by name via `portableTextSchemaTypeName`, instead of passing arrays of types to the plugin. Everything lives in one schema — styles, decorators, annotations, block **and** inline objects, initial values and validation — and custom in-cell renderers attach to that schema through the `table*` component slots.
-
-**Before (1.x):**
-
-```ts
-richTablePlugin({
-  customBlockTypes: [calloutType, imageType],
-  customInlineBlockTypes: [mentionType],
-})
-```
-
-**After (2.x):**
-
-```ts
-// schemas/tableCellContent.ts
-export const tableCellContent = defineType({
-  name: 'tableCellContent',
-  type: 'array',
-  of: [
-    defineArrayMember({
-      type: 'block',
-      // styles / decorators / annotations, plus inline objects on `of`
-      of: [mentionType],
-    }),
-    calloutType, // block objects are top-level array members
-    imageType,
-  ],
-})
-
-// sanity.config.ts — register tableCellContent in your schema, then:
-richTablePlugin({portableTextSchemaTypeName: 'tableCellContent'})
-```
-
-Attach custom in-cell renderers with the `table*` slots (`tableBlock` / `tableInlineBlock` / `tableAnnotation`) — see [Customizing cell content](README.md#customizing-cell-content) and the [custom Portable Text schema guide](./docs/README.md#using-a-custom-portable-text-schema). Omit `portableTextSchemaTypeName` to keep the built-in default cell content (bold, italic, headings, lists, links).
-
-> If you never passed `customBlockTypes` / `customInlineBlockTypes`, there's nothing to change here beyond the platform bump.
+That's the only breaking change: the public schema types (`richTable`, `richTableBlock`) and the exported TypeScript types are unchanged, so your schemas and stored content keep working as-is. Cell content is configured by pointing the plugin at a Portable Text array type in your own schema via `portableTextSchemaTypeName` (omit it for the built-in default) — see [Customizing cell content](README.md#customizing-cell-content).
 
 ## Installation
 
@@ -133,7 +92,7 @@ export default defineConfig({
 })
 ```
 
-After installing the plugin, you can use the `richTable` object type in your schemas as a field (object) or the `richTableBlock` type in your Portable Text fields.
+After installing the plugin, you can use the `richTable` object type in your schemas — as a field, as a member of an array (many tables in one field), or nested inside your own object types — and the `richTableBlock` type in your Portable Text fields.
 
 ### Usage as field
 
@@ -144,6 +103,25 @@ defineField({
   type: 'richTable', // Use the rich table object type
 })
 ```
+
+### Usage as an array item / object
+
+`richTable` is a plain object type, so it works anywhere `defineField` / `defineArrayMember` accepts a type — including as a member of an array (a field that holds many tables) or nested inside one of your own object types.
+
+```ts
+defineField({
+  name: 'tables',
+  title: 'Tables',
+  type: 'array',
+  of: [
+    defineArrayMember({
+      type: 'richTable', // one rich table per array item
+    }),
+  ],
+})
+```
+
+Give the member its own `name` when you want to mix rich tables with other types in the same array, or to attach per-instance [validation](README.md#validation). Array items have no field-actions menu, so the **Import table** action shows up as an inline button on each table instead (see [Importing tables](README.md#importing-tables)).
 
 ### Usage as custom block in Portable Text
 
@@ -268,6 +246,10 @@ The title rules respect the table's row/column title toggles — a table with co
 
 ### How errors show up
 
+| <img alt="A rich table with a required column title error surfaced inline on the column header" src="docs/images/validation.png" width="700" /> |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| A missing column title is toned red on the offending header and rolls up into the field marker.                                                 |
+
 Each violated rule reports a marker on the exact offending path, so the plugin surfaces it in place:
 
 - **A specific row / column title** → that row / column header is toned (red for errors, amber for warnings).
@@ -301,6 +283,10 @@ validation: (Rule) =>
 ## Importing tables
 
 Instead of building a table cell by cell, editors can import existing tabular data. Everything here works with the default `richTablePlugin({})` — there is nothing extra to configure.
+
+| <img alt="Import Table dialog with Paste and Upload File tabs" src="docs/images/import-dialog.png" width="720" /> |
+| ----------------------------------------------------------------------------------------------------------------- |
+| The **Import Table** dialog — paste or upload a file; the format is detected automatically.                       |
 
 **Supported formats:** CSV, TSV, HTML and Markdown, plus Excel (`.xls` / `.xlsx`). Pasting auto-detects HTML, Markdown and TSV (CSV can be parsed on request); file upload accepts `.csv`, `.tsv`, `.xls`, `.xlsx`. The dialog shows a live preview and lets you mark the first row / first column as headers. Imports are capped at 300 rows.
 
@@ -365,6 +351,10 @@ import {
 
 Already typed a header row or column into the table body? You can turn it into real titles in one step from the row / column context menu — no retyping.
 
+| <img alt="Use as row titles action in a column context menu" src="docs/images/promote-to-headers.png" width="420" /> |
+| -------------------------------------------------------------------------------------------------------------------- |
+| Promote the first column to row titles straight from its context menu.                                               |
+
 - **First row → column titles:** open the first row's **⋮** menu and choose **"Use as column titles"**. Each cell in row 1 becomes the title of the column above it, then row 1 is removed.
 - **First column → row titles:** open the first column's menu and choose **"Use as row titles"**. Each cell in column A becomes its row's title, then column A is removed.
 
@@ -384,9 +374,21 @@ Read more about rendering rich tables in your frontend application in the [Rende
 In the docs you will find even more details about the [data structure](./docs/README.md#data-structure) used by this plugin.
 And get a suggestion on how to [merge cells when rendering](./docs/README.md#merging-cells).
 
+Need Markdown instead of the DOM? The exported `toMarkdownTable(tableData)` serializes any table value to a GitHub-flavored Markdown table (the inverse of the importer) — see [Export to Markdown](./docs/README.md#export-to-markdown).
+
+```ts
+import {toMarkdownTable} from 'sanity-plugin-rich-table'
+
+const markdown = toMarkdownTable(tableData)
+```
+
 ## Reviewing changes
 
 Rich tables get a custom diff in the Studio's **Review changes** pane (used by document history and content releases), instead of the generic field-by-field differ that struggles with the nested rows → cells → Portable Text structure:
+
+| <img alt="Review changes pane showing a rich table diff with a cell changed from zweu to zwei" src="docs/images/review-changes-diff.png" width="720" /> |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The **Review changes** pane shows a per-cell before→after diff for the whole table.                                                                     |
 
 - A grid summarising added / removed / moved rows and columns and which cells changed.
 - Click a changed cell for a combined **before → after** view: removed text is struck through and added text is highlighted inline, rather than two separate snapshots.
@@ -394,12 +396,13 @@ Rich tables get a custom diff in the Studio's **Review changes** pane (used by d
 
 See [Reviewing changes](./docs/README.md#reviewing-changes) in the docs for details.
 
-## Features coming
+## Roadmap
 
-- Additional cell types and content options
-- Improved performance for large tables
-- Enhanced accessibility features
-- Default option to merge cells in the table input
+The plugin is complete and production-ready today — nothing below is required for day-to-day use. These are enhancements under consideration for future releases:
+
+- Improved performance for very large tables
+- Further accessibility refinements
+- A built-in option to merge cells in the table input
 
 ## TypeScript Support
 
@@ -432,7 +435,7 @@ The patch release that fixes `sanity graphql deploy` renames the **registered sc
 **Take action only if:**
 
 - You referenced the internal `richTableRow` **schema type name** directly in your own schema (e.g. `type: 'richTableRow'`). Change it to `type: 'row'`.
-- You have hand-authored or imported content that stored rows as `_type: 'richTableRow'` (not produced by this plugin). Use the migration template at [`docs/migrations/rename-richtablerow-to-row.ts`](./docs/migrations/rename-richtablerow-to-row.ts) to rewrite those items to `_type: 'row'`.
+- You have hand-authored or imported content that stored rows as `_type: 'richTableRow'` (not produced by this plugin). Rewrite those items to `_type: 'row'` with the script at [`docs/migrations/rename-richtablerow-to-row.sh`](./docs/migrations/rename-richtablerow-to-row.sh). Because `_type` is an **immutable** attribute, this can't be a `sanity migration run` script (`at('_type', set(...))` fails with _"Cannot modify immutable attribute"_); the script uses Sanity's sanctioned workaround — export the dataset, rewrite the type in the NDJSON, and re-import with `--replace` (see [Migrating your schema and content](https://www.sanity.io/docs/content-lake/schema-and-content-migrations)).
 
 ## License
 
