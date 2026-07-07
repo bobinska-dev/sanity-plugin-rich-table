@@ -23,6 +23,7 @@ import {RichTableCellType} from '../schemas/cell.object'
 import {ColumnHeader} from '../schemas/columnHeader.object'
 import {RichTableType} from '../schemas/richTable.object'
 import {RichTableRowType} from '../schemas/row.object'
+import {CellErrorBoundary} from './CellErrorBoundary'
 import ColumnContextMenu from './ColumnContextMenu'
 import ColumnHeaderWithInput from './ColumnHeaderWithInput'
 import ColumnResizeHandle from './ColumnResizeHandle'
@@ -377,20 +378,26 @@ const Table: ComponentType<
                           ownsRouteDialog={ownsRouteDialog}
                         />
                       )}
-                      {/* PTE CELL CONTENT */}
-                      <ContentPortableTextInput
-                        onChange={onChange}
-                        path={cellPTEPath}
-                        value={cellValue}
+                      {/* PTE CELL CONTENT — wrapped so a render crash in one cell
+                          (malformed content, a throwing custom renderer) is
+                          contained and doesn't take down the whole table. */}
+                      <CellErrorBoundary
                         key={cellItem.id}
-                        readOnly={props.readOnly}
-                        schemaType={cellContentSchemaType}
-                        role="cell"
-                        portableTextSchemaTypeName={portableTextSchemaTypeName}
-                        displayInlineChanges={props.displayInlineChanges}
-                        validation={cellValidation.markers}
-                        validationTone={cellValidation.tone}
-                      />
+                        label={`column ${cellIndex + 1}, row ${rowIndex + 1}`}
+                      >
+                        <ContentPortableTextInput
+                          onChange={onChange}
+                          path={cellPTEPath}
+                          value={cellValue}
+                          readOnly={props.readOnly}
+                          schemaType={cellContentSchemaType}
+                          role="cell"
+                          portableTextSchemaTypeName={portableTextSchemaTypeName}
+                          displayInlineChanges={props.displayInlineChanges}
+                          validation={cellValidation.markers}
+                          validationTone={cellValidation.tone}
+                        />
+                      </CellErrorBoundary>
                     </Fragment>
                   )
                 })}
