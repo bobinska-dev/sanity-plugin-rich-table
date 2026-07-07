@@ -3,7 +3,7 @@ import {type ArraySchemaType, type InputProps, type Path, type PortableTextBlock
 
 import type {CellValidation} from '../hooks/useTableCellValidation'
 import ContentPortableTextInput from '../portable-text/ContentPortableTextEditor'
-import {CellErrorBoundary} from './CellErrorBoundary'
+import {RichTableErrorBoundary} from './RichTableErrorBoundary'
 
 export interface TableCellProps {
   /** Absolute form path to the cell's `content` array — what the editor patches through. */
@@ -58,7 +58,12 @@ function TableCellComponent({
   return (
     // Wrapped so a render crash in one cell (malformed content, a throwing custom
     // renderer) is contained and doesn't take down the whole table.
-    <CellErrorBoundary label={`column ${cellIndex + 1}, row ${rowIndex + 1}`}>
+    <RichTableErrorBoundary
+      what="cell"
+      title="This cell couldn’t be displayed"
+      role="cell"
+      label={`column ${cellIndex + 1}, row ${rowIndex + 1}`}
+    >
       <ContentPortableTextInput
         onChange={onChange}
         path={pteePath}
@@ -71,7 +76,7 @@ function TableCellComponent({
         validation={markers}
         validationTone={tone}
       />
-    </CellErrorBoundary>
+    </RichTableErrorBoundary>
   )
 }
 

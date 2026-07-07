@@ -1,6 +1,6 @@
 {
   "name": "sanity-plugin-rich-table",
-  "version": "2.1.0",
+  "version": "2.1.2",
   "packageManager": "pnpm@11.10.0",
   "description": "Rich table solution for Sanity",
   "keywords": [

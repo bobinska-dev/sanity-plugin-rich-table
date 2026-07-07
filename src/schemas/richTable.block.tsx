@@ -1,6 +1,7 @@
 import {defineType, ObjectInputProps} from 'sanity'
 
 import RichTableBock from '../components/RichTableBock'
+import {RichTableErrorBoundary} from '../components/RichTableErrorBoundary'
 import RichTableInput from '../components/RichTableInput'
 import type {RichTableType} from '../schemas/richTable.object'
 
@@ -31,12 +32,15 @@ export const defineRichTableBlock = ({
       input: (inputProps) => (
         // The block's input receives a generic ObjectInputProps; narrow the value
         // to the rich-table shape RichTableInput expects (this member is a
-        // `richTable`), and forward the configured cell content schema.
-        <RichTableInput
-          {...(inputProps as ObjectInputProps<RichTableType>)}
-          isInPortableText
-          portableTextSchemaTypeName={portableTextSchemaTypeName}
-        />
+        // `richTable`), and forward the configured cell content schema. Wrapped so
+        // a crash in the table UI is contained + logged, not left to blank the doc.
+        <RichTableErrorBoundary what="table" title="This table couldn’t be displayed">
+          <RichTableInput
+            {...(inputProps as ObjectInputProps<RichTableType>)}
+            isInPortableText
+            portableTextSchemaTypeName={portableTextSchemaTypeName}
+          />
+        </RichTableErrorBoundary>
       ),
     },
   })

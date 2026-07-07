@@ -28,13 +28,15 @@ describe('richTableBlock schema', () => {
   // Regression: a table authored as `richTableBlock` in a document body must
   // honour the plugin's `portableTextSchemaTypeName`. The static block used to
   // drop it, so cells fell back to the default schema. The factory now forwards
-  // it (and `isInPortableText`) to RichTableInput.
+  // it (and `isInPortableText`) to RichTableInput — which is wrapped in the
+  // RichTableErrorBoundary, so the forwarded props live on that boundary's child.
   it('forwards portableTextSchemaTypeName + isInPortableText to the input', () => {
     const Input = defineRichTableBlock({portableTextSchemaTypeName: 'myCellContent'}).components
-      ?.input as (props: unknown) => {props: Record<string, unknown>}
+      ?.input as (props: unknown) => {props: {children: {props: Record<string, unknown>}}}
 
-    const element = Input({renderDefault: () => null})
-    expect(element.props.portableTextSchemaTypeName).toBe('myCellContent')
-    expect(element.props.isInPortableText).toBe(true)
+    const boundary = Input({renderDefault: () => null})
+    const input = boundary.props.children
+    expect(input.props.portableTextSchemaTypeName).toBe('myCellContent')
+    expect(input.props.isInPortableText).toBe(true)
   })
 })

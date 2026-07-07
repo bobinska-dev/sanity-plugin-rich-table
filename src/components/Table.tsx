@@ -378,7 +378,9 @@ const Table: ComponentType<
                       )}
                       {/* PTE CELL CONTENT — memoized so editing one cell doesn't
                           re-render every other cell's editor (Table re-renders on
-                          every keystroke). See TableCell for the comparator. */}
+                          every keystroke). TableCell wraps the content in the
+                          RichTableErrorBoundary so a render crash in one cell can't
+                          take down the whole table. See TableCell for the comparator. */}
                       <TableCell
                         pteePath={cellPTEPath}
                         pathKey={pathToString(cellPTEPath)}

@@ -5,6 +5,21 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.2](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.1.1...v2.1.2) (2026-07-07)
+
+### Bug Fixes
+
+- **import:** auto-detect the richTableBlock member for paste-to-import ([4e15034](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/4e1503410e3658f05366991a5fd09c79df56c925))
+- **pt:** resolve cell content schema from the cell's own field, not a threaded prop ([65d1758](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/65d175842c697be0a0f5e5a51cebf3fe6abf1a5a))
+
+## [2.1.1](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.1.0...v2.1.1) (2026-07-07)
+
+### Bug Fixes
+
+- generateKey uses globalThis.crypto so public exports work in Node/SSR ([46a9020](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/46a90209afb5ab500898a5e87870aa3e523edf5d))
+- **pt:** keep editor focus on slash-picker mousedown so click-to-insert works ([6f01ca5](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/6f01ca5cfb79f6880ff03893258763396b481670))
+- **pt:** log every table component crash and contain it at the table level ([24581d7](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/24581d7d00fdef1b9a6616ef351d1fcadb2e4e14))
+
 ## [2.1.0](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.0.0...v2.1.0) (2026-07-07)
 
 ### Features
