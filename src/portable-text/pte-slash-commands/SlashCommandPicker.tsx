@@ -1,5 +1,6 @@
 import {useEditor} from '@portabletext/editor'
 import {effect, raise} from '@portabletext/editor/behaviors'
+import {EventListenerPlugin} from '@portabletext/editor/plugins'
 import {defineTypeaheadPicker, useTypeaheadPicker} from '@portabletext/plugin-typeahead-picker'
 import {Box, Text} from '@sanity/ui'
 import Fuse from 'fuse.js'
@@ -102,23 +103,39 @@ export function SlashCommandPickerPlugin({schemaType}: SlashCommandPickerPluginP
 
   const getAnchorRect = () => editor.dom.getSelectionRect(editor.getSnapshot())
 
-  if (!isActive) return null
-
   return (
-    <FloatingPanel getAnchorRect={getAnchorRect} offset={4}>
-      <Box paddingBottom={2}>
-        <Text size={0} muted style={{fontStyle: 'italic'}}>
-          Insert a style, mark, list or block (navigate with ↑ ↓ and Enter)
-        </Text>
-      </Box>
-      <CommandListBox
-        keyword={keyword}
-        matches={matches}
-        selectedIndex={selectedIndex}
-        onDismiss={() => pickerState.send({type: 'dismiss'})}
-        onNavigateTo={(index) => pickerState.send({type: 'navigate to', index})}
-        onSelect={() => pickerState.send({type: 'select'})}
+    <>
+      {/* The typeahead picker dismisses itself on Escape and cursor movement, but
+          NOT when focus leaves the editor entirely — clicking another cell,
+          elsewhere in the rich-table field, or out of the Studio would otherwise
+          leave it pinned open. Dismiss on `blurred`. Selecting a command doesn't
+          blur (the list items aren't focusable and FloatingPanel doesn't trap
+          focus), so clicking a command still works. Sending `dismiss` while the
+          picker is idle is a harmless no-op. */}
+      <EventListenerPlugin
+        on={(event) => {
+          if (event.type === 'blurred') {
+            pickerState.send({type: 'dismiss'})
+          }
+        }}
       />
-    </FloatingPanel>
+      {isActive ? (
+        <FloatingPanel getAnchorRect={getAnchorRect} offset={4}>
+          <Box paddingBottom={2}>
+            <Text size={0} muted style={{fontStyle: 'italic'}}>
+              Insert a style, mark, list or block (navigate with ↑ ↓ and Enter)
+            </Text>
+          </Box>
+          <CommandListBox
+            keyword={keyword}
+            matches={matches}
+            selectedIndex={selectedIndex}
+            onDismiss={() => pickerState.send({type: 'dismiss'})}
+            onNavigateTo={(index) => pickerState.send({type: 'navigate to', index})}
+            onSelect={() => pickerState.send({type: 'select'})}
+          />
+        </FloatingPanel>
+      ) : null}
+    </>
   )
 }
