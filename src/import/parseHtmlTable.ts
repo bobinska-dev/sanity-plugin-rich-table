@@ -1,6 +1,6 @@
-import {generateKey} from '../utils/generateKey'
 import type {PortableTextBlock} from 'sanity'
 
+import {generateKey} from '../utils/generateKey'
 import {createPlaceholderBlock} from './placeholders'
 import type {CellValue, ParseResult, ParseWarning} from './types'
 import {MAX_IMPORT_ROWS} from './types'
@@ -30,6 +30,13 @@ const PLACEHOLDER_TAGS: Record<string, string> = {
   CANVAS: 'complex content',
   SVG: 'complex content',
 }
+
+/**
+ * Elements whose text content is never user-visible prose. Their text must not
+ * leak into an imported cell as spans, so they're skipped wherever they appear
+ * — at block level or nested anywhere inside inline content.
+ */
+const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'HEAD'])
 
 /** Safe URL schemes for pasted links. */
 const ALLOWED_HREF_SCHEMES = ['http', 'https', 'mailto', 'tel']
@@ -357,7 +364,16 @@ export function extractBlocks(
     const el = child as Element
     const tag = el.tagName
 
-    if (tag === 'P' || tag === 'DIV' || /^H[1-6]$/.test(tag)) {
+    if (SKIP_TAGS.has(tag)) continue
+
+    if (/^H[1-6]$/.test(tag)) {
+      // Preserve the heading level (<h2> → "h2") rather than flattening to a
+      // paragraph, so imported headings keep their semantics in the cell editor.
+      const spans = extractSpans(el, warnings, rowIdx, colIdx)
+      if (spans.children.length > 0) {
+        blocks.push(buildBlock(spans.children, spans.markDefs, tag.toLowerCase()))
+      }
+    } else if (tag === 'P' || tag === 'DIV') {
       const spans = extractSpans(el, warnings, rowIdx, colIdx)
       if (spans.children.length > 0) {
         blocks.push(buildBlock(spans.children, spans.markDefs, 'normal'))
@@ -449,6 +465,10 @@ function extractSpans(
 
     const childEl = node as Element
     const tag = childEl.tagName
+
+    // Non-content elements (script/style/etc.) carry text that must never surface
+    // as prose — drop them entirely rather than recursing into their text nodes.
+    if (SKIP_TAGS.has(tag)) continue
 
     // Emit a visible placeholder span for unparseable content (images, embeds, etc.)
     if (tag in PLACEHOLDER_TAGS) {

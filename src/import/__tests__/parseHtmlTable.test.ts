@@ -559,4 +559,43 @@ describe('parseHtmlTable — spans, nesting, and link sanitization', () => {
     expect(safe).toHaveLength(1)
     expect(safe[0].href).toBe('https://ok.example')
   })
+
+  it('strips interior control chars so obfuscated javascript: URLs are still dropped', () => {
+    // Browsers remove TAB/LF/CR before navigating, so `java\tscript:` runs as
+    // `javascript:`. The href must be sanitized against the cleaned value, not
+    // the raw one, or the scheme check is defeated by an interior control char.
+    const html = `<table><tr><td><a href="java\tscript:alert(1)">x</a></td><td><a href="ht\ntps://ok.example">y</a></td></tr></table>`
+    const {table} = parseHtmlTable(html)
+    const markDefs = (cell: unknown) => ((cell as any)?.[0]?.markDefs ?? []) as any[]
+    expect(markDefs(table.rows[0][0])).toHaveLength(0) // java\tscript: → javascript: → dropped
+    const safe = markDefs(table.rows[0][1])
+    expect(safe).toHaveLength(1)
+    expect(safe[0].href).toBe('https://ok.example') // control char removed from the stored href
+  })
+
+  it('does not leak <script>/<style> text into imported cells', () => {
+    const html = `<table><tr><td>Visible<script>alert('x')</script><style>.a{color:red}</style> text</td></tr></table>`
+    const {table} = parseHtmlTable(html)
+    expect(cellText(table.rows[0][0])).toBe('Visible text')
+  })
+
+  it('drops non-content block-level elements (script/style at block level)', () => {
+    const html = `<table><tr><td><p>Real paragraph</p><script>evil()</script></td></tr></table>`
+    const {table} = parseHtmlTable(html)
+    const cell = table.rows[0][0] as any[]
+    expect(cell).toHaveLength(1)
+    expect(cell[0].children[0].text).toBe('Real paragraph')
+  })
+
+  it('preserves heading levels (<h2> → "h2") instead of flattening to normal', () => {
+    const html = `<table><tr><td><h2>Section</h2><p>Body</p><h4>Sub</h4></td></tr></table>`
+    const {table} = parseHtmlTable(html)
+    const cell = table.rows[0][0] as any[]
+    expect(cell).toHaveLength(3)
+    expect(cell[0].style).toBe('h2')
+    expect(cell[0].children[0].text).toBe('Section')
+    expect(cell[1].style).toBe('normal')
+    expect(cell[2].style).toBe('h4')
+    expect(cell[2].children[0].text).toBe('Sub')
+  })
 })
