@@ -5,6 +5,28 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.0](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.0.0...v2.1.0) (2026-07-07)
+
+### Features
+
+- **pt:** add findRecursiveCellType guard for recursive cell schemas ([6d5db4c](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/6d5db4c84456e4c95f0e752d1144390cafb55f96))
+- **pt:** add toMarkdownTable — serialize a richTable to a GFM Markdown table ([12e90fe](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/12e90fef60d193452a516042e340c97a1ec899fe))
+
+### Bug Fixes
+
+- **migration:** replace the broken \_type migration with an export/import script ([6d75fd5](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/6d75fd5a0899243030f71d2190e6d611cd8a1495))
+- **pt:** address PR review — pnpm-only migration script, stable blur handler ([fb9c813](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/fb9c813ed061afe62379e4eaa027e80621dbdec8))
+- **pt:** dismiss the slash-command picker when the editor loses focus ([4cc2e47](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/4cc2e47d37399fd1681835b28f23b6c1e5cdb3bb))
+- **pt:** memoize the slash-picker blur handler with useCallback ([bd16319](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/bd16319a9b3309780da8d6420034ba6f50a4b8de))
+- **pt:** reuse extendsType for reference-block routing ([9459de3](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/9459de35e6d462e207c8d37c353d08980910efb2))
+- **pt:** route named image blocks by base type and harden default block media ([050e282](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/050e2827ac2fac7eae670d4edbc1cdb62448bafc))
+- **pt:** thread portableTextSchemaTypeName through richTableBlock body tables ([0204435](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/0204435ea304125843c82caec0f31e7bc289d550))
+- **pt:** wrap each cell in an error boundary so one bad cell can't crash the table ([82f0ed5](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/82f0ed507fa631c80f8e924fd1fa25d95d724326))
+
+### Performance Improvements
+
+- enable the React Compiler at build time ([6a6b20f](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/6a6b20f921c2a5867cd97742ebea628e64522c1f))
+
 ## [2.0.0](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v1.2.2...v2.0.0) (2026-07-06)
 
 ### ⚠ BREAKING CHANGES
