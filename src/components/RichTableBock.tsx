@@ -17,7 +17,7 @@ const RichTableBock: ComponentType<BlockProps> = (props) => {
       radius={2}
       padding={2}
       tone={props.focused ? 'primary' : 'default'}
-      title="Double Click to edit table"
+      title="Click to collapse, double-click to edit"
       style={{cursor: 'pointer'}}
     >
       <Stack space={3}>

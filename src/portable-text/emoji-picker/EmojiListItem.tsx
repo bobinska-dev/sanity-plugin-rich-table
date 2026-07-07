@@ -26,6 +26,10 @@ const EmojiListItem: ComponentType<EmojiListItemProps> = (props) => {
       as={'li'}
       ref={ref}
       onMouseEnter={onMouseEnter}
+      // Keep focus (and the caret selection) in the editor: a plain mousedown
+      // blurs the editable before onClick inserts the emoji, so it would land at
+      // a lost/collapsed selection. Matches the toolbar/popover buttons' guard.
+      onMouseDown={(e) => e.preventDefault()}
       onClick={onSelect}
       selected={selected}
       mode={'bleed'}

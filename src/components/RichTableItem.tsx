@@ -18,7 +18,10 @@ const RichTableItem: ComponentType<ItemProps> = (props) => {
           {props.renderDefault({
             ...props,
             open: false,
-            onOpen: () => handleToggleOpen(),
+            // The wrapping Box already toggles on click; letting the native
+            // preview's `onOpen` fire the same toggle double-flips it to a no-op.
+            // Matches RichTableBock, which passes `onOpen: () => null`.
+            onOpen: () => null,
           })}
         </Box>
         {openTable && <Box>{props.children}</Box>}
