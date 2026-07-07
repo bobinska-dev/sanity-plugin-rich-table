@@ -5,6 +5,26 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.3](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.1.2...v2.1.3) (2026-07-07)
+
+### Bug Fixes
+
+- **diff,schema:** absent title flag = off; honour explicitly-empty PT groups ([5fa4119](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/5fa4119bd8ee3027e0b41bb221e9902de6995254)), closes [#8](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/8) [#9](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/9)
+- **import:** harden markdown + CSV parsing edge cases ([87354e4](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/87354e4fd0356c4b152a7c5a4ba2224fc901e04a)), closes [#12](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/12) [#13](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/13) [#14](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/14)
+- **import:** reject control-char scheme bypass in pasted link hrefs ([09d20db](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/09d20db3950423e93db209d5198292211da10e40))
+- **import:** skip non-content tags and preserve heading levels in HTML paste ([f9ca4d6](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/f9ca4d6705121fdeef0bc2e241b6432c34cea74f)), closes [#11](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/11) [#15](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/15) [#10](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/10)
+- **pt:** add-column in a single atomic transaction ([142a57a](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/142a57aa9d9fdecd1db1ce60f0db8298f2143609))
+- **pt:** catch INDIRECT recursive cell schemas, not just direct ([3ad3e6b](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/3ad3e6b8370a982b4e1866452e5cbae08413e1da))
+- **pt:** clear table by unsetting its fields, not the whole path ([90b84ac](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/90b84acbce5c2c4685ba5d1ab7501127f11e8346))
+- **pte:** sync external cell value changes without disrupting typing ([9ec2e4f](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/9ec2e4fccb6076c4e8af6556a175520aacaecd2e)), closes [#2](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/2)
+- **review:** flush external cell sync on blur; stop stripping href spaces ([2ff764b](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/2ff764b66b8809f424b72b5712ac8b5dc3f6ecc7)), closes [#40](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/40)
+- **table:** dedupe drag-commit, fix picker CSS, guard sheet parse ([fde0191](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/fde01913b9a1fcb0e375d2d18456119aa8a18ced))
+- **ui:** no-arg richTablePlugin, emoji focus guard, item double-toggle, tooltip ([012f206](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/012f20691ff1a29698f0bc37b7da57e8f1ad7eaa))
+
+### Performance Improvements
+
+- **table:** memoize cells so editing one doesn't re-render the rest ([#18](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/18)) ([ceee694](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/ceee69437e53d0c949c59ec5a5660fbf0109c4df))
+
 ## [2.1.2](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.1.1...v2.1.2) (2026-07-07)
 
 ### Bug Fixes
