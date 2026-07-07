@@ -109,10 +109,13 @@ function sanitizeHref(href: string | null): string | undefined {
   // navigating, so `java\tscript:` becomes `javascript:` at click time. `.trim()`
   // only removes leading/trailing whitespace, so an interior control char would
   // otherwise defeat the scheme check (the scheme regex fails to match → treated
-  // as a "relative" URL and passed through). Strip control chars + spaces FIRST,
-  // then detect the scheme against the cleaned value, and return the cleaned URL.
+  // as a "relative" URL and passed through). Strip only C0 control chars (< 0x20)
+  // FIRST, then detect the scheme against the cleaned value. A literal space (0x20)
+  // is NOT a control char and doesn't enable the bypass (browsers don't ignore it
+  // mid-scheme), so it's preserved — dropping it would mangle legit URLs like
+  // `?q=hello world`.
   const cleaned = Array.from(trimmed)
-    .filter((c) => c.charCodeAt(0) > 32)
+    .filter((c) => c.charCodeAt(0) >= 0x20)
     .join('')
   if (!cleaned) return undefined
   if (/^(#|\/|\.{1,2}\/)/.test(cleaned)) return cleaned

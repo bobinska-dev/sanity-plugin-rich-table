@@ -3,16 +3,7 @@ import {ListIndexProvider} from '@portabletext/plugin-list-index'
 import {MarkdownShortcutsPlugin} from '@portabletext/plugin-markdown-shortcuts'
 import {PasteLinkPlugin} from '@portabletext/plugin-paste-link'
 import {Card} from '@sanity/ui'
-import {
-  ComponentType,
-  type MutableRefObject,
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import {ComponentType, Suspense, useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {
   ArrayDefinition,
   ArraySchemaType,
@@ -98,29 +89,35 @@ const SyncReadOnly: ComponentType<{readOnly: boolean}> = ({readOnly}) => {
  * here. Pushing `update value` for that echo (or the naive `key={hash(value)}`
  * remount) would reset the value mid-keystroke: dropped characters, jumped caret.
  *
- * So we only sync while the cell is NOT focused (`focusedRef`). Local edits are
- * already persisted, so there is nothing to sync while focused; and the effect is
- * keyed on `value` (NOT `focused`), so a blur alone never fires it with a stale,
- * still-in-flight value. External changes arrive while the cell isn't the active
- * caret and ARE applied. Worst case this no-ops — it can't disrupt active typing.
+ * So we never sync while the cell is focused. `syncedValueRef` records the last
+ * `value` the editor was reconciled to, and the effect re-runs on blur (`focused`
+ * is a dependency), so an external change that arrived WHILE focused is flushed on
+ * blur instead of being lost until some unrelated later change — the gap a plain
+ * value-keyed effect leaves. Comparing against `syncedValueRef` (not the editor's
+ * live snapshot) is what keeps this safe: if `value` is momentarily stale-behind a
+ * just-typed keystroke on blur, it still equals `syncedValueRef`, so we DON'T push
+ * a revert; when the local edit's patch round-trips, `value` changes and we sync to
+ * it (a no-op the editor already has). Re-applying the user's own value is harmless
+ * (they're not focused); only a genuinely external `value` produces a real change.
  */
 export const SyncExternalValue: ComponentType<{
   value: PortableTextBlock[] | undefined
-  focusedRef: MutableRefObject<boolean>
-}> = ({value, focusedRef}) => {
+  focused: boolean
+}> = ({value, focused}) => {
   const editor = useEditor()
-  const isInitialMount = useRef(true)
+  // The last value we reconciled the editor to. Seeded from the initial value
+  // (already applied via `initialConfig`), so the first run is a no-op.
+  const syncedValueRef = useRef(value)
   useEffect(() => {
-    // Skip the first run: `initialConfig.initialValue` already seeded this value.
-    if (isInitialMount.current) {
-      isInitialMount.current = false
-      return
-    }
     // The user is editing this cell — their edits are the source of truth and are
     // already being persisted; do not overwrite the live value under the caret.
-    if (focusedRef.current) return
+    if (focused) return
+    // Reference-compare against what we last synced: `value` is a slice of the
+    // immutable document value, so a new reference means the content changed.
+    if (value === syncedValueRef.current) return
+    syncedValueRef.current = value
     editor.send({type: 'update value', value})
-  }, [editor, value, focusedRef])
+  }, [editor, value, focused])
   return null
 }
 
@@ -133,15 +130,8 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
   const _type = useFormValue(['_type']) as string
   // STATES
   const [focused, setFocused] = useState<boolean>(false)
-  // Mirror `focused` into a ref so SyncExternalValue can read the latest focus
-  // state inside an effect WITHOUT re-running that effect on focus changes (which
-  // would risk pushing a stale, still-in-flight value on blur).
-  const focusedRef = useRef(false)
 
-  const handleFocus = useCallback((state: boolean) => {
-    focusedRef.current = state
-    setFocused(state)
-  }, [])
+  const handleFocus = useCallback((state: boolean) => setFocused(state), [])
 
   const schema = useSchema()
   // Resolve the cell content schema from the cell's OWN `content` field first.
@@ -236,7 +226,7 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
         {/* eslint-disable-next-line react-hooks/refs */}
         <EditorProvider initialConfig={initialConfig.current}>
           <SyncReadOnly readOnly={props.readOnly ?? false} />
-          <SyncExternalValue value={props.value} focusedRef={focusedRef} />
+          <SyncExternalValue value={props.value} focused={focused} />
           <CustomListenerPlugin
             _id={_id}
             _type={_type}

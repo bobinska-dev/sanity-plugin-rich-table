@@ -573,6 +573,16 @@ describe('parseHtmlTable — spans, nesting, and link sanitization', () => {
     expect(safe[0].href).toBe('https://ok.example') // control char removed from the stored href
   })
 
+  it('preserves interior spaces in an href (only control chars are stripped)', () => {
+    // A space (0x20) is not a control char and does not enable a scheme bypass, so
+    // it must round-trip — dropping it would mangle real URLs from Word/Notion/etc.
+    const html = `<table><tr><td><a href="https://example.com/a?q=hello world">x</a></td></tr></table>`
+    const {table} = parseHtmlTable(html)
+    const markDefs = ((table.rows[0][0] as any)?.[0]?.markDefs ?? []) as any[]
+    expect(markDefs).toHaveLength(1)
+    expect(markDefs[0].href).toBe('https://example.com/a?q=hello world')
+  })
+
   it('does not leak <script>/<style> text into imported cells', () => {
     const html = `<table><tr><td>Visible<script>alert('x')</script><style>.a{color:red}</style> text</td></tr></table>`
     const {table} = parseHtmlTable(html)
