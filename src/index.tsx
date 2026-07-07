@@ -1,16 +1,23 @@
 import {ComponentType} from 'react'
-import {type BlockAnnotationProps, type BlockProps, definePlugin, type LayoutProps} from 'sanity'
+import {
+  type BlockAnnotationProps,
+  type BlockProps,
+  definePlugin,
+  type LayoutProps,
+  useSchema,
+} from 'sanity'
 
 import {TableImportProvider} from './import/TableImportContext'
 import {tableImportFieldAction} from './import/tableImportFieldAction'
+import {findRecursiveCellType} from './portable-text/findRecursiveCellType'
 import {defineCellObject, RichTableCellType} from './schemas/cell.object'
 import columnHeaderObject, {ColumnHeader} from './schemas/columnHeader.object'
 import {defineContentArrayMember} from './schemas/content'
-import richTableBlock from './schemas/richTable.block'
+import {defineRichTableBlock} from './schemas/richTable.block'
 import {defineRichTableObject, RichTableType} from './schemas/richTable.object'
 import {
-  richTableRules,
   type RichTableRuleBuilder,
+  richTableRules,
   type RichTableValidationConfig,
   richTableValidator,
 } from './schemas/richTableValidation'
@@ -65,6 +72,15 @@ export {
   type ToRichTableOptions,
   type XlsxParseResult,
 } from './import/types'
+
+// ---------------------------------------------------------------------------
+// Rendering helpers
+//
+// `toMarkdownTable` serializes a stored `richTable` value into a GitHub-flavored
+// Markdown table string — the inverse of `parseMarkdownTable`. Handy for
+// exporting a table, feeding it to an LLM, or rendering to Markdown/MDX.
+// ---------------------------------------------------------------------------
+export {toMarkdownTable, type ToMarkdownTableOptions} from './utils/toMarkdownTable'
 
 // Augment @sanity/types so ANY block-capable schema type used as a Portable Text
 // member can carry the rich-table render slots: `components.tableBlock` (block
@@ -128,8 +144,26 @@ export interface RichTablePluginOptions {
  * Mounts the {@link TableImportProvider} once around the whole studio so the
  * rich-table import field action can open the dialog rendered by each field's
  * input.
+ *
+ * It also fails fast on a **recursive cell schema**: if the type passed as
+ * `portableTextSchemaTypeName` includes a rich table among its members, a cell
+ * could contain a table containing cells containing tables… — infinite nesting
+ * that otherwise crashes Sanity's schema normalization with an opaque "Maximum
+ * call stack size exceeded". Running the check in the layout surfaces a clear,
+ * actionable error at studio load, before that crash can happen.
  */
-function RichTableStudioLayout(props: LayoutProps) {
+function RichTableStudioLayout(props: LayoutProps & {portableTextSchemaTypeName?: string}) {
+  const schema = useSchema()
+  const recursiveType = findRecursiveCellType(schema, props.portableTextSchemaTypeName)
+  if (recursiveType) {
+    throw new Error(
+      `[sanity-plugin-rich-table] The Portable Text type "${props.portableTextSchemaTypeName}" ` +
+        `used for table cell content includes "${recursiveType}", which is a rich table. ` +
+        `A table cell cannot contain a table — this nests the schema infinitely and crashes ` +
+        `Sanity with "Maximum call stack size exceeded". Remove richTable / richTableBlock from ` +
+        `the "of" array of "${props.portableTextSchemaTypeName}".`,
+    )
+  }
   return <TableImportProvider>{props.renderDefault(props)}</TableImportProvider>
 }
 
@@ -183,32 +217,41 @@ function RichTableStudioLayout(props: LayoutProps) {
  * @see {@link https://github.com/bobinska-dev/sanity-plugin-rich-table} for full documentation
  */
 export const richTablePlugin = definePlugin<RichTablePluginOptions>(
-  ({portableTextSchemaTypeName}) => ({
-    name: 'rich-table',
-    title: 'Rich Table Plugin',
+  ({portableTextSchemaTypeName}) => {
+    // Bind the option into the layout once (the factory runs once per plugin
+    // instantiation, so this component identity is stable) so the layout can
+    // run its recursive-cell-schema guard against the configured type.
+    const StudioLayout = (props: LayoutProps) => (
+      <RichTableStudioLayout {...props} portableTextSchemaTypeName={portableTextSchemaTypeName} />
+    )
 
-    schema: {
-      types: [
-        defineRichTableObject({portableTextSchemaTypeName}),
-        rowObject,
-        defineCellObject({portableTextSchemaTypeName}),
-        columnHeaderObject,
-        richTableBlock,
-        defineContentArrayMember(),
-      ],
-    },
+    return {
+      name: 'rich-table',
+      title: 'Rich Table Plugin',
 
-    studio: {
-      components: {
-        layout: RichTableStudioLayout,
+      schema: {
+        types: [
+          defineRichTableObject({portableTextSchemaTypeName}),
+          rowObject,
+          defineCellObject({portableTextSchemaTypeName}),
+          columnHeaderObject,
+          defineRichTableBlock({portableTextSchemaTypeName}),
+          defineContentArrayMember(),
+        ],
       },
-    },
 
-    document: {
-      // Adds an "Import table" entry to the field-actions menu of rich-table
-      // fields. `unstable_fieldActions` is the only field-actions API Sanity
-      // exposes today.
-      unstable_fieldActions: (prev) => [...prev, tableImportFieldAction],
-    },
-  }),
+      studio: {
+        components: {
+          layout: StudioLayout,
+        },
+      },
+
+      document: {
+        // Adds an "Import table" entry to the field-actions menu of rich-table
+        // fields. `unstable_fieldActions` is the only field-actions API Sanity
+        // exposes today.
+        unstable_fieldActions: (prev) => [...prev, tableImportFieldAction],
+      },
+    }
+  },
 )
