@@ -183,3 +183,34 @@ describe('InitialiseTable – deeply nested array member (preserves _key/_type)'
     expect(byField('columnHeaders').value).toHaveLength(3)
   })
 })
+
+// Releasing a drag fires BOTH the Card's synthetic `onMouseUp` and the
+// window-level `mouseup` fallback within a SINGLE native dispatch — before React
+// re-renders, so both handlers still observe `dragging === true`. Without the
+// synchronous `dragCommittedRef` guard the table is committed twice (a partial
+// undo could then leave a mismatched grid); this locks in exactly-once.
+describe('InitialiseTable – drag commit (double-fire guard)', () => {
+  it('commits a drag exactly once when the Card and window mouseup both fire', () => {
+    const {onChange, execute} = renderPicker({isInPortableText: true})
+    const cell = screen.getByLabelText('Select 2 rows by 2 columns')
+
+    // Start the drag on the target cell (sets `dragging` and hover = 2×2)…
+    fireEvent.mouseDown(cell)
+    // …then release. This one event bubbles cell → Card (React synthetic
+    // `onMouseUp`) → window (native fallback listener), invoking `endDrag` twice
+    // in the same dispatch — exactly the real-browser double-fire.
+    fireEvent.mouseUp(cell)
+    // An explicit window release too, mirroring a release outside the component.
+    fireEvent.mouseUp(window)
+
+    // Portable Text path commits through `onChange`; the ref guard => one commit.
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(execute).not.toHaveBeenCalled()
+
+    const {patches} = onChange.mock.calls[0][0]
+    const byField = (field: string) =>
+      patches.find((p: {type: string; path: unknown[]}) => p.type === 'set' && p.path[0] === field)
+    expect(byField('rows').value).toHaveLength(2)
+    expect(byField('columnHeaders').value).toHaveLength(2)
+  })
+})
