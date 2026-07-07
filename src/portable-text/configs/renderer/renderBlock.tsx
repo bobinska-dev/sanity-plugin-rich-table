@@ -63,12 +63,13 @@ export const renderBlock = (options?: RenderBlockOptions): RenderBlockFunction =
     if (props.schemaType.name === 'image' || extendsType(currentSchema, 'image')) {
       return withEdit(<ImageBlock {...withSchema} />)
     }
-    // A reference type carries `to` (its allowed targets) even when it's a *named*
-    // array member (e.g. `fallbackReference`); detect it on the original schema so
+    // Route by BASE type too: a reference carries `to` (its allowed targets) even
+    // when it's a *named* array member (e.g. `fallbackReference`), and its compiled
+    // `.type` chain reaches `reference`. Walk that chain (like the image branch) so
     // named references still get the document preview instead of the generic card.
     if (
       props.schemaType.name === 'reference' ||
-      original?.name === 'reference' ||
+      extendsType(currentSchema, 'reference') ||
       Array.isArray(original?.to)
     ) {
       return withEdit(<ReferenceBlock {...withSchema} />)

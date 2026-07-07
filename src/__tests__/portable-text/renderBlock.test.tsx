@@ -53,6 +53,28 @@ describe('renderBlock dispatch', () => {
     } as never) as {type: unknown}
     expect(el.type).toBe(ImageBlock)
   })
+
+  it('routes a NAMED reference member (authorRef) to ReferenceBlock by base type', () => {
+    // A named `type: 'reference'` member — its compiled `.type` chain reaches
+    // `reference`, so it must get ReferenceBlock and not fall through to the
+    // default block (which would render the generic card instead of a preview).
+    const configSchema = {
+      of: [
+        {
+          name: 'authorRef',
+          type: {name: 'reference', type: {name: 'object'}},
+          to: [{type: 'author'}],
+        },
+      ],
+    } as never
+    const RenderNamed = renderBlock({configSchema})
+    const el = RenderNamed({
+      schemaType: {name: 'authorRef'},
+      value: {_key: 'k'},
+      children: null,
+    } as never) as {type: unknown}
+    expect(el.type).toBe(ReferenceBlock)
+  })
 })
 
 describe('DefaultCustomBlock media fallback', () => {
