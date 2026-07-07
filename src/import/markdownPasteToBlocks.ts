@@ -1,9 +1,9 @@
-import {generateKey} from '../utils/generateKey'
 import {markdownToPortableText} from '@portabletext/markdown'
 import type {PortableTextBlock} from 'sanity'
 
+import {generateKey} from '../utils/generateKey'
 import {cellToText} from './cellToText'
-import {toRichTableBlock} from './toRichTableValue'
+import {RICH_TABLE_BLOCK_TYPE, toRichTableBlock} from './toRichTableValue'
 import type {CellValue, ParsedTable} from './types'
 
 /**
@@ -56,7 +56,10 @@ interface PtSpan {
  * `richTable` shape, so prose, headings, and lists from the same paste flow
  * through unchanged while tables become rich tables in one pass.
  */
-export function markdownPasteToBlocks(plain: string): PortableTextBlock[] {
+export function markdownPasteToBlocks(
+  plain: string,
+  blockType: string = RICH_TABLE_BLOCK_TYPE,
+): PortableTextBlock[] {
   if (!plain) return []
 
   const blocks = markdownToPortableText(plain, {
@@ -68,10 +71,11 @@ export function markdownPasteToBlocks(plain: string): PortableTextBlock[] {
         // structurally overlaps our documented subset — cast through `unknown`.
         const parsed = mdTableBlockToParsedTable(value as unknown as MdTableBlock)
         if (parsed.rows.length === 0 && parsed.headers === null) return undefined
-        // toRichTableBlock returns the rich-table block shape (`richTableBlock`),
-        // which is structurally a `PortableTextObject`. The matcher's typing
-        // requires a `PortableTextObject`-compatible return; cast through unknown.
-        return toRichTableBlock(parsed) as unknown as ReturnType<
+        // toRichTableBlock returns the rich-table block shape (`blockType`,
+        // defaulting to `richTableBlock`), which is structurally a
+        // `PortableTextObject`. The matcher's typing requires a
+        // `PortableTextObject`-compatible return; cast through unknown.
+        return toRichTableBlock(parsed, undefined, blockType) as unknown as ReturnType<
           NonNullable<
             NonNullable<NonNullable<Parameters<typeof markdownToPortableText>[1]>['types']>['table']
           >

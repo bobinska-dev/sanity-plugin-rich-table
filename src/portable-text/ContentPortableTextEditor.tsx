@@ -16,7 +16,6 @@ import {
 
 import LoadingIndicator from '../components/LoadingIndicator'
 import {invalidAnnotationKeysFrom} from '../hooks/useTableCellValidation'
-import content from '../schemas/content'
 import ButtonToolbar from './components/context-menu-toolbar/ButtonToolbar'
 import CustomListenerPlugin from './components/EventListenerPlugin'
 import {StyledPortableTextEditable} from './components/StyledPortableTextEditable'
@@ -30,6 +29,7 @@ import {createRenderStyle, StyleComponent} from './configs/renderer/renderStyle'
 import {EmojiPickerPlugin} from './emoji-picker/EmojiPicker'
 import {InlineDiffEditable} from './inline-diff/InlineDiffEditable'
 import {SlashCommandPickerPlugin} from './pte-slash-commands/SlashCommandPicker'
+import {resolveCellContentSchemaType} from './resolveCellContentSchemaType'
 import {resolveSchemaDefinition} from './resolveSchemaDefinition'
 
 // import { useFullscreenPTE } from './hooks/useFullScreenPTE'
@@ -91,9 +91,20 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
   const handleFocus = useCallback((state: boolean) => setFocused(state), [])
 
   const schema = useSchema()
-  const configSchema = props.portableTextSchemaTypeName
-    ? (schema.get(props.portableTextSchemaTypeName) as ArraySchemaType<PortableTextBlock>)
-    : undefined
+  // Resolve the cell content schema from the cell's OWN `content` field first.
+  // It is always correct — `defineCellObject` sets it to
+  // `portableTextSchemaTypeName || 'content'` — and, crucially, it survives
+  // Sanity dropping `components.input` on a RENAMED `richTableBlock` member,
+  // where the threaded `portableTextSchemaTypeName` prop never arrives and the
+  // cell would otherwise fall back to the default schema (SYS-192). The global
+  // lookup by name stays as a defensive fallback.
+  const configSchema =
+    resolveCellContentSchemaType(props.schemaType) ??
+    (props.portableTextSchemaTypeName
+      ? (schema.get(props.portableTextSchemaTypeName) as
+          | ArraySchemaType<PortableTextBlock>
+          | undefined)
+      : undefined)
 
   // Consumer-defined custom render components for marks, keyed by name. They are
   // read off the compiled schema (styles/decorators carry `component`;
@@ -129,14 +140,10 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
   )
 
   // * INITIAL CONFIG FOR EDITOR PROVIDER
-  // Split out to avoid a nested ternary. Prefer the schema resolved from
-  // portableTextSchemaTypeName; else the passed-in schemaType's resolved array
-  // type (legacy prop shape); else the built-in content type.
-  const legacySchemaType = props.schemaType
-    ? // @ts-expect-error legacy prop shape: unwrap the resolved array type
-      props.schemaType.type.type
-    : content
-  const pteSchemaType = configSchema ? configSchema : legacySchemaType
+  // `configSchema` (resolved from the cell's own content field, above) drives the
+  // toolbar and slash-command picker too. It's the resolved `content` array type
+  // even for the built-in default, so no separate fallback is needed.
+  const pteSchemaType = configSchema
 
   const initialConfig = useRef<EditorConfig>({
     initialValue: props.value,

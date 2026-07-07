@@ -1,7 +1,6 @@
 import type {PortableTextBlock} from 'sanity'
 
 import {generateKey} from '../utils/generateKey'
-
 import {cellToText} from './cellToText'
 import {createEmptyBlockContent, createTextBlock} from './placeholders'
 import type {CellValue, ParsedTable, ToRichTableOptions} from './types'
@@ -147,14 +146,20 @@ function cellValueToContent(value: CellValue | undefined): PortableTextBlock[] {
 export const RICH_TABLE_BLOCK_TYPE = 'richTableBlock'
 
 /**
- * Like {@link toRichTableValue}, but stamps `_type: 'richTableBlock'` so the
- * result can be inserted as a Portable Text block (paste-to-import, etc.). The
- * base object type `richTable` is only correct for a standalone object field; a
- * Portable Text member must carry the block type name.
+ * Like {@link toRichTableValue}, but stamps `_type: blockType` (defaults to
+ * {@link RICH_TABLE_BLOCK_TYPE}) so the result can be inserted as a Portable
+ * Text block (paste-to-import, etc.). The base object type `richTable` is only
+ * correct for a standalone object field; a Portable Text member must carry the
+ * block type name.
+ *
+ * Pass `blockType` when the block is registered under a different member name
+ * (e.g. `defineArrayMember({name: 'richTable', type: 'richTableBlock'})`) so the
+ * inserted block's `_type` matches that member instead of the default.
  */
 export function toRichTableBlock(
   parsed: ParsedTable,
   options?: ToRichTableOptions,
+  blockType: string = RICH_TABLE_BLOCK_TYPE,
 ): RichTableValue {
-  return {...toRichTableValue(parsed, options), _type: RICH_TABLE_BLOCK_TYPE}
+  return {...toRichTableValue(parsed, options), _type: blockType}
 }

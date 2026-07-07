@@ -13,6 +13,11 @@ import {createTablePasteBehaviors, type ShowToastFn} from './tablePasteBehavior'
  * "paste a spreadsheet / HTML / markdown table → rich table block". The toast
  * callback is passed via a ref so each editor instance stays independent.
  *
+ * The inserted block's `_type` is auto-detected per paste from the field's own
+ * schema, so a `richTableBlock` member registered under any name — e.g.
+ * `defineArrayMember({name: 'richTable', type: 'richTableBlock'})` — is honoured
+ * automatically, with no configuration.
+ *
  * @example
  * ```tsx
  * // in your PortableText input's `renderEditable` / plugins slot

@@ -55,6 +55,9 @@ The plugin ships two lines. **2.x** targets Sanity 6 and is the `latest` release
 > npm install sanity-plugin-rich-table@1.0.5
 > ```
 
+> [!NOTE]
+> **React Compiler runtime (2.1.0+).** The plugin's build runs the React Compiler and ships output that imports React 19's built-in `react/compiler-runtime`. Make sure your Studio resolves a **single** React 19 — a duplicated React (or a mismatched `react-compiler-runtime` polyfill dragged in transitively, e.g. by another package) can surface a `useMemoCache … size N` error at runtime. Dedupe React via your package manager (e.g. pnpm `overrides`) if you hit it.
+
 ## Migrating from 1.x
 
 **2.0.0 is a platform bump.** It targets **Sanity 6** (React 19, Node ≥ 22.12). If you're still on Sanity 5, stay on the `^1.1` line (see [Compatibility](README.md#compatibility)). Otherwise bump Sanity, React and Node together, then install `sanity-plugin-rich-table@^2`.
@@ -322,6 +325,8 @@ export default defineConfig({
 ```
 
 This affects only Sanity's document-body Portable Text inputs — not the rich table's own cell editors.
+
+A pasted table is inserted with the `_type` of **your** rich-table block member, detected automatically from the field's schema — so if you registered it under a different name (e.g. `defineArrayMember({name: 'richTable', type: 'richTableBlock'})` to keep the stored `_type` stable), pasted blocks still match your member. No configuration needed.
 
 ### Excel (`.xlsx`) support
 
