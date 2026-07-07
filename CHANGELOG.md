@@ -5,6 +5,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.1](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.1.0...v2.1.1) (2026-07-07)
+
+### Bug Fixes
+
+- generateKey uses globalThis.crypto so public exports work in Node/SSR ([46a9020](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/46a90209afb5ab500898a5e87870aa3e523edf5d))
+- **pt:** keep editor focus on slash-picker mousedown so click-to-insert works ([6f01ca5](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/6f01ca5cfb79f6880ff03893258763396b481670))
+- **pt:** log every table component crash and contain it at the table level ([24581d7](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/24581d7d00fdef1b9a6616ef351d1fcadb2e4e14))
+
 ## [2.1.0](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.0.0...v2.1.0) (2026-07-07)
 
 ### Features
