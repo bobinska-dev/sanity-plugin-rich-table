@@ -4,7 +4,7 @@ import {EventListenerPlugin} from '@portabletext/editor/plugins'
 import {defineTypeaheadPicker, useTypeaheadPicker} from '@portabletext/plugin-typeahead-picker'
 import {Box, Text} from '@sanity/ui'
 import Fuse from 'fuse.js'
-import {useMemo} from 'react'
+import {useCallback, useMemo} from 'react'
 import type {ArrayDefinition, ArraySchemaType, PortableTextBlock} from 'sanity'
 
 import {FloatingPanel} from '../components/FloatingPanel'
@@ -111,15 +111,21 @@ export function SlashCommandPickerPlugin({schemaType}: SlashCommandPickerPluginP
   // aren't focusable and FloatingPanel doesn't trap focus), so clicking a command
   // still works; dismissing while idle is a harmless no-op.
   //
-  // A plain function (not useCallback — see the repo's React Compiler rules) so
-  // the compiler memoizes it on the stable `send`; the component re-renders on
-  // every keystroke while active, and a fresh handler each render would make
-  // `EventListenerPlugin` unsubscribe/resubscribe the editor listener each time.
-  const handleEditorEvent = (event: EditorEmittedEvent) => {
-    if (event.type === 'blurred') {
-      send({type: 'dismiss'})
-    }
-  }
+  // Memoized on the stable `send`: this component re-renders on every keystroke
+  // while the picker is active, and `EventListenerPlugin` re-subscribes the
+  // editor listener whenever its `on` prop identity changes — so a fresh handler
+  // each render would resubscribe on every keystroke. `useCallback` is required
+  // because this package's build does NOT run the React Compiler (no
+  // babel-plugin-react-compiler in package.config.ts), so an in-body function
+  // would not be auto-memoized.
+  const handleEditorEvent = useCallback(
+    (event: EditorEmittedEvent) => {
+      if (event.type === 'blurred') {
+        send({type: 'dismiss'})
+      }
+    },
+    [send],
+  )
 
   return (
     <>
