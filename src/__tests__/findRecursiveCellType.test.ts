@@ -46,9 +46,25 @@ describe('findRecursiveCellType', () => {
     expect(findRecursiveCellType(schema, 'tableCellContent')).toBe('richTable')
   })
 
+  it('flags an INDIRECT cycle — a table nested inside a custom block object', () => {
+    // A `callout` cell member whose own body PT array embeds a richTableBlock.
+    const callout = {
+      name: 'callout',
+      type: {name: 'object'},
+      fields: [
+        {name: 'title', type: {name: 'string'}},
+        {name: 'body', type: {name: 'array', of: [blockMember, richTableBlockMember]}},
+      ],
+    }
+    const schema = schemaWith('tableCellContent', {of: [blockMember, callout]})
+    // Reports the top-level cell member that introduces the cycle.
+    expect(findRecursiveCellType(schema, 'tableCellContent')).toBe('callout')
+  })
+
   it('does not loop forever on a self-referential compiled chain', () => {
-    const cyclic: {name: string; type?: unknown} = {name: 'block'}
+    const cyclic: {name: string; type?: unknown; fields?: unknown} = {name: 'block'}
     cyclic.type = cyclic
+    cyclic.fields = [{type: cyclic}]
     const schema = schemaWith('tableCellContent', {of: [cyclic]})
     expect(() => findRecursiveCellType(schema, 'tableCellContent')).not.toThrow()
     expect(findRecursiveCellType(schema, 'tableCellContent')).toBeUndefined()

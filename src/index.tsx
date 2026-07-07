@@ -190,7 +190,7 @@ function RichTableStudioLayout(props: LayoutProps & {portableTextSchemaTypeName?
  *
  * export default defineConfig({
  *   // ...
- *   plugins: [richTablePlugin({})],
+ *   plugins: [richTablePlugin()],
  * })
  * ```
  *
@@ -216,8 +216,8 @@ function RichTableStudioLayout(props: LayoutProps & {portableTextSchemaTypeName?
  *
  * @see {@link https://github.com/bobinska-dev/sanity-plugin-rich-table} for full documentation
  */
-export const richTablePlugin = definePlugin<RichTablePluginOptions>(
-  ({portableTextSchemaTypeName}) => {
+export const richTablePlugin = definePlugin<RichTablePluginOptions | void>(
+  ({portableTextSchemaTypeName} = {}) => {
     // Bind the option into the layout once (the factory runs once per plugin
     // instantiation, so this component identity is stable) so the layout can
     // run its recursive-cell-schema guard against the configured type.

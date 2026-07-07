@@ -95,4 +95,30 @@ describe('parseCsvTable', () => {
       ['3', '4'],
     ])
   })
+
+  it('ignores a trailing blank line (no spurious empty row)', () => {
+    const result = parseCsvTable('A,B\n1,2\n3,4\n')
+    expect(result.table.headers).toEqual(['A', 'B'])
+    expect(result.table.rows).toEqual([
+      ['1', '2'],
+      ['3', '4'],
+    ])
+  })
+
+  it('drops a fully-blank line between rows', () => {
+    const result = parseCsvTable('A,B\n1,2\n\n3,4')
+    expect(result.table.headers).toEqual(['A', 'B'])
+    expect(result.table.rows).toEqual([
+      ['1', '2'],
+      ['3', '4'],
+    ])
+  })
+
+  it('does not misread a single data row + trailing newline as header + empty body', () => {
+    // One data row followed by a blank line must not be split into a header row
+    // and an empty body — the trailing blank is dropped before header detection.
+    const result = parseCsvTable('only,one,row\n')
+    expect(result.table.headers).toBeNull()
+    expect(result.table.rows).toEqual([['only', 'one', 'row']])
+  })
 })

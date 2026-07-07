@@ -41,9 +41,12 @@ export const defaultSchemaDefinition: SchemaDefinition = {
  *
  * Reads the consumer's decorators/styles/lists/annotations/objects off the
  * compiled block via {@link extractBlockConfig} (the compiled paths are deeply
- * nested — see that helper). Any group the block doesn't define falls back to
- * the built-in defaults; the whole defaults are returned when no resolved block
- * schema is present.
+ * nested — see that helper). Sanity's compiler already fills the built-in
+ * defaults for any group the block OMITS, so an empty group reaching us can only
+ * mean the author explicitly declared it empty (e.g. `marks: {decorators: []}`
+ * to disable all decorators). We therefore map each group straight through —
+ * substituting defaults per-group would silently override that intent. The whole
+ * defaults are returned only when no resolved block schema is present at all.
  */
 export function resolveSchemaDefinition(
   schemaType?: ArraySchemaType<PortableTextBlock>,
@@ -52,18 +55,10 @@ export function resolveSchemaDefinition(
   if (!cfg) return defaultSchemaDefinition
 
   return {
-    decorators: cfg.decorators.length
-      ? cfg.decorators.map(({name, title}) => ({name, title}))
-      : defaultSchemaDefinition.decorators,
-    styles: cfg.styles.length
-      ? cfg.styles.map(({name, title}) => ({name, title}))
-      : defaultSchemaDefinition.styles,
-    lists: cfg.lists.length
-      ? cfg.lists.map(({name, title}) => ({name, title}))
-      : defaultSchemaDefinition.lists,
-    annotations: cfg.annotations.length
-      ? cfg.annotations.map(({name, title, fields}) => ({name, title, fields}))
-      : defaultSchemaDefinition.annotations,
+    decorators: cfg.decorators.map(({name, title}) => ({name, title})),
+    styles: cfg.styles.map(({name, title}) => ({name, title})),
+    lists: cfg.lists.map(({name, title}) => ({name, title})),
+    annotations: cfg.annotations.map(({name, title, fields}) => ({name, title, fields})),
     blockObjects: cfg.blockObjects.map(({name, title, fields}) => ({name, title, fields})),
     inlineObjects: cfg.inlineObjects.map(({name, title, fields}) => ({name, title, fields})),
   }

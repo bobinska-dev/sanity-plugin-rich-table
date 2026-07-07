@@ -78,6 +78,49 @@ const SyncReadOnly: ComponentType<{readOnly: boolean}> = ({readOnly}) => {
   return null
 }
 
+/**
+ * Sync EXTERNAL value changes into the editor. `initialConfig` only seeds the
+ * value once, so without this a cell never reflects an undo/redo, a History-panel
+ * revert, or a real-time collaborator's edit until it's remounted.
+ *
+ * The hard constraint is not clobbering the user's own typing. Local edits leave
+ * the editor as a `mutation` event, get written by {@link CustomListenerPlugin}
+ * via `patch.execute`, then round-trip back as a new `value` prop — re-entering
+ * here. Pushing `update value` for that echo (or the naive `key={hash(value)}`
+ * remount) would reset the value mid-keystroke: dropped characters, jumped caret.
+ *
+ * So we never sync while the cell is focused. `syncedValueRef` records the last
+ * `value` the editor was reconciled to, and the effect re-runs on blur (`focused`
+ * is a dependency), so an external change that arrived WHILE focused is flushed on
+ * blur instead of being lost until some unrelated later change — the gap a plain
+ * value-keyed effect leaves. Comparing against `syncedValueRef` (not the editor's
+ * live snapshot) is what keeps this safe: if `value` is momentarily stale-behind a
+ * just-typed keystroke on blur, it still equals `syncedValueRef`, so we DON'T push
+ * a revert; when the local edit's patch round-trips, `value` changes and we sync to
+ * it (a no-op the editor already has). Re-applying the user's own value is harmless
+ * (they're not focused); only a genuinely external `value` produces a real change.
+ */
+export const SyncExternalValue: ComponentType<{
+  value: PortableTextBlock[] | undefined
+  focused: boolean
+}> = ({value, focused}) => {
+  const editor = useEditor()
+  // The last value we reconciled the editor to. Seeded from the initial value
+  // (already applied via `initialConfig`), so the first run is a no-op.
+  const syncedValueRef = useRef(value)
+  useEffect(() => {
+    // The user is editing this cell — their edits are the source of truth and are
+    // already being persisted; do not overwrite the live value under the caret.
+    if (focused) return
+    // Reference-compare against what we last synced: `value` is a slice of the
+    // immutable document value, so a new reference means the content changed.
+    if (value === syncedValueRef.current) return
+    syncedValueRef.current = value
+    editor.send({type: 'update value', value})
+  }, [editor, value, focused])
+  return null
+}
+
 /** # ContentPortableTextInput
  * A Portable Text Input component for the rich table solution.
  */
@@ -183,6 +226,7 @@ const ContentPortableTextInput: ComponentType<ContentPortableTextInputProps> = (
         {/* eslint-disable-next-line react-hooks/refs */}
         <EditorProvider initialConfig={initialConfig.current}>
           <SyncReadOnly readOnly={props.readOnly ?? false} />
+          <SyncExternalValue value={props.value} focused={focused} />
           <CustomListenerPlugin
             _id={_id}
             _type={_type}

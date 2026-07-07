@@ -131,3 +131,59 @@ describe('ColumnContextMenu – "Use as row titles"', () => {
     })
   })
 })
+
+describe('ColumnContextMenu – add column', () => {
+  beforeEach(() => {
+    mockPaneRouter.params = {}
+    mockPaneRouter.routerPanesState = []
+    mockPaneRouter.setParams = vi.fn()
+  })
+
+  it('adds a column to the right in a single atomic transaction, bumping cellIndex before inserting', () => {
+    const {execute} = renderMenu()
+
+    fireEvent.click(screen.getByLabelText('Column options 1'))
+    fireEvent.click(screen.getByText('Add column (right)'))
+
+    // Crux of the finding: one transaction, not two. A partial undo must not be
+    // able to bump a sibling's `cellIndex` without the matching insert.
+    expect(execute).toHaveBeenCalledTimes(1)
+    const [ops] = execute.mock.calls[0]
+    expect(ops).toHaveLength(4)
+
+    // The cellIndex bump of the following column comes first, before any insert.
+    expect(ops[0]).toEqual({inc: {'myTable.columnHeaders[1].cellIndex': 1}})
+
+    // …then the new header is inserted after the current one…
+    expect(ops[1].insert.after).toBe('myTable.columnHeaders[_key=="h0"]')
+    expect(ops[1].insert.items).toHaveLength(1)
+    expect(ops[1].insert.items[0]._type).toBe('columnHeader')
+    expect(ops[1].insert.items[0].cellIndex).toBe(1)
+
+    // …then a new cell after the current cell in every row.
+    expect(ops[2].insert.after).toBe('myTable.rows[0].cells[0]')
+    expect(ops[2].insert.items).toHaveLength(1)
+    expect(ops[3].insert.after).toBe('myTable.rows[1].cells[0]')
+    expect(ops[3].insert.items).toHaveLength(1)
+  })
+
+  it('adds a column to the left in a single atomic transaction', () => {
+    const {execute} = renderMenu({columnIndex: 1, columnHeaderKey: 'h1'})
+
+    fireEvent.click(screen.getByLabelText('Column options 2'))
+    fireEvent.click(screen.getByText('Add column (left)'))
+
+    expect(execute).toHaveBeenCalledTimes(1)
+    const [ops] = execute.mock.calls[0]
+    expect(ops).toHaveLength(4)
+
+    // The cellIndex bump comes first, then the header + cell inserts (before).
+    expect(ops[0]).toEqual({inc: {'myTable.columnHeaders[1].cellIndex': 1}})
+    expect(ops[1].insert.before).toBe('myTable.columnHeaders[_key=="h1"]')
+    expect(ops[1].insert.items).toHaveLength(1)
+    expect(ops[2].insert.before).toBe('myTable.rows[0].cells[1]')
+    expect(ops[2].insert.items).toHaveLength(1)
+    expect(ops[3].insert.before).toBe('myTable.rows[1].cells[1]')
+    expect(ops[3].insert.items).toHaveLength(1)
+  })
+})

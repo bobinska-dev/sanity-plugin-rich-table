@@ -1,6 +1,6 @@
-import {generateKey} from '../utils/generateKey'
 import type {PortableTextBlock} from 'sanity'
 
+import {generateKey} from '../utils/generateKey'
 import {createPlaceholderBlock} from './placeholders'
 import type {CellValue, ParseResult, ParseWarning} from './types'
 import {MAX_IMPORT_ROWS} from './types'
@@ -30,6 +30,13 @@ const PLACEHOLDER_TAGS: Record<string, string> = {
   CANVAS: 'complex content',
   SVG: 'complex content',
 }
+
+/**
+ * Elements whose text content is never user-visible prose. Their text must not
+ * leak into an imported cell as spans, so they're skipped wherever they appear
+ * — at block level or nested anywhere inside inline content.
+ */
+const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'HEAD'])
 
 /** Safe URL schemes for pasted links. */
 const ALLOWED_HREF_SCHEMES = ['http', 'https', 'mailto', 'tel']
@@ -98,10 +105,23 @@ function buildCellGrid(rowEls: Element[]): (Element | null)[][] {
 function sanitizeHref(href: string | null): string | undefined {
   const trimmed = href?.trim()
   if (!trimmed) return undefined
-  if (/^(#|\/|\.{1,2}\/)/.test(trimmed)) return trimmed
-  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(trimmed)?.[1]?.toLowerCase()
-  if (!scheme) return trimmed // no scheme → relative path
-  return ALLOWED_HREF_SCHEMES.includes(scheme) ? trimmed : undefined
+  // Browsers strip TAB/LF/CR (and other C0 control chars) from URLs before
+  // navigating, so `java\tscript:` becomes `javascript:` at click time. `.trim()`
+  // only removes leading/trailing whitespace, so an interior control char would
+  // otherwise defeat the scheme check (the scheme regex fails to match → treated
+  // as a "relative" URL and passed through). Strip only C0 control chars (< 0x20)
+  // FIRST, then detect the scheme against the cleaned value. A literal space (0x20)
+  // is NOT a control char and doesn't enable the bypass (browsers don't ignore it
+  // mid-scheme), so it's preserved — dropping it would mangle legit URLs like
+  // `?q=hello world`.
+  const cleaned = Array.from(trimmed)
+    .filter((c) => c.charCodeAt(0) >= 0x20)
+    .join('')
+  if (!cleaned) return undefined
+  if (/^(#|\/|\.{1,2}\/)/.test(cleaned)) return cleaned
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(cleaned)?.[1]?.toLowerCase()
+  if (!scheme) return cleaned // no scheme → relative path
+  return ALLOWED_HREF_SCHEMES.includes(scheme) ? cleaned : undefined
 }
 
 /**
@@ -347,7 +367,16 @@ export function extractBlocks(
     const el = child as Element
     const tag = el.tagName
 
-    if (tag === 'P' || tag === 'DIV' || /^H[1-6]$/.test(tag)) {
+    if (SKIP_TAGS.has(tag)) continue
+
+    if (/^H[1-6]$/.test(tag)) {
+      // Preserve the heading level (<h2> → "h2") rather than flattening to a
+      // paragraph, so imported headings keep their semantics in the cell editor.
+      const spans = extractSpans(el, warnings, rowIdx, colIdx)
+      if (spans.children.length > 0) {
+        blocks.push(buildBlock(spans.children, spans.markDefs, tag.toLowerCase()))
+      }
+    } else if (tag === 'P' || tag === 'DIV') {
       const spans = extractSpans(el, warnings, rowIdx, colIdx)
       if (spans.children.length > 0) {
         blocks.push(buildBlock(spans.children, spans.markDefs, 'normal'))
@@ -439,6 +468,10 @@ function extractSpans(
 
     const childEl = node as Element
     const tag = childEl.tagName
+
+    // Non-content elements (script/style/etc.) carry text that must never surface
+    // as prose — drop them entirely rather than recursing into their text nodes.
+    if (SKIP_TAGS.has(tag)) continue
 
     // Emit a visible placeholder span for unparseable content (images, embeds, etc.)
     if (tag in PLACEHOLDER_TAGS) {

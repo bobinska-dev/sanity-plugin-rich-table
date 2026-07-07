@@ -22,6 +22,6 @@ export default styled(Box)<{
       ? `repeat(${props.$maxRows}, ${props.$cellSize}px);`
       : 'repeat(1, auto);'};
 
-  max-width: ${(props) => props.$maxWidth}+ 'px';
-  max-height: ${(props) => props.$maxWidth} + 'px';
+  max-width: ${(props) => props.$maxWidth}px;
+  max-height: ${(props) => props.$maxHeight}px;
 `

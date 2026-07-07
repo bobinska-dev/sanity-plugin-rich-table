@@ -1,5 +1,5 @@
 import {Box, Button, Card, Flex, Text} from '@sanity/ui'
-import {ComponentType, useCallback, useEffect, useState} from 'react'
+import {ComponentType, useCallback, useEffect, useRef, useState} from 'react'
 import {FormPatch, FormPatchJSONValue, OperationsAPI, PatchEvent, SANITY_PATCH_TYPE} from 'sanity'
 
 import {ColumnHeader} from '../schemas/columnHeader.object'
@@ -50,6 +50,12 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
   // Dragging states for click-and-drag selection
   const [dragging, setDragging] = useState<boolean>(false)
   const [dragStart, setDragStart] = useState<TableSize | null>(null)
+  // Synchronous guard so a single drag commits exactly once. Releasing inside
+  // the component fires BOTH the Card's `onMouseUp` and the window-level
+  // `mouseup` fallback in the same tick — each still sees `dragging === true`
+  // (state hasn't re-rendered), so without this ref the table is committed
+  // twice. The ref clears synchronously, so the second handler is a no-op.
+  const dragCommittedRef = useRef(false)
 
   // * HELPERS
   const computeRect = (a: TableSize, b: TableSize) => {
@@ -136,18 +142,27 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
   const effectiveRows = selected.rows || hover.rows
   const effectiveCols = selected.cols || hover.cols
 
-  // window-level mouseup to finalize drag if releasing outside component
-  useEffect(() => {
-    const onWindowUp = () => {
-      if (dragging && hover.rows > 0 && hover.cols > 0) {
-        handleCommit(hover.rows, hover.cols)
-      }
+  // Finalize a drag, committing at most once (see `dragCommittedRef`). Shared by
+  // the Card's `onMouseUp` and the window-level fallback below.
+  const endDrag = useCallback(() => {
+    if (dragCommittedRef.current) {
       setDragging(false)
       setDragStart(null)
+      return
     }
-    window.addEventListener('mouseup', onWindowUp)
-    return () => window.removeEventListener('mouseup', onWindowUp)
+    if (dragging && hover.rows > 0 && hover.cols > 0) {
+      dragCommittedRef.current = true
+      handleCommit(hover.rows, hover.cols)
+    }
+    setDragging(false)
+    setDragStart(null)
   }, [dragging, hover, handleCommit])
+
+  // window-level mouseup to finalize drag if releasing outside component
+  useEffect(() => {
+    window.addEventListener('mouseup', endDrag)
+    return () => window.removeEventListener('mouseup', endDrag)
+  }, [endDrag])
 
   return (
     <Card
@@ -167,13 +182,7 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
           onChange: () => handleCommit(selected.rows, selected.cols),
         })
       }
-      onMouseUp={() => {
-        if (dragging && hover.rows > 0 && hover.cols > 0) {
-          handleCommit(hover.rows, hover.cols)
-        }
-        setDragging(false)
-        setDragStart(null)
-      }}
+      onMouseUp={endDrag}
       aria-label="Table size picker"
       style={{
         display: 'inline-block',
@@ -235,6 +244,7 @@ const InitialiseTable: ComponentType<InitialiseTableProps> = ({
                     if (e.button !== 0) return
                     e.preventDefault()
                     e.stopPropagation()
+                    dragCommittedRef.current = false
                     setDragging(true)
                     const start = {rows: rowCount, cols: colCount}
                     setDragStart(start)

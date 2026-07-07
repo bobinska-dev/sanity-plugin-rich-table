@@ -232,6 +232,20 @@ describe('buildTableDiffModel', () => {
     expect(model.hasChanges).toBe(true)
   })
 
+  it('treats an absent title flag as OFF (detects an off→on toggle)', () => {
+    // `useToggleTitles` UNSETS the flag to turn titles off, so an absent flag
+    // means OFF everywhere. A revision going from absent → explicit `true` is a
+    // real off→on toggle; a `true` default would read it as true→true and miss it.
+    const from = {rows: [row('r1', 'A', ['x'])]}
+    const to = {rows: [row('r1', 'A', ['x'])], hasColumnTitles: true, hasRowTitles: true}
+    const model = buildTableDiffModel(from, to)
+
+    expect(model.columnTitlesToggled).toBe(true)
+    expect(model.rowTitlesToggled).toBe(true)
+    expect(model.hasColumnTitles).toBe(true)
+    expect(model.hasChanges).toBe(true)
+  })
+
   it('aligns rows positionally when _key is missing', () => {
     const from = {rows: [{title: '', cells: [cell('a', 'x')]}]}
     const to = {rows: [{title: '', cells: [cell('a', 'y')]}]}

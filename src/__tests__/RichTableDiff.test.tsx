@@ -60,9 +60,10 @@ describe('RichTableDiff', () => {
 
   it('renders rows that have no columns without breaking', () => {
     // Smoke test: a row present with an empty cells array and no column headers → 0
-    // columns. The component must still render the row label.
-    const from = {rows: [{_key: 'r1', title: 'A', cells: []}]}
-    const to = {rows: [{_key: 'r1', title: 'B', cells: []}]}
+    // columns. The component must still render the row label. `hasRowTitles` is set
+    // explicitly because an absent flag means titles are OFF (they aren't rendered).
+    const from = {rows: [{_key: 'r1', title: 'A', cells: []}], hasRowTitles: true}
+    const to = {rows: [{_key: 'r1', title: 'B', cells: []}], hasRowTitles: true}
 
     expect(() => renderDiff(from, to)).not.toThrow()
     expect(screen.getByText('B')).toBeInTheDocument()

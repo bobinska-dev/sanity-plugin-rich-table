@@ -13,7 +13,10 @@ import {MAX_IMPORT_ROWS} from './types'
  */
 export function parseCsvTable(csv: string): ParseResult {
   const warnings: ParseResult['warnings'] = []
-  const rows = parseCsvRows(csv)
+  // Drop fully-empty rows (the trailing blank line most editors append, or a
+  // blank separator line) so they don't become empty table rows or skew header
+  // detection into treating a single data row as a header + empty body.
+  const rows = parseCsvRows(csv).filter((row) => row.some((field) => field.trim() !== ''))
 
   if (rows.length === 0) {
     return {table: {headers: null, rows: []}, warnings}
