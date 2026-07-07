@@ -401,10 +401,15 @@ export function buildTableDiffModel(from: MaybeTable, to: MaybeTable): TableDiff
   })
 
   const bothPresent = Boolean(from) && Boolean(to)
-  const fromHasColumnTitles = asBool(from?.hasColumnTitles, true)
-  const toHasColumnTitles = asBool(to?.hasColumnTitles, true)
-  const fromHasRowTitles = asBool(from?.hasRowTitles, true)
-  const toHasRowTitles = asBool(to?.hasRowTitles, true)
+  // Absent means OFF everywhere else: `useToggleTitles` UNSETS the flag to turn
+  // titles off (and sets `true` to turn them on), and the live renderer + markdown
+  // export both read the flag as `Boolean(...)`. Default to `false` here too, or
+  // the diff would render phantom title rows and miss a real off→on toggle
+  // (absent defaulting to `true` reads an on-toggle as `true` → `true` = no change).
+  const fromHasColumnTitles = asBool(from?.hasColumnTitles, false)
+  const toHasColumnTitles = asBool(to?.hasColumnTitles, false)
+  const fromHasRowTitles = asBool(from?.hasRowTitles, false)
+  const toHasRowTitles = asBool(to?.hasRowTitles, false)
   const columnTitlesToggled = bothPresent && fromHasColumnTitles !== toHasColumnTitles
   const rowTitlesToggled = bothPresent && fromHasRowTitles !== toHasRowTitles
 

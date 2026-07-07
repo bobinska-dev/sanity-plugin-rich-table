@@ -48,4 +48,40 @@ describe('resolveSchemaDefinition', () => {
     expect((def.blockObjects ?? []).map((o) => o.name)).toContain('callout')
     expect((def.inlineObjects ?? []).map((o) => o.name)).toContain('mention')
   })
+
+  it('fills defaults for OMITTED groups (bare block)', () => {
+    // Sanity's compiler fills the built-in defaults for any group a block omits,
+    // so a bare `{type: 'block'}` must resolve to the full default toolbar.
+    const schema = createSchema({
+      name: 'test',
+      types: [{name: 'bare', type: 'array', of: [{type: 'block'}]}],
+    })
+    const def = resolveSchemaDefinition(schema.get('bare') as ArraySchemaType<PortableTextBlock>)
+
+    expect((def.decorators ?? []).map((d) => d.name)).toContain('strong')
+    expect((def.lists ?? []).map((l) => l.name)).toEqual(['bullet', 'number'])
+    expect((def.annotations ?? []).map((a) => a.name)).toContain('link')
+  })
+
+  it('honours EXPLICITLY empty groups instead of restoring defaults', () => {
+    // `marks: {decorators: []}` / `lists: []` means the author wants NONE — an
+    // empty group must survive, not be silently replaced with the defaults.
+    const schema = createSchema({
+      name: 'test',
+      types: [
+        {
+          name: 'stripped',
+          type: 'array',
+          of: [{type: 'block', lists: [], marks: {decorators: [], annotations: []}}],
+        },
+      ],
+    })
+    const def = resolveSchemaDefinition(
+      schema.get('stripped') as ArraySchemaType<PortableTextBlock>,
+    )
+
+    expect(def.decorators).toEqual([])
+    expect(def.lists).toEqual([])
+    expect(def.annotations).toEqual([])
+  })
 })
