@@ -79,6 +79,8 @@ The plugin ships two lines. **2.x** targets Sanity 6 and is the `latest` release
 >   },
 > })
 > ```
+>
+> To help you spot this, when your schema nests a rich table in a Portable Text field the plugin prints a one-time `console.error` hint in `sanity dev` if the `useMemoCache` warning fires. It's dev-only and points at this fix; disable it with `richTablePlugin({devConsoleHint: false})`.
 
 ## Migrating from 1.x
 
