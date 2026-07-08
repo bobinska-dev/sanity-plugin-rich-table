@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.2.0](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.1.3...v2.2.0) (2026-07-08)
+
+### Features
+
+- **dev:** hint in console when the nested-editor compiler-runtime bug hits ([66b25bf](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/66b25bf16708c967308fbf857b4d8b2ba7f26a97))
+
 ## [2.1.3](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.1.2...v2.1.3) (2026-07-07)
 
 ### Bug Fixes
