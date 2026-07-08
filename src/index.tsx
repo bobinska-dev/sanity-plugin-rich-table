@@ -1,4 +1,4 @@
-import {ComponentType} from 'react'
+import {ComponentType, useEffect, useMemo} from 'react'
 import {
   type BlockAnnotationProps,
   type BlockProps,
@@ -7,6 +7,8 @@ import {
   useSchema,
 } from 'sanity'
 
+import {installCompilerRuntimeHint} from './dev/installCompilerRuntimeHint'
+import {schemaHasNestedRichTable} from './dev/schemaHasNestedRichTable'
 import {TableImportProvider} from './import/TableImportContext'
 import {tableImportFieldAction} from './import/tableImportFieldAction'
 import {findRecursiveCellType} from './portable-text/findRecursiveCellType'
@@ -138,6 +140,14 @@ declare module '@sanity/types' {
 
 export interface RichTablePluginOptions {
   portableTextSchemaTypeName?: string
+  /**
+   * Print a one-time `console.error` hint in `sanity dev` if React's
+   * `useMemoCache` size-mismatch warning fires **and** this schema nests a rich
+   * table in a Portable Text field — the shape that can trip the dev-only
+   * react-compiler-runtime issue (see the Compatibility section of the README).
+   * No effect in production. Default: `true`; set `false` to disable entirely.
+   */
+  devConsoleHint?: boolean
 }
 
 /**
@@ -152,8 +162,25 @@ export interface RichTablePluginOptions {
  * call stack size exceeded". Running the check in the layout surfaces a clear,
  * actionable error at studio load, before that crash can happen.
  */
-function RichTableStudioLayout(props: LayoutProps & {portableTextSchemaTypeName?: string}) {
+function RichTableStudioLayout(
+  props: LayoutProps & {portableTextSchemaTypeName?: string; devConsoleHint?: boolean},
+) {
   const schema = useSchema()
+
+  // Dev-only: watch for React's `useMemoCache` size-mismatch warning and print a
+  // one-time hint about the nested-editor React-Compiler-runtime issue + its fix.
+  // Scoped to Studios that actually nest a rich table in a Portable Text field
+  // (the only shape that triggers it), so it's not installed — and can't
+  // misdiagnose an unrelated warning — anywhere else. Opt out with
+  // `richTablePlugin({devConsoleHint: false})`. Hooks run before the
+  // recursive-schema guard below so they stay unconditional.
+  const nestsRichTable = useMemo(() => schemaHasNestedRichTable(schema), [schema])
+  const hintEnabled = props.devConsoleHint !== false && nestsRichTable
+  useEffect(() => {
+    if (hintEnabled) return installCompilerRuntimeHint()
+    return undefined
+  }, [hintEnabled])
+
   const recursiveType = findRecursiveCellType(schema, props.portableTextSchemaTypeName)
   if (recursiveType) {
     throw new Error(
@@ -217,12 +244,17 @@ function RichTableStudioLayout(props: LayoutProps & {portableTextSchemaTypeName?
  * @see {@link https://github.com/bobinska-dev/sanity-plugin-rich-table} for full documentation
  */
 export const richTablePlugin = definePlugin<RichTablePluginOptions | void>(
-  ({portableTextSchemaTypeName} = {}) => {
-    // Bind the option into the layout once (the factory runs once per plugin
+  ({portableTextSchemaTypeName, devConsoleHint} = {}) => {
+    // Bind the options into the layout once (the factory runs once per plugin
     // instantiation, so this component identity is stable) so the layout can
-    // run its recursive-cell-schema guard against the configured type.
+    // run its recursive-cell-schema guard against the configured type and gate
+    // the dev console hint.
     const StudioLayout = (props: LayoutProps) => (
-      <RichTableStudioLayout {...props} portableTextSchemaTypeName={portableTextSchemaTypeName} />
+      <RichTableStudioLayout
+        {...props}
+        portableTextSchemaTypeName={portableTextSchemaTypeName}
+        devConsoleHint={devConsoleHint}
+      />
     )
 
     return {

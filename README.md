@@ -58,6 +58,30 @@ The plugin ships two lines. **2.x** targets Sanity 6 and is the `latest` release
 > [!NOTE]
 > **React Compiler runtime (2.1.0+).** The plugin's build runs the React Compiler and ships output that imports React 19's built-in `react/compiler-runtime`. Make sure your Studio resolves a **single** React 19 — a duplicated React (or a mismatched `react-compiler-runtime` polyfill dragged in transitively, e.g. by another package) can surface a `useMemoCache … size N` error at runtime. Dedupe React via your package manager (e.g. pnpm `overrides`) if you hit it.
 
+> [!IMPORTANT]
+> **`sanity dev` only: table cells show `[type: _key]` placeholders when the table is nested in a Portable Text field.** If you use the table [as a custom block](#usage-as-custom-block-in-portable-text) (a `@portabletext/editor` cell editor nested inside your document-body `@portabletext/editor`), you may see the cells' custom block/inline objects render as raw `[imageWithCaption: …]` placeholders in **`sanity dev`**, with `useMemoCache "size 1 vs 20"` console spam — while `sanity build`/production renders them correctly.
+>
+> **Cause:** `@sanity/ui`'s React-Compiler output imports the standalone `react-compiler-runtime` shim, whose **dev** build installs a `LazyGuardDispatcher` that swaps React's *global* current dispatcher around every compiled function. That global swap corrupts the **inner** (cell) editor's hook state, so its custom components never mount. React 19 already ships a guard-free `react/compiler-runtime`, and `sanity build` uses the guard-free production runtime — so this is dev-only.
+>
+> **Fix:** alias the shim to React's built-in runtime in your `sanity.cli.ts` so dev matches prod:
+>
+> ```ts
+> // sanity.cli.ts
+> export default defineCliConfig({
+>   // …
+>   reactCompiler: {target: '19'},
+>   vite: {
+>     resolve: {
+>       alias: [{find: /^react-compiler-runtime$/, replacement: 'react/compiler-runtime'}],
+>     },
+>     // keep Vite's optimizer from pre-bundling (and baking in) the shim before the alias applies
+>     optimizeDeps: {exclude: ['react-compiler-runtime']},
+>   },
+> })
+> ```
+>
+> To help you spot this, when your schema nests a rich table in a Portable Text field the plugin prints a one-time `console.error` hint in `sanity dev` if the `useMemoCache` warning fires. It's dev-only and points at this fix; disable it with `richTablePlugin({devConsoleHint: false})`.
+
 ## Migrating from 1.x
 
 **2.0.0 is a platform bump.** It targets **Sanity 6** (React 19, Node ≥ 22.12). If you're still on Sanity 5, stay on the `^1.1` line (see [Compatibility](README.md#compatibility)). Otherwise bump Sanity, React and Node together, then install `sanity-plugin-rich-table@^2`.

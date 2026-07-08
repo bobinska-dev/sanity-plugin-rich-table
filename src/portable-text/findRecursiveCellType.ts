@@ -19,8 +19,11 @@ interface SchemaLike {
  * whose own body PT array contains a `richTableBlock`), both of which overflow
  * Sanity's schema normalization. A visited set makes it finite even on a
  * legitimately-cyclic compiled schema.
+ *
+ * Shared with {@link schemaHasNestedRichTable} (the dev-hint gate), so the
+ * "does this subtree contain a table" walk lives in one place.
  */
-function containsRichTable(node: unknown, seen: Set<unknown>): boolean {
+export function containsRichTable(node: unknown, seen: Set<unknown>): boolean {
   if (!node || typeof node !== 'object' || seen.has(node)) return false
   seen.add(node)
 
