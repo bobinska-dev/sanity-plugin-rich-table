@@ -1,4 +1,4 @@
-import {ComponentType} from 'react'
+import {ComponentType, useEffect} from 'react'
 import {
   type BlockAnnotationProps,
   type BlockProps,
@@ -7,6 +7,7 @@ import {
   useSchema,
 } from 'sanity'
 
+import {installCompilerRuntimeHint} from './dev/installCompilerRuntimeHint'
 import {TableImportProvider} from './import/TableImportContext'
 import {tableImportFieldAction} from './import/tableImportFieldAction'
 import {findRecursiveCellType} from './portable-text/findRecursiveCellType'
@@ -153,6 +154,11 @@ export interface RichTablePluginOptions {
  * actionable error at studio load, before that crash can happen.
  */
 function RichTableStudioLayout(props: LayoutProps & {portableTextSchemaTypeName?: string}) {
+  // Dev-only: watch for React's `useMemoCache` size-mismatch warning and print a
+  // one-time hint about the nested-editor React-Compiler-runtime issue + its fix.
+  // Runs before the recursive-schema guard below so it's an unconditional hook.
+  useEffect(() => installCompilerRuntimeHint(), [])
+
   const schema = useSchema()
   const recursiveType = findRecursiveCellType(schema, props.portableTextSchemaTypeName)
   if (recursiveType) {
