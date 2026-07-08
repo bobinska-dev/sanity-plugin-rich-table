@@ -1,26 +1,9 @@
-import {RICH_TABLE_TYPE} from '../portable-text/findRecursiveCellType'
+import {containsRichTable} from '../portable-text/findRecursiveCellType'
 import {extendsType} from '../portable-text/schemaTypeChain'
 
 interface SchemaLike {
   getTypeNames?: () => string[]
   get: (typeName: string) => unknown
-}
-
-/** Whether `node`, or anything nested in its arrays (`of`) / object fields, is a rich table. */
-function subtreeHasRichTable(node: unknown, seen: Set<unknown>): boolean {
-  if (!node || typeof node !== 'object' || seen.has(node)) return false
-  seen.add(node)
-  if (extendsType(node, RICH_TABLE_TYPE)) return true
-  const {of, fields, type} = node as {
-    of?: unknown
-    fields?: Array<{type?: unknown}>
-    type?: unknown
-  }
-  if (Array.isArray(of) && of.some((member) => subtreeHasRichTable(member, seen))) return true
-  if (Array.isArray(fields) && fields.some((field) => subtreeHasRichTable(field?.type, seen))) {
-    return true
-  }
-  return subtreeHasRichTable(type, seen)
 }
 
 /** A Portable Text array = an array whose members include a `block`. */
@@ -58,7 +41,7 @@ export function schemaHasNestedRichTable(schema: SchemaLike): boolean {
     if (isPortableTextArray(node)) {
       const of = (node as {of: unknown[]}).of
       // A fresh visited set per member so one member's subtree doesn't mask another's.
-      if (of.some((member) => subtreeHasRichTable(member, new Set()))) return true
+      if (of.some((member) => containsRichTable(member, new Set()))) return true
     }
 
     const {of, fields, type} = node as {
