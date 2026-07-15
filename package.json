@@ -73,7 +73,7 @@
     "react-icons": "^5.5.0"
   },
   "optionalDependencies": {
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "@e965/xlsx": "^0.20.3"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.2",

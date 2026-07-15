@@ -32,7 +32,7 @@ export default defineConfig({
     '@portabletext/toolkit',
     // Lazy-loaded SheetJS (optionalDependency); externalized so the heavy
     // bundle is never inlined and Excel import degrades gracefully if absent.
-    'xlsx',
+    '@e965/xlsx',
   ],
 
   // Remove this block to enable strict export validation
