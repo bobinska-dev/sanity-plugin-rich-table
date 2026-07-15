@@ -5,6 +5,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.2.2](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.2.1...v2.2.2) (2026-07-15)
+
+### Bug Fixes
+
+- address QA findings on the ESM regression guards ([c9466d0](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/c9466d0a02791c41fc5367a92a548a128f6235c8))
+- use named styled-components import for Node ESM compatibility ([3950258](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/3950258f2e917c887a65b20e3a1efbd2ad505cda)), closes [#42](https://github.com/bobinska-dev/sanity-plugin-rich-table/issues/42)
+- use pnpm in prepublishOnly per repo convention ([6918882](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/6918882f575385133b627bd16427c96c1549ea45))
+
 ## [2.2.1](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.2.0...v2.2.1) (2026-07-15)
 
 ### Bug Fixes
