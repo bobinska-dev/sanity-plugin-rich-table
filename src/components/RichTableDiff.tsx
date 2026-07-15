@@ -11,7 +11,7 @@ import {
   useState,
 } from 'react'
 import {type DiffProps} from 'sanity'
-import styled from 'styled-components'
+import {styled} from 'styled-components'
 
 import type {RichTableType} from '../schemas/richTable.object'
 import {

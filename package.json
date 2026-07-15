@@ -44,10 +44,11 @@
     "link-watch": "plugin-kit link-watch",
     "lint": "eslint .",
     "dev": "pnpm --filter studio dev",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "pnpm build && pnpm test:node-esm",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:node-esm": "node scripts/test-node-esm-import.mjs",
     "test:studio-install": "node scripts/test-studio-install.mjs",
     "watch": "pkg-utils watch --strict",
     "prepare": "husky"
