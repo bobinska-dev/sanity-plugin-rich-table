@@ -5,6 +5,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.2.1](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.2.0...v2.2.1) (2026-07-15)
+
+### Bug Fixes
+
+- **deps:** replace vulnerable npm xlsx@0.18.5 with SheetJS CDN xlsx@0.20.3 ([0cfff1d](https://github.com/bobinska-dev/sanity-plugin-rich-table/commit/0cfff1db103b332d600358fedf09235859360058))
+
 ## [2.2.0](https://github.com/bobinska-dev/sanity-plugin-rich-table/compare/v2.1.3...v2.2.0) (2026-07-08)
 
 ### Features
