@@ -71,6 +71,10 @@ export default [
         'error',
         {
           paths: [
+            // Carried over from eslint-config-sanity, which this block would
+            // otherwise clobber (flat-config last-wins).
+            {name: 'underscore'},
+            {name: 'jquery'},
             {
               name: 'styled-components',
               importNames: ['default'],

@@ -10,12 +10,14 @@
  */
 
 import path from 'node:path'
-import {fileURLToPath} from 'node:url'
+import {fileURLToPath, pathToFileURL} from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 try {
-  const mod = await import(path.join(root, 'dist/index.js'))
+  // pathToFileURL: bare absolute paths break dynamic import() on Windows
+  // (ERR_UNSUPPORTED_ESM_URL_SCHEME — drive letters parse as URL schemes).
+  const mod = await import(pathToFileURL(path.join(root, 'dist/index.js')).href)
   if (typeof mod.richTablePlugin !== 'function') {
     console.error('FAIL: dist/index.js imported, but the richTablePlugin export is missing.')
     process.exit(1)
