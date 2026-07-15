@@ -44,7 +44,7 @@
     "link-watch": "plugin-kit link-watch",
     "lint": "eslint .",
     "dev": "pnpm --filter studio dev",
-    "prepublishOnly": "npm run build && npm run test:node-esm",
+    "prepublishOnly": "pnpm build && pnpm test:node-esm",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
