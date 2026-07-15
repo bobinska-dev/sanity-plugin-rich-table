@@ -61,6 +61,28 @@ export default [
     },
   },
   {
+    // Guard against the default styled-components import (regressed twice:
+    // fixed in v1.0.5 via #6, reintroduced in 1.2.x, fixed again via #42).
+    // styled-components v6 has no `exports` map, so under Node's native ESM
+    // runtime the default binding resolves to the whole CJS module.exports
+    // object and the plugin crashes at import time. The named export is safe.
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'styled-components',
+              importNames: ['default'],
+              message:
+                "Use the named import — import {styled} from 'styled-components' — the default import crashes under Node ESM (see #6, #42).",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Test assertions frequently reach into PortableText block internals
     // (a `string | PortableTextBlock[]` union) to inspect children/marks, where
     // precise typing adds noise without value. Relax `no-explicit-any` for tests

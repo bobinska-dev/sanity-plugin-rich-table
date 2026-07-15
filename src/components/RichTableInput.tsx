@@ -18,7 +18,7 @@ import {
   useFormValue,
 } from 'sanity'
 import {useDocumentPane} from 'sanity/structure'
-import styled, {createGlobalStyle} from 'styled-components'
+import {createGlobalStyle, styled} from 'styled-components'
 
 import {useDialogRouteState} from '../hooks/useDialogRouteState'
 import {useTableCellValidation} from '../hooks/useTableCellValidation'
