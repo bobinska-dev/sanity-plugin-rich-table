@@ -44,8 +44,8 @@ export type {RichTableRuleBuilder, RichTableValidationConfig}
 // field action and inline block button.
 //
 // NOTE: `parseXlsxTable` is intentionally NOT re-exported here — it statically
-// imports the optional `xlsx` package, so re-exporting it would eagerly load
-// `xlsx` for every consumer (breaking graceful degradation when it's absent).
+// imports the optional `@e965/xlsx` package, so re-exporting it would eagerly
+// load it for every consumer (breaking graceful degradation when it's absent).
 // Use `parseFile` (which lazy-imports the XLSX parser) for Excel input instead.
 // ---------------------------------------------------------------------------
 export {detectFormat} from './import/detectFormat'

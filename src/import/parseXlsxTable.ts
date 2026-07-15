@@ -1,5 +1,5 @@
+import * as XLSX from '@e965/xlsx'
 import type {PortableTextBlock} from 'sanity'
-import * as XLSX from 'xlsx'
 
 import {parseHtmlTable} from './parseHtmlTable'
 import {createPlaceholderBlock} from './placeholders'

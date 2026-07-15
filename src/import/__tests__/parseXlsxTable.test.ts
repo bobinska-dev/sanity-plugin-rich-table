@@ -1,5 +1,5 @@
+import * as XLSX from '@e965/xlsx'
 import {afterEach, describe, expect, it, vi} from 'vitest'
-import * as XLSX from 'xlsx'
 
 import {parseXlsxTable} from '../parseXlsxTable'
 import {PLACEHOLDER_PREFIX} from '../placeholders'
@@ -13,8 +13,8 @@ import {MAX_IMPORT_ROWS} from '../types'
  */
 let readPostProcess: ((wb: XLSX.WorkBook) => void) | null = null
 
-vi.mock('xlsx', async () => {
-  const actual = await vi.importActual<typeof XLSX>('xlsx')
+vi.mock('@e965/xlsx', async () => {
+  const actual = await vi.importActual<typeof XLSX>('@e965/xlsx')
   return {
     ...actual,
     read: (...args: Parameters<typeof actual.read>) => {

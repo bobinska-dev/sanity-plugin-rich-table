@@ -354,7 +354,7 @@ A pasted table is inserted with the `_type` of **your** rich-table block member,
 
 ### Excel (`.xlsx`) support
 
-Excel parsing uses [SheetJS](https://sheetjs.com) (`xlsx`), declared as an **optional dependency** (installed by default). The dependency is installed from the [official SheetJS CDN](https://cdn.sheetjs.com) rather than the npm registry — the registry package is abandoned at 0.18.5 with known security advisories (prototype pollution, ReDoS), while SheetJS publishes patched releases only through their CDN. If your registry proxy blocks non-registry tarball URLs, install without optional dependencies: CSV / TSV / HTML / Markdown import still work and Excel upload simply reports that it is unavailable.
+Excel parsing uses [SheetJS](https://sheetjs.com) via [`@e965/xlsx`](https://www.npmjs.com/package/@e965/xlsx), declared as an **optional dependency** (installed by default). `@e965/xlsx` is an automated npm mirror of the official SheetJS releases — the original `xlsx` registry package is abandoned at 0.18.5 with known security advisories (prototype pollution, ReDoS), while SheetJS publishes patched releases only through their own CDN. The mirror's code is byte-identical to the official CDN tarball, is published with [npm provenance](https://docs.npmjs.com/generating-provenance-statements), and — unlike a CDN tarball URL — installs as a normal registry dependency with an integrity hash in your lockfile (CDN tarball URLs also hard-fail installs on pnpm ≥ 10.26, which blocks URL-resolved transitive dependencies by default). If you prefer not to install it, install without optional dependencies: CSV / TSV / HTML / Markdown import still work and Excel upload simply reports that it is unavailable.
 
 ### Building your own import UI
 

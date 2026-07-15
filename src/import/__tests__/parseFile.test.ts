@@ -1,5 +1,5 @@
+import * as XLSX from '@e965/xlsx'
 import {describe, expect, it} from 'vitest'
-import * as XLSX from 'xlsx'
 
 import {parseFile} from '../parseFile'
 import type {XlsxParseResult} from '../types'
